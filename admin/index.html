@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pusat Kontrol Super Admin | CDE Pearls Lombok</title>
+  <meta name="description" content="Portal Super Admin independen CDE Pearls Lombok untuk manajemen katalog produk mutiara laut, pelacak pesanan atelier, CRM leads WhatsApp, dan laporan keuangan eksekutif.">
+  <link rel="icon" type="image/png" href="../frontend/images/cde_logo.png">
+  <link rel="stylesheet" href="css/admin.css">
+  <!-- Lucide Icons Script -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- OVERLAY LOGIN SUPER ADMIN / ADMIN RBAC -->
+  <div class="admin-login-overlay" id="adminLoginOverlay" style="display: none;">
+    <div class="admin-login-card">
+      <img src="../frontend/images/cde_logo.png" alt="CD'E Pearls Culture Pearls" style="max-width: 155px; margin: 0 auto 12px; display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));">
+      <div class="admin-login-badge">
+        <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+        Pusat Kontrol Eksekutif
+      </div>
+      <h2 style="font-family: 'Playfair Display', serif; font-size: 1.45rem; color: #0B1F33; margin-bottom: 6px;">Portal Manajemen Atelier</h2>
+      <p style="font-size: 0.82rem; color: #5D6D7E; margin-bottom: 22px;">Autentikasi Hak Akses Privat Super Admin & Staf Produksi Lombok</p>
+
+      <div id="loginAlertBox" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 16px; text-align: left; background: #FEF2F2; color: #991B1B; border: 1px solid #F87171;"></div>
+
+      <form id="adminLoginForm" style="text-align: left;">
+        <div class="form-group-adm" style="margin-bottom: 14px;">
+          <label class="adm-label" for="loginEmail">Email Resmi Manajemen *</label>
+          <input type="email" id="loginEmail" class="adm-input" placeholder="nama@cdepearls.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group-adm" style="margin-bottom: 20px;">
+          <label class="adm-label" for="loginPassword">Kata Sandi Eksekutif *</label>
+          <input type="password" id="loginPassword" class="adm-input" placeholder="••••••••" required value="admin123" autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="btn-adm btn-adm-primary" style="width: 100%; padding: 13px; font-size: 0.9rem; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
+          Masuk ke Sistem Kontrol
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed #EEF1F3;">
+        <div style="font-size: 0.72rem; color: #5D6D7E; margin-bottom: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+          Akses Cepat Pengujian (1-Klik Masuk)
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button type="button" class="btn-adm-demo btn-adm-demo-super" onclick="quickLoginDemo('superadmin@cdepearls.com')" title="Masuk sebagai Super Admin">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 34px; height: 34px; border-radius: 50%; background: #0B1F33; color: #C9A96E; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; border: 1.5px solid #C9A96E;">SA</div>
+              <div>
+                <strong style="display: block; font-size: 0.82rem; color: #0B1F33;">Super Admin (Direktur Eksekutif)</strong>
+                <span style="font-size: 0.72rem; color: #8A6D3B;">superadmin@cdepearls.com • Hak Akses Penuh</span>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: #C9A96E;"></i>
+          </button>
+
+          <button type="button" class="btn-adm-demo btn-adm-demo-staff" onclick="quickLoginDemo('admin@cdepearls.com')" title="Masuk sebagai Admin Atelier">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 34px; height: 34px; border-radius: 50%; background: #1D4ED8; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem;">AT</div>
+              <div>
+                <strong style="display: block; font-size: 0.82rem; color: #0B1F33;">Admin Atelier (Manajer Produksi)</strong>
+                <span style="font-size: 0.72rem; color: #1D4ED8;">admin@cdepearls.com • Operasional & Stok</span>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: #1D4ED8;"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR NAVIGASI SUPER ADMIN -->
+  <aside class="adm-sidebar">
+    <div class="adm-brand">
+      <a href="index.html" class="adm-brand-link" title="Super Admin CDE Pearls">
+        <img src="../frontend/images/cde_logo.png" alt="CD'E Pearls Culture Pearls" class="adm-brand-logo-img">
+      </a>
+      <div class="adm-brand-sub">Pusat Kontrol Super Admin</div>
+    </div>
+
+    <!-- Kotak Pengguna Aktif & Peran -->
+    <div class="adm-user-box" id="admUserBox">
+      <div class="adm-user-info">
+        <div class="adm-user-name" id="admCurrentUserName">Memuat...</div>
+        <div class="adm-user-email" id="admCurrentUserEmail">...</div>
+        <div style="margin-top: 4px;" id="admCurrentUserRoleBadge">
+          <span class="role-badge-super">SUPER ADMIN</span>
+        </div>
+      </div>
+      <button type="button" class="btn-logout" id="btnAdminLogout" title="Keluar dari Portal" onclick="handleAdminLogout()">
+        Keluar
+      </button>
+    </div>
+
+    <nav class="adm-nav">
+      <span class="adm-nav-header">Manajemen Utama</span>
+      <a href="#dashboard" class="adm-nav-link active" data-target="tabDashboard">
+        <span class="adm-nav-icon"><i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i></span>
+        <span>Dashboard Ringkasan</span>
+      </a>
+      <a href="#inventaris" class="adm-nav-link" data-target="tabInventory">
+        <span class="adm-nav-icon"><i data-lucide="package" style="width: 18px; height: 18px;"></i></span>
+        <span>Katalog Produk</span>
+      </a>
+      <a href="#kategori" class="adm-nav-link" data-target="tabCategories">
+        <span class="adm-nav-icon"><i data-lucide="layers" style="width: 18px; height: 18px;"></i></span>
+        <span>5 Kategori Mutiara</span>
+      </a>
+      <a href="#stok" class="adm-nav-link" data-target="tabStock">
+        <span class="adm-nav-icon"><i data-lucide="boxes" style="width: 18px; height: 18px;"></i></span>
+        <span>Stok Butir Mutiara</span>
+      </a>
+      <a href="#pesanan" class="adm-nav-link" data-target="tabOrders">
+        <span class="adm-nav-icon"><i data-lucide="shopping-bag" style="width: 18px; height: 18px;"></i></span>
+        <span>Pesanan & Bayar</span>
+      </a>
+
+      <span class="adm-nav-header">CRM & Pelanggan</span>
+      <a href="#leads" class="adm-nav-link" data-target="tabLeads">
+        <span class="adm-nav-icon"><i data-lucide="message-square" style="width: 18px; height: 18px;"></i></span>
+        <span>WhatsApp Leads CRM</span>
+      </a>
+      <a href="#pelanggan" class="adm-nav-link" data-target="tabCustomers">
+        <span class="adm-nav-icon"><i data-lucide="users" style="width: 18px; height: 18px;"></i></span>
+        <span>Daftar Pelanggan</span>
+      </a>
+      <a href="#ulasan" class="adm-nav-link" data-target="tabReviews">
+        <span class="adm-nav-icon"><i data-lucide="star" style="width: 18px; height: 18px;"></i></span>
+        <span>Ulasan Pelanggan</span>
+      </a>
+
+      <span class="adm-nav-header">Eksekutif & Sistem</span>
+      <a href="#users" class="adm-nav-link sec-superadmin-only" data-target="tabAdminUsers">
+        <span class="adm-nav-icon"><i data-lucide="shield-check" style="width: 18px; height: 18px;"></i></span>
+        <span>Admin Users</span>
+        <span class="superadmin-only-tag">SUPER</span>
+      </a>
+      <a href="#laporan" class="adm-nav-link sec-superadmin-only" data-target="tabReports">
+        <span class="adm-nav-icon"><i data-lucide="file-text" style="width: 18px; height: 18px;"></i></span>
+        <span>Laporan & Audit Logs</span>
+        <span class="superadmin-only-tag">SUPER</span>
+      </a>
+      <a href="#gateway" class="adm-nav-link" data-target="tabGateway">
+        <span class="adm-nav-icon"><i data-lucide="settings" style="width: 18px; height: 18px;"></i></span>
+        <span>Pengaturan Gateway WA</span>
+      </a>
+    </nav>
+
+    <div class="adm-sidebar-footer">
+      <a href="../frontend/index.html" class="btn-view-store" target="_blank">
+        <span>Buka Toko Pelanggan</span>
+        <span>↗</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- KONTEN UTAMA SUPER ADMIN -->
+  <main class="adm-main">
+    
+    <!-- Topbar Eksekutif -->
+    <header class="adm-topbar">
+      <div>
+        <h1 class="topbar-heading">Pusat Kontrol CD'E Pearls</h1>
+        <div class="topbar-meta">Atelier & Cultivation Management • Lombok, Nusa Tenggara Barat</div>
+      </div>
+      <div class="topbar-right">
+        <div class="status-pill">
+          <span class="pulse-circle"></span>
+          <span id="topbarStatusText">Atelier Lombok: Online</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Area Isi Tab Dashboard -->
+    <div class="adm-body">
+
+      <!-- ==================== TAB 0: DASHBOARD RINGKASAN ==================== -->
+      <div class="adm-tab-content" id="tabDashboard">
+        <!-- 4 KPI Ringkasan Metrik Bisnis -->
+        <section class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Total Omset Penjualan</span>
+              <div class="kpi-icon-box">
+                <i data-lucide="coins" style="width: 18px; height: 18px;"></i>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpiTotalRevenue">Rp 0</div>
+            <div class="kpi-growth">
+              <span>↑ 18.4%</span>
+              <span style="color: var(--adm-text-muted); font-weight: normal;">akumulasi penjualan</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Pesanan Masuk</span>
+              <div class="kpi-icon-box">
+                <i data-lucide="shopping-bag" style="width: 18px; height: 18px;"></i>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpiTotalOrders">0 Pesanan</div>
+            <div class="kpi-growth" style="color: var(--adm-info);">
+              <span>● Update Real-time</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Koleksi Desain Aktif</span>
+              <div class="kpi-icon-box">
+                <i data-lucide="gem" style="width: 18px; height: 18px;"></i>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpiTotalProducts">0 Desain</div>
+            <div style="font-size: 0.74rem; color: var(--adm-text-muted);">
+              Tersedia di etalase toko
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Stok Butir Mutiara</span>
+              <div class="kpi-icon-box">
+                <i data-lucide="circle-dot" style="width: 18px; height: 18px;"></i>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpiTotalStock">0 Butir</div>
+            <div style="font-size: 0.74rem; color: var(--adm-success); font-weight: 600;">
+              Pinctada Maxima Grade AAA
+            </div>
+          </div>
+        </section>
+
+        <!-- 2 Kolom Ringkasan Cepat -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+          <!-- Ringkasan Pesanan Terbaru -->
+          <section class="adm-section" style="margin-bottom: 0;">
+            <div class="adm-section-header" style="border-bottom: 1px solid var(--adm-border); padding: 18px 24px;">
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--adm-text-main);">Pesanan Terbaru Atelier</h3>
+                <p class="adm-section-desc">Transasksi perhiasan masuk dari website dan WhatsApp.</p>
+              </div>
+              <button type="button" class="btn-adm btn-adm-primary" style="padding: 6px 12px; font-size: 0.76rem;" onclick="switchAdminTab('tabOrders')">
+                Lihat Semua
+              </button>
+            </div>
+            <div id="dashboardRecentOrders" style="padding: 16px 24px;">
+              <!-- Rendered via admin.js -->
+            </div>
+          </section>
+
+          <!-- Ringkasan WhatsApp Leads Terbaru -->
+          <section class="adm-section" style="margin-bottom: 0;">
+            <div class="adm-section-header" style="border-bottom: 1px solid var(--adm-border); padding: 18px 24px;">
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--adm-text-main);">Leads Konsultasi WhatsApp Baru</h3>
+                <p class="adm-section-desc">Calon pembeli yang menghubungi lewat tombol WhatsApp.</p>
+              </div>
+              <button type="button" class="btn-adm btn-adm-gold" style="padding: 6px 12px; font-size: 0.76rem;" onclick="switchAdminTab('tabLeads')">
+                Kelola CRM
+              </button>
+            </div>
+            <div id="dashboardRecentLeads" style="padding: 16px 24px;">
+              <!-- Rendered via admin.js -->
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 1: INVENTARIS & FORM PRODUK ==================== -->
+      <div class="adm-tab-content" id="tabInventory" style="display: none;">
+        <!-- Form Tambah / Edit Koleksi Perhiasan Baru -->
+        <section class="adm-section" id="formSection">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">Form Manajemen & Penambahan Koleksi Perhiasan</h2>
+              <p class="adm-section-desc">Tambahkan produk baru ke katalog atau perbarui rincian spesifikasi mutiara dan kadar logam mulia.</p>
+            </div>
+            <button type="button" class="btn-adm btn-adm-danger" id="btnCancelEdit" style="display: none;" onclick="cancelEdit()">
+              Batal Edit
+            </button>
+          </div>
+
+          <form class="adm-form" id="productForm">
+            <div class="form-row">
+              <div class="form-group-adm">
+                <label class="adm-label" for="prodName">Nama Perhiasan *</label>
+                <input type="text" id="prodName" class="adm-input" placeholder="Contoh: Kalung Mutiara Lombok Royal Queen" required>
+              </div>
+
+              <div class="form-group-adm">
+                <label class="adm-label" for="prodCategory">Kategori *</label>
+                <select id="prodCategory" class="adm-select">
+                  <option value="kalung">Kalung Mutiara (Necklaces)</option>
+                  <option value="gelang">Gelang Mutiara (Bracelets)</option>
+                  <option value="anting">Anting Mutiara (Earrings)</option>
+                  <option value="cincin">Cincin Mutiara (Rings)</option>
+                  <option value="mutiara-lepas">Mutiara Lepas (Loose Pearls)</option>
+                </select>
+              </div>
+
+              <div class="form-group-adm">
+                <label class="adm-label" for="prodPearlType">Jenis / Varietas Mutiara *</label>
+                <input type="text" id="prodPearlType" class="adm-input" placeholder="Contoh: Golden South Sea Pearl" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group-adm">
+                <label class="adm-label" for="prodPearlGrade">Grade Mutu *</label>
+                <select id="prodPearlGrade" class="adm-select">
+                  <option value="Grade AAA">Grade AAA (Kemilau Cermin Tertinggi)</option>
+                  <option value="Grade AA+">Grade AA+ (Kemilau Sangat Baik)</option>
+                  <option value="Grade Baroque AAA">Grade Baroque AAA (High Luster Artistik)</option>
+                </select>
+              </div>
+
+              <div class="form-group-adm">
+                <label class="adm-label" for="prodPearlSize">Ukuran Butir Diameter *</label>
+                <input type="text" id="prodPearlSize" class="adm-input" placeholder="Contoh: 12 - 13 mm" required>
+              </div>
+
+              <div class="form-group-adm">
+                <label class="adm-label" for="prodMetal">Kadar / Bahan Rangka Logam *</label>
+                <input type="text" id="prodMetal" class="adm-input" placeholder="Contoh: Emas Kuning 18K (750)" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group-adm">
+                <label class="adm-label" for="prodPrice">Harga Jual Investasi (IDR) *</label>
+                <input type="number" id="prodPrice" class="adm-input" placeholder="Contoh: 28500000" min="100000" step="50000" required>
+              </div>
+
+              <div class="form-group-adm">
+                <label class="adm-label" for="prodStock">Stok Butir Tersedia *</label>
+                <input type="number" id="prodStock" class="adm-input" placeholder="Contoh: 5" min="0" value="5" required>
+              </div>
+
+              <div class="form-group-adm">
+                <label class="adm-label" for="prodOrigin">Asal Perairan Panen</label>
+                <input type="text" id="prodOrigin" class="adm-input" placeholder="Contoh: Sekotong, Lombok Barat">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group-adm full-width">
+                <label class="adm-label" for="prodImage">URL Foto Resolusi Tinggi (Link Gambar)</label>
+                <input type="url" id="prodImage" class="adm-input" placeholder="https://images.unsplash.com/...">
+              </div>
+
+              <div class="form-group-adm full-width">
+                <label class="adm-label" for="prodDesc">Deskripsi Koleksi & Catatan Gemologi</label>
+                <textarea id="prodDesc" class="adm-textarea" placeholder="Tuliskan keunikan nacre, kilau, dan kisah pembuatan perhiasan ini..."></textarea>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+              <button type="submit" class="btn-adm btn-adm-primary" id="btnSubmitProduct">
+                + Tambah ke Katalog
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Tabel Manajemen Inventaris Katalog -->
+        <section class="adm-section">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">Manajemen Inventaris Katalog</h2>
+              <p class="adm-section-desc">Daftar seluruh stok perhiasan aktif yang sinkron dengan etalase pelanggan secara real-time.</p>
+            </div>
+          </div>
+
+          <!-- Toolbar Pencarian & Filter -->
+          <div class="table-toolbar">
+            <input type="text" id="tableSearchInput" class="adm-input search-adm-input" placeholder="Cari nama perhiasan, tipe mutiara, nomor sertifikat...">
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <span style="font-size: 0.78rem; font-weight: 700; color: var(--adm-text-muted);">Kategori:</span>
+              <select id="tableCategoryFilter" class="adm-select" style="padding: 6px 12px; font-size: 0.8rem;">
+                <option value="all">Semua Kategori</option>
+                <option value="kalung">Kalung</option>
+                <option value="gelang">Gelang</option>
+                <option value="anting">Anting</option>
+                <option value="cincin">Cincin</option>
+                <option value="mutiara-lepas">Mutiara Lepas</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Tabel Data -->
+          <div class="table-responsive">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th style="width: 70px;">Foto</th>
+                  <th>Nama Perhiasan & Sertifikat</th>
+                  <th>Kategori</th>
+                  <th>Spesifikasi Mutiara & Logam</th>
+                  <th>Harga Jual</th>
+                  <th>Status Stok</th>
+                  <th style="width: 140px;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody">
+                <!-- Dirender via admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ==================== TAB 2: 5 KATEGORI MUTIARA ==================== -->
+      <div class="adm-tab-content" id="tabCategories" style="display: none;">
+        <section class="adm-section">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">5 Kategori Spesialis Mutiara CDE Pearls</h2>
+              <p class="adm-section-desc">Struktur kategori terpisah untuk Kalung, Gelang, Anting, Cincin, dan Butir Mutiara Lepas.</p>
+            </div>
+          </div>
+
+          <div class="category-admin-grid" id="categoryAdminGrid">
+            <!-- Dirender via admin.js -->
+          </div>
+        </section>
+      </div>
+
+      <!-- ==================== TAB 3: STOK BUTIR MUTIARA ==================== -->
+      <div class="adm-tab-content" id="tabStock" style="display: none;">
+        <section class="adm-section">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">Pusat Manajemen Stok & Ketersediaan Mutiara</h2>
+              <p class="adm-section-desc">Ubah jumlah stok secara cepat dengan kontrol satu klik dan pantau persediaan yang menipis.</p>
+            </div>
+          </div>
+
+          <!-- Alert Menipis -->
+          <div id="lowStockAlertBanner" style="display: none; margin: 20px 24px; padding: 14px 20px; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; color: #92400E; font-size: 0.85rem;">
+            ⚠️ <strong>Peringatan Stok Menipis:</strong> Terdapat produk dengan persediaan 3 butir atau kurang. Harap lakukan panen atau pengadaan atelier segera.
+          </div>
+
+          <div class="table-responsive" style="padding: 0 24px 24px;">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Nama Produk Perhiasan</th>
+                  <th>Kategori</th>
+                  <th>Varietas & Grade Mutiara</th>
+                  <th>Status Persediaan</th>
+                  <th style="text-align: center;">Penyesuaian Cepat (+ / -)</th>
+                </tr>
+              </thead>
+              <tbody id="stockTableBody">
+                <!-- Dirender via admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ==================== TAB 4: PESANAN & BAYAR ==================== -->
+      <div class="adm-tab-content" id="tabOrders" style="display: none;">
+        <section class="adm-section">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">Manajemen Pesanan Atelier & Verifikasi Pembayaran</h2>
+              <p class="adm-section-desc">Pantau pesanan masuk, lakukan konfirmasi lunas (PAID), atur pengerjaan atelier Lombok, dan input nomor resi pengiriman berasuransi.</p>
+            </div>
+          </div>
+
+          <!-- Toolbar Filter Pesanan -->
+          <div class="table-toolbar" style="margin: 0 24px 20px; padding-top: 16px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn-adm active order-filter-btn" data-filter="all" onclick="filterOrdersByStatus('all', this)">Semua Pesanan</button>
+              <button class="btn-adm order-filter-btn" data-filter="WAITING_PAYMENT" onclick="filterOrdersByStatus('WAITING_PAYMENT', this)">Menunggu Pembayaran</button>
+              <button class="btn-adm order-filter-btn" data-filter="PAID" onclick="filterOrdersByStatus('PAID', this)">Lunas (PAID)</button>
+              <button class="btn-adm order-filter-btn" data-filter="PROCESSING" onclick="filterOrdersByStatus('PROCESSING', this)">Diproses Atelier</button>
+              <button class="btn-adm order-filter-btn" data-filter="SHIPPED" onclick="filterOrdersByStatus('SHIPPED', this)">Dikirim (Resi)</button>
+            </div>
+            <input type="text" id="searchOrderInput" class="adm-input search-adm-input" placeholder="Cari ID pesanan, nama pemesan, no telp..." style="max-width: 280px;" oninput="handleSearchOrders(this.value)">
+          </div>
+
+          <!-- Daftar Kartu Pesanan -->
+          <div class="orders-list-grid" id="ordersListContainer">
+            <!-- Dirender via admin.js -->
+          </div>
+        </section>
+      </div>
+
+      <!-- ==================== TAB 5: WHATSAPP LEADS CRM ==================== -->
+      <div class="adm-tab-content" id="tabLeads" style="display: none;">
+        <section class="adm-section">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">Pusat Leads & Percakapan WhatsApp Concierge</h2>
+              <p class="adm-section-desc">Pantau setiap prospek pelanggan yang berkonsultasi mengenai produk perhiasan atau memulai direct checkout.</p>
+            </div>
+            <button type="button" class="btn-adm btn-adm-gold" onclick="promptAddManualLead()">
+              + Catat Lead Baru
+            </button>
+          </div>
+
+          <!-- Filter Status Lead -->
+          <div class="table-toolbar" style="margin: 0 24px 16px;">
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-adm active lead-filter-btn" onclick="filterLeads('ALL', this)">Semua Lead</button>
+              <button class="btn-adm lead-filter-btn" onclick="filterLeads('NEW', this)">Lead Baru</button>
+              <button class="btn-adm lead-filter-btn" onclick="filterLeads('CONTACTED', this)">Sedang Chat</button>
+              <button class="btn-adm lead-filter-btn" onclick="filterLeads('DEAL', this)">Deal / Pesan</button>
+              <button class="btn-adm lead-filter-btn" onclick="filterLeads('CANCELLED', this)">Batal</button>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="padding: 0 24px 24px;">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Waktu Masuk</th>
+                  <th>Nama Calon Pembeli</th>
+                  <th>Nomor WhatsApp</th>
+                  <th>Perhiasan / Kebutuhan</th>
+                  <th>Status Follow-up</th>
+                  <th>Aksi Hubungi</th>
+                </tr>
+              </thead>
+              <tbody id="leadsTableBody">
+                <!-- Dirender via admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ==================== TAB 6: DAFTAR PELANGGAN ==================== -->
+      <div class="adm-tab-content" id="tabCustomers" style="display: none;">
+        <section class="adm-section">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">Direktori Pelanggan Terdaftar</h2>
+              <p class="adm-section-desc">Daftar pelanggan setia CD'E Pearls Lombok beserta riwayat total transaksi belanja.</p>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="padding: 24px;">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Nama Pelanggan</th>
+                  <th>Email Akun</th>
+                  <th>No. WhatsApp</th>
+                  <th>Alamat Pengiriman</th>
+                  <th>Tanggal Bergabung</th>
+                  <th>Total Pesanan</th>
+                </tr>
+              </thead>
+              <tbody id="customersTableBody">
+                <!-- Dirender via admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ==================== TAB 7: ULASAN PELANGGAN ==================== -->
+      <div class="adm-tab-content" id="tabReviews" style="display: none;">
+        <section class="adm-section">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">Moderasi Ulasan & Testimoni Pelanggan</h2>
+              <p class="adm-section-desc">Kelola testimoni pelanggan mengenai kilau mutiara dan pelayanan atelier.</p>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="padding: 24px;">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Produk Perhiasan</th>
+                  <th>Nama Pelanggan</th>
+                  <th>Rating</th>
+                  <th>Tanggal</th>
+                  <th>Isi Ulasan Testimoni</th>
+                  <th style="width: 100px;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="reviewsTableBody">
+                <!-- Dirender via admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ==================== TAB 8: ADMIN USERS (SUPER ADMIN ONLY) ==================== -->
+      <div class="adm-tab-content" id="tabAdminUsers" style="display: none;">
+        <section class="adm-section">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">Manajemen Akun Administrator (RBAC)</h2>
+              <p class="adm-section-desc">Kelola hak akses portal untuk Super Admin (Eksekutif) dan Admin Atelier (Operasional).</p>
+            </div>
+          </div>
+
+          <!-- Form Tambah Akun Admin -->
+          <form id="addAdminUserForm" style="margin: 0 24px 24px; padding: 20px; background: #F8F7F2; border-radius: 8px; border: 1px solid var(--adm-border);">
+            <h4 style="font-size: 0.9rem; margin-bottom: 12px; font-weight: 700; color: #0B1F33;">+ Tambah Akun Administrator Baru</h4>
+            <div class="form-row">
+              <div class="form-group-adm">
+                <label class="adm-label">Nama Lengkap Admin *</label>
+                <input type="text" id="newAdminName" class="adm-input" placeholder="Contoh: Sarah Atelier" required>
+              </div>
+              <div class="form-group-adm">
+                <label class="adm-label">Email Administrator *</label>
+                <input type="email" id="newAdminEmail" class="adm-input" placeholder="sarah@cdepearls.com" required>
+              </div>
+              <div class="form-group-adm">
+                <label class="adm-label">Hak Akses / Peran *</label>
+                <select id="newAdminRole" class="adm-select">
+                  <option value="ADMIN">ADMIN (Operasional & Katalog)</option>
+                  <option value="SUPER_ADMIN">SUPER_ADMIN (Hak Penuh & Laporan)</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn-adm btn-adm-primary" style="margin-top: 10px;">
+              Simpan Akun Admin
+            </button>
+          </form>
+
+          <!-- Tabel Akun Admin -->
+          <div class="table-responsive" style="padding: 0 24px 24px;">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Nama Staf</th>
+                  <th>Email</th>
+                  <th>Peran Sistem</th>
+                  <th>Tanggal Terdaftar</th>
+                  <th style="width: 160px;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTableBody">
+                <!-- Dirender via admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ==================== TAB 9: LAPORAN & AUDIT LOGS (SUPER ADMIN ONLY) ==================== -->
+      <div class="adm-tab-content" id="tabReports" style="display: none;">
+        <!-- Ringkasan Finansial Eksekutif -->
+        <section class="adm-section">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">Laporan Keuangan & Kinerja Atelier</h2>
+              <p class="adm-section-desc">Ringkasan transaksi penjualan, rata-rata belanja, dan distribusi per kategori mutiara.</p>
+            </div>
+          </div>
+
+          <div class="reports-summary-grid">
+            <div class="report-stat-box">
+              <h4>Total Pendapatan Terverifikasi</h4>
+              <div class="big-val" id="repTotalPaidRevenue" style="color: var(--adm-success);">Rp 0</div>
+              <div style="font-size: 0.76rem; color: var(--adm-text-muted); margin-top: 6px;">
+                Status Pembayaran: PAID
+              </div>
+            </div>
+
+            <div class="report-stat-box">
+              <h4>Rata-rata Nilai Pesanan (AOV)</h4>
+              <div class="big-val" id="repAverageOrderValue">Rp 0</div>
+              <div style="font-size: 0.76rem; color: var(--adm-text-muted); margin-top: 6px;">
+                Per transaksi perhiasan
+              </div>
+            </div>
+
+            <div class="report-stat-box">
+              <h4>Total Butir Terjual</h4>
+              <div class="big-val" id="repTotalItemsSold">0 Butir</div>
+              <div style="font-size: 0.76rem; color: var(--adm-text-muted); margin-top: 6px;">
+                Termasuk sertifikasi gemologi CDE
+              </div>
+            </div>
+          </div>
+
+          <!-- Breakdown per Kategori -->
+          <div style="padding: 0 24px 24px;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; color: var(--adm-text-main);">
+              Distribusi Omset per Kategori Perhiasan
+            </h3>
+            <div class="table-responsive">
+              <table class="adm-table">
+                <thead>
+                  <tr>
+                    <th>Kategori Mutiara</th>
+                    <th>Jumlah Desain Aktif</th>
+                    <th>Total Pesanan Masuk</th>
+                    <th>Estimasi Nilai Omset</th>
+                  </tr>
+                </thead>
+                <tbody id="categoryReportTableBody">
+                  <!-- Dirender via admin.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tabel Audit Logs Sistem -->
+        <section class="adm-section">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">Log Audit Aktivitas Sistem</h2>
+              <p class="adm-section-desc">Catatan rekaman aktivitas login, perubahan status pesanan, update harga, dan stok.</p>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="padding: 24px;">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th style="width: 170px;">Waktu & Tanggal</th>
+                  <th>Pengguna</th>
+                  <th>Peran</th>
+                  <th>Aksi Operasi</th>
+                  <th>Detail Keterangan</th>
+                </tr>
+              </thead>
+              <tbody id="auditLogsTableBody">
+                <!-- Dirender via admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ==================== TAB 10: PENGATURAN GATEWAY WHATSAPP ==================== -->
+      <div class="adm-tab-content" id="tabGateway" style="display: none;">
+        <section class="adm-section">
+          <div class="adm-section-header">
+            <div>
+              <h2 class="adm-section-title">Pengaturan Gateway WhatsApp & Concierge Butik</h2>
+              <p class="adm-section-desc">Atur nomor WhatsApp resmi butik serta format pesan otomatis yang diterima saat pelanggan berkonsultasi atau melakukan Direct Checkout.</p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; padding: 26px;">
+            <!-- Form Pengaturan -->
+            <form id="settingsForm">
+              <div class="form-group-adm" style="margin-bottom: 18px;">
+                <label class="adm-label" for="setWhatsAppPhone">Nomor WhatsApp Concierge Butik (Format Internasional) *</label>
+                <input type="text" id="setWhatsAppPhone" class="adm-input" placeholder="6281239887766" required>
+                <span style="font-size: 0.72rem; color: var(--adm-text-muted);">Gunakan awalan kode negara 62 tanpa tanda + atau spasi (contoh: 6281239887766).</span>
+              </div>
+
+              <div class="form-group-adm" style="margin-bottom: 18px;">
+                <label class="adm-label" for="setAddress">Alamat Butik & Galeri Lombok</label>
+                <input type="text" id="setAddress" class="adm-input" placeholder="Jl. Raya Senggigi No. 88, Lombok Barat">
+              </div>
+
+              <div class="form-group-adm" style="margin-bottom: 24px;">
+                <label class="adm-label" for="setGreeting">Penutup Pesan Konfirmasi Checkout</label>
+                <textarea id="setGreeting" class="adm-textarea" style="min-height: 90px;" placeholder="Mohon informasi petunjuk nomor rekening resmi CDE Pearls..."></textarea>
+              </div>
+
+              <button type="submit" class="btn-adm btn-adm-gold" style="width: 100%;">
+                Simpan Konfigurasi Gateway
+              </button>
+            </form>
+
+            <!-- Pratinjau Live Pesan WhatsApp -->
+            <div>
+              <span class="adm-label" style="display: block; margin-bottom: 10px;">
+                Pratinjau Format Pesan Otomatis di WhatsApp:
+              </span>
+              <div class="wa-preview-box" id="waTemplatePreview">
+                <!-- Dirender via admin.js -->
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Shared Store & Admin Scripts -->
+  <script src="../frontend/js/store.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    // Inisialisasi ikon Lucide
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    });
+  </script>
+</body>
+</html>

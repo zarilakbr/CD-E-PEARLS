@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studio Kustomisasi Perhiasan Mutiara | CDE Pearls Lombok</title>
+  <meta name="description" content="Rancang cincin, kalung, anting, atau gelang mutiara air laut Lombok eksklusif Anda sendiri. Simulasi visual interaktif real-time dengan pilihan emas 18K dan mutiara South Sea bersertifikat.">
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/customizer.css">
+</head>
+<body>
+
+  <!-- Top Announcement Bar (Deep Navy & Champagne Accent) -->
+  <aside class="announcement-bar-navy">
+    PENGIRIMAN GRATIS & BERASURANSI KE SELURUH INDONESIA <span>•</span> KONSULTASI ATELIER VIA WHATSAPP RESMI <span>•</span> SERTIFIKAT LAB GEMOLOGI 100% ASLI
+  </aside>
+
+  <!-- Header Deep Navy (Main Pearl E-Commerce Navbar) -->
+  <header class="site-header-navy">
+    <div class="container header-inner-navy">
+      <!-- Kiri: Brand Logo & Navigasi -->
+      <div class="header-left-navy">
+        <a href="index.html" class="header-brand-link" title="CD'E Pearls Lombok - Haute Joaillerie">
+          <img src="images/cde_logo.png" alt="CD'E Pearls Culture Pearls" class="header-brand-logo-img">
+        </a>
+        
+        <nav class="header-nav-navy">
+          <a href="index.html" class="header-nav-link-navy">Home</a>
+          <a href="index.html#catalog" class="header-nav-link-navy">Koleksi Produk</a>
+          <a href="customizer.html" class="header-nav-link-navy active">Studio 3D Atelier</a>
+          <a href="cart.html" class="header-nav-link-navy">Keranjang</a>
+        </nav>
+      </div>
+
+      <!-- Kanan: Keranjang & Kembali ke Toko -->
+      <div class="header-actions-navy">
+        <a href="cart.html" class="icon-action-btn" title="Keranjang Belanja" id="btnHeaderCart">
+          <span data-lucide="shoppingBag" data-size="18"></span>
+          <span class="badge-counter" id="headerCartBadge" style="display: none;">0</span>
+        </a>
+
+        <a href="index.html" class="btn btn-hero-primary" style="padding: 8px 18px; font-size: 0.78rem;">
+          <span data-lucide="arrowRight" data-size="14"></span>
+          Kembali ke Toko
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Halaman Kustomisasi -->
+  <main class="customizer-page">
+    <div class="container">
+      
+      <!-- Breadcrumb -->
+      <div style="font-size: 0.8rem; color: var(--c-sand); margin-bottom: 20px;">
+        <a href="index.html" style="color: var(--c-taupe);">Beranda</a> &gt; 
+        <span style="color: var(--c-gold-dark); font-weight: 600;">Kustomisasi Perhiasan Mutiara Pribadi</span>
+      </div>
+
+      <!-- Header Judul -->
+      <div class="customizer-header">
+        <span class="section-subtitle">CDE Atelier Bespoke Studio</span>
+        <h1 class="customizer-title">Kustomisasi Perhiasan Mutiara Pribadi</h1>
+        <p class="customizer-subtitle">
+          Rancang mahakarya perhiasan mutiara air laut Lombok Anda sendiri secara visual. Pilih basis perhiasan, kualitas mutiara laut, kadar logam mulia, dan detail ukuran sesuai preferensi Anda.
+        </p>
+      </div>
+
+      <!-- Stepper Kemajuan -->
+      <div class="stepper-container">
+        <div class="stepper-track">
+          <div class="stepper-progress"></div>
+        </div>
+        <div class="stepper-steps">
+          <button class="step-item active" data-step="1">
+            <div class="step-circle">1</div>
+            <span class="step-label">Jenis Basis</span>
+          </button>
+          <button class="step-item" data-step="2">
+            <div class="step-circle">2</div>
+            <span class="step-label">Pilih Mutiara</span>
+          </button>
+          <button class="step-item" data-step="3">
+            <div class="step-circle">3</div>
+            <span class="step-label">Bahan Logam</span>
+          </button>
+          <button class="step-item" data-step="4">
+            <div class="step-circle">4</div>
+            <span class="step-label">Ukuran & Review</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Layout 2 Kolom -->
+      <div class="customizer-layout">
+        
+        <!-- Kolom Kiri: Wizard Steps -->
+        <div class="wizard-box">
+
+          <!-- STEP 1: PILIH BASIS PERHIASAN -->
+          <div class="step-panel active" id="stepPanel1">
+            <h2 class="step-panel-title">1. Pilih Basis Perhiasan Anda</h2>
+            <p class="step-panel-desc">
+              Tentukan bentuk dasar perhiasan yang ingin Anda rancang bersama tim atelier CDE Pearls.
+            </p>
+            <div class="options-grid" id="basisOptionsContainer">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- STEP 2: PILIH MUTIARA LOMBOK -->
+          <div class="step-panel" id="stepPanel2">
+            <h2 class="step-panel-title">2. Pilih Mutiara Asli South Sea Pearl Lombok</h2>
+            <p class="step-panel-desc">
+              Pilih karakter warna, jenis tiram, dan diameter butir mutiara air laut yang Anda kehendaki.
+            </p>
+            <div class="options-grid" id="pearlOptionsContainer">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Slider Diameter Mutiara -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">Diameter Butir Mutiara:</span>
+                <span class="slider-value" id="pearlDiameterVal">12 mm</span>
+              </div>
+              <input type="range" class="custom-range" id="pearlDiameterSlider" min="9" max="14" step="0.5" value="12">
+              <div style="display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--c-sand); margin-top: 6px;">
+                <span>9 mm (Halus)</span>
+                <span>11.5 mm (Populer)</span>
+                <span>14 mm (Kolektor Langka)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: PILIH BAHAN LOGAM & RANGKA -->
+          <div class="step-panel" id="stepPanel3">
+            <h2 class="step-panel-title">3. Pilih Bahan Logam & Rangka</h2>
+            <p class="step-panel-desc">
+              Semua rangka diproduksi dengan presisi tinggi bebas alergi nikel dan berstandar ekspor internasional.
+            </p>
+            <div class="options-grid" id="metalOptionsContainer">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- STEP 4: UKURAN & FINISHING DETAIL -->
+          <div class="step-panel" id="stepPanel4">
+            <h2 class="step-panel-title">4. Ukuran & Detail Personalisasi</h2>
+            <p class="step-panel-desc">
+              Pastikan perhiasan nyaman dikenakan dan tambahkan grafir nama atau inisial istimewa secara cuma-cuma.
+            </p>
+
+            <!-- Slider Ukuran -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label" id="sizeSliderLabel">Ukuran Jari / Cincin (HK Size):</span>
+                <span class="slider-value" id="sizeValueDisplay">Ukuran 14</span>
+              </div>
+              <input type="range" class="custom-range" id="sizeSlider" min="10" max="24" step="1" value="14">
+              <div style="font-size: 0.75rem; color: var(--c-taupe); margin-top: 8px;">
+                *Jika ragu dengan ukuran jari Anda, tim concierge kami siap memandu pengukuran via video call atau mengirim pengukur ring-sizer gratis.
+              </div>
+            </div>
+
+            <!-- Custom Grafir -->
+            <div class="text-input-group">
+              <label class="text-input-label" for="engravingInput">
+                Grafir Nama / Inisial Khusus (Gratis - Maksimal 15 Karakter):
+              </label>
+              <input type="text" id="engravingInput" class="custom-text-input" placeholder="Contoh: Sarah & Dion 2026" maxlength="15">
+            </div>
+          </div>
+
+          <!-- Tombol Navigasi Wizard -->
+          <div class="wizard-nav">
+            <button class="btn btn-outline-light" id="btnPrevStep" style="visibility: hidden;">
+              ← Kembali
+            </button>
+            <button class="btn btn-dark" id="btnNextStep">
+              Langkah Selanjutnya →
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Kolom Kanan: Pratinjau Visual & Ringkasan Estimasi Biaya -->
+        <div class="preview-sticky">
+          <div class="visualizer-card">
+            
+            <!-- Visualizer 3D WebGL Three.js Viewport -->
+            <div class="visualizer-3d-box">
+              <span class="render-badge-live">
+                <span class="live-dot"></span>
+                <span id="renderBadgeLiveText">3D Atelier Studio • Putar 360°</span>
+              </span>
+
+              <!-- Canvas 3D Three.js Container -->
+              <div id="threeDContainer" class="three-d-canvas-wrap"></div>
+
+              <!-- 3D Controls Toolbar -->
+              <div class="controls-3d-toolbar">
+                <button type="button" class="btn-3d-tool" id="btnAutoRotate3D" title="Toggle Putar Otomatis">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  <span>Auto Spin</span>
+                </button>
+                <button type="button" class="btn-3d-tool" id="btnResetView3D" title="Reset Sudut Pandang">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
+                  <span>Reset View</span>
+                </button>
+                <span class="hint-3d-drag">Geser untuk putar 360°</span>
+              </div>
+            </div>
+
+            <!-- Ringkasan Kustomisasi -->
+            <div class="summary-body">
+              <h3 class="summary-title">Ringkasan Kustomisasi Anda</h3>
+
+              <div class="spec-summary-list">
+                <div class="spec-summary-item">
+                  <span class="spec-summary-label">Basis:</span>
+                  <span class="spec-summary-val" id="sumBasis">Cincin Solitaire</span>
+                </div>
+                <div class="spec-summary-item">
+                  <span class="spec-summary-label">Mutiara Laut:</span>
+                  <span class="spec-summary-val" id="sumPearl">Lombok Golden South Sea (12mm)</span>
+                </div>
+                <div class="spec-summary-item">
+                  <span class="spec-summary-label">Bahan Logam:</span>
+                  <span class="spec-summary-val" id="sumMetal">Solid Yellow Gold 18K (750)</span>
+                </div>
+                <div class="spec-summary-item">
+                  <span class="spec-summary-label">Ukuran / Panjang:</span>
+                  <span class="spec-summary-val" id="sumSize">Ukuran 14</span>
+                </div>
+                <div class="spec-summary-item">
+                  <span class="spec-summary-label">Grafir Nama:</span>
+                  <span class="spec-summary-val" id="sumEngraving">Tanpa Grafir</span>
+                </div>
+              </div>
+
+              <!-- Rincian Biaya -->
+              <div class="pricing-breakdown">
+                <div class="price-row">
+                  <span>Rangka Logam Mulia:</span>
+                  <span id="breakdownMetalPrice">Rp 6.500.000</span>
+                </div>
+                <div class="price-row">
+                  <span>Butir Mutiara Laut Lombok:</span>
+                  <span id="breakdownPearlPrice">Rp 15.500.000</span>
+                </div>
+                <div class="price-row free-tag">
+                  <span>Ongkos Pasang & Finishing Atelier:</span>
+                  <span>GRATIS</span>
+                </div>
+                <div class="price-row free-tag">
+                  <span>Sertifikat Lab & Kotak Beludru:</span>
+                  <span>GRATIS</span>
+                </div>
+                <div class="price-total-box">
+                  <span class="total-label">Total Estimasi:</span>
+                  <span class="total-amount" id="breakdownTotalPrice">Rp 22.000.000</span>
+                </div>
+              </div>
+
+              <!-- Tombol CTA Pesan Custom -->
+              <button class="btn btn-gold btn-order-custom" id="btnOrderCustomNow">
+                Pesan Custom Sekarang
+              </button>
+
+              <!-- Garansi & Jaminan Kepercayaan -->
+              <div class="custom-guarantee">
+                <div class="guarantee-item">
+                  <span class="guarantee-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  </span>
+                  <span>100% Mutiara Air Laut Alami Lombok (Pinctada Maxima)</span>
+                </div>
+                <div class="guarantee-item">
+                  <span class="guarantee-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                  </span>
+                  <span>Sertifikat Gemologi Keaslian & Kemurnian Emas 18K</span>
+                </div>
+                <div class="guarantee-item">
+                  <span class="guarantee-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                  </span>
+                  <span>Pengiriman Aman & Berasuransi Penuh ke Alamat Anda</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer Terracotta -->
+  <footer class="site-footer-terracotta">
+    <div class="container">
+      <div class="footer-links-row" style="border-top: none; padding-top: 0;">
+        <a href="index.html#shop" class="footer-nav-link">Our Product</a>
+        <a href="customizer.html" class="footer-nav-link" style="font-weight: 700;">Tutorial Order (Studio Atelier)</a>
+        <a href="cart.html" class="footer-nav-link">Status Order (Cart)</a>
+        <a href="https://wa.me/6281239887766" target="_blank" class="footer-nav-link">Whatsapp Concierge</a>
+        <a href="index.html#about" class="footer-nav-link">About Us</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/vendor/three.min.js"></script>
+  <script src="js/vendor/OrbitControls.js"></script>
+  <script src="js/lucide-helper.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/whatsappService.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/customizer.js"></script>
+</body>
+</html>

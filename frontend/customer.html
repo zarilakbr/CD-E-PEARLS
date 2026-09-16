@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Dashboard | CD'E Pearls Lombok</title>
+  <meta name="description" content="Dashboard akun pelanggan CD'E Pearls: Pantau status pesanan perhiasan mutiara laut, sertifikat keaslian, koleksi favorit, dan ulasan Anda.">
+  <link rel="icon" type="image/png" href="images/cde_logo.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/customer.css">
+</head>
+<body>
+
+  <!-- Top Announcement Bar -->
+  <aside class="announcement-bar-navy">
+    PENGIRIMAN GRATIS & BERASURANSI KE SELURUH INDONESIA <span>•</span> KONSULTASI ATELIER VIA WHATSAPP RESMI <span>•</span> SERTIFIKAT LAB GEMOLOGI 100% ASLI
+  </aside>
+
+  <!-- Header Deep Navy -->
+  <header class="site-header-navy">
+    <div class="container header-inner-navy">
+      <div class="header-left-navy">
+        <a href="index.html" class="header-brand-link" title="CD'E Pearls Lombok">
+          <img src="images/cde_logo.png" alt="CD'E Pearls Logo" class="header-brand-logo-img">
+        </a>
+        
+        <nav class="header-nav-navy">
+          <a href="index.html" class="header-nav-link-navy">Beranda</a>
+          <a href="index.html#catalog" class="header-nav-link-navy">Koleksi Produk</a>
+          <a href="customizer.html" class="header-nav-link-navy">Studio 3D Atelier</a>
+          <a href="cart.html" class="header-nav-link-navy">Keranjang Belanja</a>
+          <a href="customer.html" class="header-nav-link-navy active">Akun Saya</a>
+        </nav>
+      </div>
+
+      <div class="header-actions-navy">
+        <a href="customer.html" class="icon-action-btn" title="Koleksi Favorit" onclick="switchDashboardTab('wishlist')">
+          <span data-lucide="heart" data-size="18"></span>
+          <span class="badge-counter" id="headerWishlistBadge">0</span>
+        </a>
+
+        <a href="cart.html" class="icon-action-btn" title="Keranjang Belanja" id="btnHeaderCart">
+          <span data-lucide="shoppingBag" data-size="18"></span>
+          <span class="badge-counter" id="headerCartBadge">0</span>
+        </a>
+
+        <a href="index.html#catalog" class="btn btn-hero-primary" style="padding: 8px 18px; font-size: 0.78rem;">
+          <span data-lucide="arrowRight" data-size="14"></span>
+          Lanjut Belanja
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Halaman Customer -->
+  <main class="customer-page">
+    <div class="container">
+      
+      <!-- Breadcrumb -->
+      <div style="font-size: 0.82rem; color: var(--c-text-muted); margin-bottom: 24px;">
+        <a href="index.html" style="color: var(--c-text-muted); text-decoration: none;">Beranda</a> / 
+        <span style="color: var(--c-deep-navy); font-weight: 600;">Customer Dashboard</span>
+      </div>
+
+      <!-- 1. AUTH CONTAINER (Jika Belum Login) -->
+      <div id="authContainer" style="display: none;">
+        <div class="auth-container-card">
+          <div class="auth-card-header">
+            <img src="images/cde_logo.png" alt="CD'E Pearls Culture Pearls" class="auth-card-logo">
+            <div class="auth-badge-pill">
+              <span data-lucide="sparkles" data-size="12"></span>
+              Concierge & Atelier Access
+            </div>
+            <h1 class="auth-card-title">Akun Pelanggan CD'E Pearls</h1>
+            <p class="auth-card-sub">Masuk untuk mengakses sertifikat gemologi, pelacak pesanan berasuransi, dan koleksi favorit Anda.</p>
+          </div>
+
+          <div class="auth-tabs-row">
+            <button type="button" class="auth-tab-btn active" id="tabLogin" onclick="switchAuthTab('login')">
+              <span data-lucide="logIn" data-size="16"></span>
+              Masuk Akun
+            </button>
+            <button type="button" class="auth-tab-btn" id="tabRegister" onclick="switchAuthTab('register')">
+              <span data-lucide="userPlus" data-size="16"></span>
+              Daftar Akun Baru
+            </button>
+          </div>
+
+          <!-- Section Login -->
+          <div id="loginSection">
+            <form id="loginForm">
+              <div class="form-group">
+                <label class="form-label" for="loginEmail">Alamat Email Terdaftar</label>
+                <div class="input-icon-wrapper">
+                  <span class="input-icon-left" data-lucide="mail" data-size="18"></span>
+                  <input type="email" id="loginEmail" class="form-control" placeholder="nama@email.com" required autocomplete="email">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-label">
+                  <label for="loginPassword" style="margin: 0;">Kata Sandi</label>
+                  <a href="javascript:void(0)" class="form-label-link" onclick="alert('Untuk bantuan pemulihan kata sandi, silakan hubungi Concierge CD\'E Pearls melalui WhatsApp Resmi.')">Lupa Kata Sandi?</a>
+                </div>
+                <div class="input-icon-wrapper has-right-icon">
+                  <span class="input-icon-left" data-lucide="lock" data-size="18"></span>
+                  <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required value="password123" autocomplete="current-password">
+                  <button type="button" class="input-icon-right" onclick="togglePasswordVisibility('loginPassword', this)" title="Tampilkan/Sembunyikan Kata Sandi">
+                    <span data-lucide="eye" data-size="18"></span>
+                  </button>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; font-size: 0.82rem; color: var(--c-text-muted);">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+                  <input type="checkbox" id="rememberMe" checked style="accent-color: var(--c-champagne-gold); width: 16px; height: 16px; cursor: pointer;">
+                  <span>Ingat saya di perangkat ini</span>
+                </label>
+              </div>
+
+              <button type="submit" class="btn-auth-submit">
+                <span data-lucide="logIn" data-size="18"></span>
+                Masuk ke Akun Saya
+              </button>
+            </form>
+
+            <!-- Akses Cepat Demo VIP -->
+            <div class="demo-login-box">
+              <span class="demo-login-label">Akses Cepat Pengujian:</span>
+              <button type="button" class="btn-demo-vip" onclick="quickDemoLogin('ratna.paramitha@gmail.com')" title="Klik untuk langsung login sebagai Ibu Ratna Paramitha">
+                <div class="demo-avatar">RP</div>
+                <div class="demo-info">
+                  <span class="demo-title">Ibu Ratna Paramitha (VIP Concierge)</span>
+                  <span class="demo-sub">ratna.paramitha@gmail.com • 1-Klik Masuk</span>
+                </div>
+                <span data-lucide="chevronRight" data-size="18" style="color: var(--c-champagne-gold);"></span>
+              </button>
+            </div>
+
+            <div class="auth-security-footer">
+              <span data-lucide="shieldCheck" data-size="16" style="color: var(--c-success);"></span>
+              <span>Data akun & pesanan perhiasan dilindungi enkripsi CD'E Pearls</span>
+            </div>
+          </div>
+
+          <!-- Section Register -->
+          <div id="registerSection" style="display: none;">
+            <form id="registerForm">
+              <div class="form-group">
+                <label class="form-label" for="regName">Nama Lengkap</label>
+                <div class="input-icon-wrapper">
+                  <span class="input-icon-left" data-lucide="user" data-size="18"></span>
+                  <input type="text" id="regName" class="form-control" placeholder="Contoh: Ibu Dewi Saraswati" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="regEmail">Alamat Email</label>
+                <div class="input-icon-wrapper">
+                  <span class="input-icon-left" data-lucide="mail" data-size="18"></span>
+                  <input type="email" id="regEmail" class="form-control" placeholder="nama@email.com" required autocomplete="email">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="regPhone">Nomor WhatsApp Aktif</label>
+                <div class="input-icon-wrapper">
+                  <span class="input-icon-left" data-lucide="phone" data-size="18"></span>
+                  <input type="tel" id="regPhone" class="form-control" placeholder="081234567890" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="regPassword">Kata Sandi Baru</label>
+                <div class="input-icon-wrapper has-right-icon">
+                  <span class="input-icon-left" data-lucide="lock" data-size="18"></span>
+                  <input type="password" id="regPassword" class="form-control" placeholder="Minimal 6 karakter" required minlength="6">
+                  <button type="button" class="input-icon-right" onclick="togglePasswordVisibility('regPassword', this)" title="Tampilkan/Sembunyikan Kata Sandi">
+                    <span data-lucide="eye" data-size="18"></span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="regAddress">Alamat Pengiriman Utama</label>
+                <div class="input-icon-wrapper">
+                  <textarea id="regAddress" class="form-control" placeholder="Alamat lengkap tujuan pengiriman perhiasan (Nama Jalan, Nomor, Kota, Kode Pos)" style="padding-left: 16px;"></textarea>
+                </div>
+              </div>
+
+              <button type="submit" class="btn-auth-submit">
+                <span data-lucide="checkCircle" data-size="18"></span>
+                Daftar Akun Baru
+              </button>
+            </form>
+
+            <div class="auth-security-footer">
+              <span data-lucide="shieldCheck" data-size="16" style="color: var(--c-success);"></span>
+              <span>Privilese pelanggan resmi terhubung langsung ke atelier Lombok</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. DASHBOARD CONTAINER (Setelah Login) -->
+      <div class="dashboard-layout" id="dashboardLayout" style="display: none;">
+        
+        <!-- Sidebar Menu -->
+        <aside class="dashboard-sidebar">
+          <div class="user-profile-badge">
+            <div class="user-avatar-circle" id="userAvatar">R</div>
+            <div class="user-info-text">
+              <div class="user-info-name" id="userName">Ibu Ratna Paramitha</div>
+              <div class="user-info-email" id="userEmail">ratna.paramitha@gmail.com</div>
+            </div>
+          </div>
+
+          <nav class="dashboard-nav-list">
+            <button type="button" class="dashboard-nav-item active" data-tab="orders" onclick="switchDashboardTab('orders')">
+              <span data-lucide="package" data-size="18"></span>
+              <span>Riwayat Pesanan</span>
+              <span class="nav-badge-pill" id="sidebarOrdersBadge">0</span>
+            </button>
+
+            <button type="button" class="dashboard-nav-item" data-tab="wishlist" onclick="switchDashboardTab('wishlist')">
+              <span data-lucide="heart" data-size="18"></span>
+              <span>Koleksi Favorit</span>
+              <span class="nav-badge-pill" id="sidebarWishlistBadge">0</span>
+            </button>
+
+            <button type="button" class="dashboard-nav-item" data-tab="profile" onclick="switchDashboardTab('profile')">
+              <span data-lucide="user" data-size="18"></span>
+              <span>Profil Saya</span>
+            </button>
+
+            <button type="button" class="dashboard-nav-item" data-tab="reviews" onclick="switchDashboardTab('reviews')">
+              <span data-lucide="star" data-size="18"></span>
+              <span>Ulasan Saya</span>
+            </button>
+
+            <div style="border-top: 1px solid var(--c-light-gray); margin-top: 12px; padding-top: 12px;">
+              <button type="button" class="dashboard-nav-item" onclick="handleLogout()" style="color: #DC2626;">
+                <span data-lucide="logOut" data-size="18" style="color: #DC2626;"></span>
+                <span>Keluar Akun</span>
+              </button>
+            </div>
+          </nav>
+        </aside>
+
+        <!-- Main Content Panel -->
+        <section class="dashboard-content-panel" id="dashboardContentPanel">
+          <!-- Dirender secara dinamis oleh customer.js -->
+        </section>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer Terracotta (Persis Screenshot Owner) -->
+  <footer class="site-footer-terracotta" id="about">
+    <div class="container">
+      <div class="footer-top-row">
+        <!-- Kiri: Brand Logo Monogram -->
+        <div class="footer-logo-block">
+          <a href="index.html" title="CD'E Pearls Lombok - Haute Joaillerie">
+            <img src="images/cde_logo_clean.png" alt="CD'E Pearls Logo" class="footer-brand-logo-img">
+          </a>
+        </div>
+
+        <!-- Kanan: Newsletter You can be one step ahead -->
+        <div class="footer-newsletter-block">
+          <div class="newsletter-lead-title">You can be one step ahead.</div>
+          <div class="newsletter-lead-sub">Sign up to hear about our updates on the products.</div>
+          <form class="newsletter-pill-form" onsubmit="event.preventDefault(); alert('Terima kasih telah berlangganan informasi eksklusif CD\'E Pearls!'); this.reset();">
+            <input type="email" class="newsletter-pill-input" placeholder="Your email address" required>
+            <button type="submit" class="newsletter-pill-btn">SIGN UP</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Baris Navigasi Footer Persis Desain -->
+      <nav class="footer-links-row" aria-label="Footer Navigation">
+        <a href="index.html#catalog" class="footer-nav-link">Our Product</a>
+        <a href="index.html#education" class="footer-nav-link">Tutorial Order</a>
+        <a href="cart.html#orderTrackingBox" class="footer-nav-link">Status Order</a>
+        <a href="https://wa.me/6281239887766" target="_blank" class="footer-nav-link">Whatsapp</a>
+        <a href="https://instagram.com/cdepearls" target="_blank" class="footer-nav-link">Instagram</a>
+        <a href="index.html#about" class="footer-nav-link">About Us</a>
+      </nav>
+
+      <!-- Copyright Baris Bawah -->
+      <div class="footer-copyright-row">
+        <div>© 2026 CD'E Pearls Lombok. Hak Cipta Dilindungi Undang-Undang.</div>
+        <div style="display: flex; gap: 24px;">
+          <a href="#" style="color: inherit; text-decoration: none;">Kebijakan Privasi</a>
+          <a href="#" style="color: inherit; text-decoration: none;">Syarat & Ketentuan Pengiriman</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Container Notifikasi Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="js/lucide-helper.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/whatsappService.js"></script>
+  <script src="js/customer.js"></script>
+</body>
+</html>
