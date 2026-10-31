@@ -115,7 +115,10 @@ test('google oauth links existing customer and verifies email', function () {
     $providerMock->shouldReceive('user')->andReturn($socialiteUser);
     Socialite::shouldReceive('driver')->with('google')->andReturn($providerMock);
 
-    $response = $this->get('/api/v1/auth/google/callback');
+    $state = 'test-oauth-state-1';
+    \Illuminate\Support\Facades\Cache::put('oauth_state:' . $state, ['ip' => '127.0.0.1'], now()->addMinutes(10));
+
+    $response = $this->get('/api/v1/auth/google/callback?state=' . $state);
     $response->assertStatus(302); // Redirect to frontend /akun
 
     $existingCustomer->refresh();
@@ -148,7 +151,10 @@ test('google oauth strictly rejects admin or spi roles from logging in via oauth
     $providerMock->shouldReceive('user')->andReturn($socialiteUser);
     Socialite::shouldReceive('driver')->with('google')->andReturn($providerMock);
 
-    $response = $this->get('/api/v1/auth/google/callback');
+    $stateAdmin = 'test-oauth-state-admin';
+    \Illuminate\Support\Facades\Cache::put('oauth_state:' . $stateAdmin, ['ip' => '127.0.0.1'], now()->addMinutes(10));
+
+    $response = $this->get('/api/v1/auth/google/callback?state=' . $stateAdmin);
     $response->assertStatus(302);
     // Redirects to frontend with error query parameter
     expect($response->headers->get('Location'))->toContain('auth_error=ROLE_NOT_PERMITTED');
@@ -169,7 +175,10 @@ test('google oauth rejects unverified google email addresses', function () {
     $providerMock->shouldReceive('user')->andReturn($socialiteUser);
     Socialite::shouldReceive('driver')->with('google')->andReturn($providerMock);
 
-    $response = $this->get('/api/v1/auth/google/callback');
+    $stateAdmin = 'test-oauth-state-admin';
+    \Illuminate\Support\Facades\Cache::put('oauth_state:' . $stateAdmin, ['ip' => '127.0.0.1'], now()->addMinutes(10));
+
+    $response = $this->get('/api/v1/auth/google/callback?state=' . $stateAdmin);
     $response->assertStatus(302);
     expect($response->headers->get('Location'))->toContain('auth_error=EMAIL_NOT_VERIFIED');
 });
@@ -188,7 +197,7 @@ test('login enforces 5 attempts per minute per email+IP and returns 429 with Ret
             'email' => $email,
             'password' => 'WrongPassword2026!',
         ]);
-        $res->assertStatus(422);
+        $res->assertStatus(401);
     }
 
     // 6th attempt should be blocked with 429

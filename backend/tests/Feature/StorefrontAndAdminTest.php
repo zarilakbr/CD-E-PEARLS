@@ -360,9 +360,14 @@ test('email verification and resend verification flow', function () {
     $resendRes->assertStatus(200);
     expect($resendRes->json('success'))->toBeTrue();
 
-    // 2. Verify email with valid hash
+    // 2. Verify email with valid signed URL
     $hash = sha1($this->customer1->getEmailForVerification());
-    $verifyRes = $this->getJson("/api/v1/auth/verify-email/{$this->customer1->id}/{$hash}");
+    $signedUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+        'verification.verify',
+        now()->addHours(24),
+        ['id' => $this->customer1->id, 'hash' => $hash]
+    );
+    $verifyRes = $this->getJson($signedUrl);
     $verifyRes->assertStatus(200);
     expect($verifyRes->json('success'))->toBeTrue();
 

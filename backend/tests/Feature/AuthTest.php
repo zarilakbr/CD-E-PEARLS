@@ -67,7 +67,7 @@ test('login succeeds with correct credentials and returns token', function () {
         ->assertJsonStructure(['token', 'user']);
 });
 
-test('login fails with invalid credentials', function () {
+test('login fails with invalid credentials returning 401', function () {
     $user = User::create([
         'name' => 'Test Buyer',
         'email' => 'buyer.fail@cdepearls.com',
@@ -82,10 +82,11 @@ test('login fails with invalid credentials', function () {
         'password' => 'WrongPassword123!',
     ]);
 
-    $response->assertStatus(422)
+    $response->assertStatus(401)
         ->assertJson([
             'success' => false,
             'error' => 'INVALID_CREDENTIALS',
+            'message' => 'Email atau kata sandi tidak valid',
         ]);
 });
 
@@ -110,7 +111,7 @@ test('frozen account cannot log in', function () {
         ]);
 });
 
-test('account is locked after 10 failed login attempts', function () {
+test('repeated failed logins do not trigger global account lockout dos', function () {
     $user = User::create([
         'name' => 'Lockout Target',
         'email' => 'lockout@cdepearls.com',
@@ -119,7 +120,7 @@ test('account is locked after 10 failed login attempts', function () {
         'status' => 'active',
     ]);
 
-    // Perform 10 failed attempts
+    // Perform 10 failed attempts from attacker IP
     for ($i = 0; $i < 10; $i++) {
         RateLimiter::clear(Str::transliterate("login:lockout@cdepearls.com|127.0.0.1"));
         $this->postJson('/api/v1/auth/login', [
@@ -129,20 +130,8 @@ test('account is locked after 10 failed login attempts', function () {
     }
 
     $user->refresh();
-    expect($user->locked_until)->not->toBeNull();
-
-    // 11th attempt should report locked
-    RateLimiter::clear(Str::transliterate("login:lockout@cdepearls.com|127.0.0.1"));
-    $response = $this->postJson('/api/v1/auth/login', [
-        'email' => 'lockout@cdepearls.com',
-        'password' => 'ValidPassword2026!',
-    ]);
-
-    $response->assertStatus(423)
-        ->assertJson([
-            'success' => false,
-            'error' => 'ACCOUNT_LOCKED',
-        ]);
+    // User must NOT be globally locked (eliminating DoS vector)
+    expect($user->locked_until)->toBeNull();
 });
 
 test('authenticated user can view profile and update password', function () {

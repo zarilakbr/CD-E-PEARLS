@@ -86,7 +86,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'INVALID_TURNSTILE',
-                'message' => 'Verifikasi keamanan Turnstile gagal. Silakan coba kembali.',
+                'message' => 'Verifikasi keamanan gagal.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -127,9 +127,13 @@ class AuthController extends Controller
             ]);
         }
 
-        // Log verification email dispatch (log driver in dev)
-        $verifyToken = Str::random(40);
-        Log::info("Verification email dispatched to {$user->email} with verification token: {$verifyToken}");
+        // Generate signed URL (valid for 24h) and dispatch without logging plain token
+        $verificationUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addHours(24),
+            ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())]
+        );
+        Log::info("Verification email dispatched for registered user id {$user->id}");
 
         AuditLog::create([
             'actor_id' => $user->id,
@@ -180,58 +184,36 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'INVALID_TURNSTILE',
-                'message' => 'Verifikasi keamanan Turnstile gagal. Silakan coba kembali.',
+                'message' => 'Verifikasi keamanan gagal.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $user = User::where('email', $email)->first();
 
-        // 4. Lockout check (15 minutes lockout after 10 failed logins)
-        if ($user && $user->isLocked()) {
-            $diffInMinutes = ceil(now()->diffInSeconds($user->locked_until) / 60);
-
-            return response()->json([
-                'success' => false,
-                'message' => "Akun Anda terkunci sementara karena akumulasi kesalahan kata sandi. Coba lagi dalam {$diffInMinutes} menit.",
-                'error' => 'ACCOUNT_LOCKED',
-                'locked_until' => $user->locked_until,
-            ], Response::HTTP_LOCKED);
-        }
-
-        // 5. Credential verification (Timing-safe anti-enumeration)
+        // 4. Credential verification with anti-enumeration (identical 401 response, no global lockout DoS)
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
-            RateLimiter::hit($emailKey, 60);
+            $attempts = RateLimiter::attempts($emailKey) + 1;
+            $decay = min(60 * pow(2, max(0, $attempts - 5)), 900);
+            RateLimiter::hit($emailKey, $decay);
             RateLimiter::hit($ipKey, 3600);
 
-            if ($user) {
-                $user->increment('failed_logins');
-                if ($user->failed_logins >= 10) {
-                    $user->update([
-                        'locked_until' => now()->addMinutes(15),
-                    ]);
-
-                    AuditLog::create([
-                        'actor_id' => $user->id,
-                        'actor_name' => $user->name,
-                        'actor_role' => $user->role,
-                        'action' => 'ACCOUNT_LOCKED_FAILED_LOGINS',
-                        'target_type' => 'user',
-                        'target_id' => (string) $user->id,
-                        'ip_address' => $request->ip(),
-                        'user_agent' => $request->userAgent(),
-                        'created_at' => now(),
-                    ]);
-                }
-            }
+            AuditLog::create([
+                'action' => 'LOGIN_FAILED',
+                'target_type' => 'auth',
+                'target_id' => $email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'created_at' => now(),
+            ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Alamat email atau kata sandi tidak cocok dengan catatan kami.',
                 'error' => 'INVALID_CREDENTIALS',
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                'message' => 'Email atau kata sandi tidak valid',
+            ], Response::HTTP_UNAUTHORIZED);
         }
 
-        // 6. Status frozen check
+        // 5. Status frozen check
         if ($user->isFrozen()) {
             return response()->json([
                 'success' => false,
@@ -240,11 +222,10 @@ class AuthController extends Controller
             ], Response::HTTP_FORBIDDEN);
         }
 
-        // 7. Success: clear counters and update timestamp
+        // 6. Success: clear counters and update timestamp
         RateLimiter::clear($emailKey);
         $user->update([
             'failed_logins' => 0,
-            'locked_until' => null,
             'last_login_at' => now(),
         ]);
 
@@ -308,8 +289,15 @@ class AuthController extends Controller
             ], Response::HTTP_SERVICE_UNAVAILABLE);
         }
 
+        $state = Str::random(40);
+        \Illuminate\Support\Facades\Cache::put('oauth_state:' . $state, [
+            'ip' => $request->ip(),
+            'created_at' => now()->timestamp,
+        ], now()->addMinutes(10));
+
         return Socialite::driver('google')
             ->stateless()
+            ->with(['state' => $state])
             ->redirect();
     }
 
@@ -322,9 +310,17 @@ class AuthController extends Controller
         $callbackKey = 'google_callback:' . $request->ip();
         if ($rateLimitResponse = $this->checkRateLimit($callbackKey, 10, 60, 'Google OAuth Callback', $request)) {
             $seconds = RateLimiter::availableIn($callbackKey);
-            return redirect(config('app.frontend_url', 'http://localhost:5173') . '/?auth_error=RATE_LIMIT_EXCEEDED&retry_after=' . $seconds);
+            return redirect(config('app.frontend_url', 'http://localhost:5173') . '/masuk?auth_error=RATE_LIMIT_EXCEEDED&retry_after=' . $seconds);
         }
         RateLimiter::hit($callbackKey, 60);
+
+        // 4.e: Validate OAuth state parameter with 10 min TTL
+        $state = $request->query('state');
+        if (empty($state) || ! \Illuminate\Support\Facades\Cache::has('oauth_state:' . $state)) {
+            Log::warning('Google OAuth callback rejected: invalid or missing state parameter');
+            return redirect(config('app.frontend_url', 'http://localhost:5173') . '/masuk?auth_error=INVALID_OAUTH_STATE');
+        }
+        \Illuminate\Support\Facades\Cache::forget('oauth_state:' . $state);
 
         try {
             $googleUser = Socialite::driver('google')
@@ -332,12 +328,12 @@ class AuthController extends Controller
                 ->user();
         } catch (\Throwable $e) {
             Log::warning('Google OAuth callback failed: ' . $e->getMessage());
-            return redirect(config('app.frontend_url', 'http://localhost:5173') . '/?auth_error=OAUTH_FAILED');
+            return redirect(config('app.frontend_url', 'http://localhost:5173') . '/masuk?auth_error=OAUTH_FAILED');
         }
 
         // Verify that email is verified by Google
         $rawUser = $googleUser->getRaw();
-        $isVerified = $rawUser['email_verified'] ?? true;
+        $isVerified = (bool) ($rawUser['email_verified'] ?? false);
         if (! $isVerified) {
             AuditLog::create([
                 'action' => 'GOOGLE_LOGIN_REJECTED_UNVERIFIED_EMAIL',
@@ -348,7 +344,7 @@ class AuthController extends Controller
                 'created_at' => now(),
             ]);
 
-            return redirect(config('app.frontend_url', 'http://localhost:5173') . '/?auth_error=EMAIL_NOT_VERIFIED');
+            return redirect(config('app.frontend_url', 'http://localhost:5173') . '/masuk?auth_error=EMAIL_NOT_VERIFIED');
         }
 
         $email = strtolower($googleUser->getEmail());
@@ -574,7 +570,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'INVALID_TURNSTILE',
-                'message' => 'Verifikasi keamanan Turnstile gagal. Silakan coba kembali.',
+                'message' => 'Verifikasi keamanan gagal.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -588,7 +584,8 @@ class AuthController extends Controller
                 ['token' => Hash::make($token), 'created_at' => now()]
             );
 
-            Log::info("Password reset link requested for {$email}. Reset token: {$token}");
+            // Log without plain token
+            Log::info("Password reset requested for email: {$email}");
         }
 
         return response()->json([
@@ -649,10 +646,19 @@ class AuthController extends Controller
     }
 
     /**
-     * Verify user email address.
+     * Verify user email address using temporary signed URL.
      */
     public function verifyEmail(Request $request, $id, $hash): JsonResponse
     {
+        // 4.f: Validate temporary signature
+        if (! $request->hasValidSignature()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'INVALID_SIGNATURE',
+                'message' => 'Tautan verifikasi email tidak valid atau telah kedaluwarsa.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         $user = User::findOrFail($id);
 
         if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
@@ -698,23 +704,26 @@ class AuthController extends Controller
      */
     public function resendVerification(Request $request): JsonResponse
     {
-        $resendKey = 'resend_verification:' . ($request->user()?->id ?? $request->ip());
-        if ($rateLimitResponse = $this->checkRateLimit($resendKey, 3, 3600, 'Kirim Ulang Verifikasi', $request)) {
-            return $rateLimitResponse;
-        }
-
-        // Turnstile check
+        // 1. Turnstile check
         if (! $this->turnstile->verify($request->input('turnstile_token'), $request->ip())) {
             return response()->json([
                 'success' => false,
                 'error' => 'INVALID_TURNSTILE',
-                'message' => 'Verifikasi keamanan Turnstile gagal. Silakan coba kembali.',
+                'message' => 'Verifikasi keamanan gagal.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        RateLimiter::hit($resendKey, 3600);
-
         $user = $request->user();
+        if (! $user && $email = $request->input('email')) {
+            $user = User::where('email', strtolower($email))->first();
+        }
+
+        $resendKey = 'resend_verification:' . ($user?->id ?? $request->ip());
+        if ($rateLimitResponse = $this->checkRateLimit($resendKey, 3, 3600, 'Kirim Ulang Verifikasi', $request)) {
+            return $rateLimitResponse;
+        }
+
+        RateLimiter::hit($resendKey, 3600);
 
         if ($user && $user->hasVerifiedEmail()) {
             return response()->json([
@@ -723,16 +732,22 @@ class AuthController extends Controller
             ]);
         }
 
-        $hash = sha1($user->getEmailForVerification());
-        $verificationUrl = url("/api/v1/auth/verify-email/{$user->id}/{$hash}");
+        if ($user) {
+            $hash = sha1($user->getEmailForVerification());
+            $verificationUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addHours(24),
+                ['id' => $user->id, 'hash' => $hash]
+            );
 
-        // In dev environment, logs to default log driver (laravel.log)
-        Log::info("Verification email resent to {$user->email}. Verification URL: {$verificationUrl}");
+            // Log without plain verification token
+            Log::info("Verification email resent for user id: {$user->id}");
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Tautan verifikasi telah dikirimkan ke email Anda. Silakan periksa kotak masuk atau spam.',
-            'verification_link_dev' => app()->environment('local', 'testing') ? $verificationUrl : null,
+            'verification_link_dev' => (app()->environment('local', 'testing') && isset($verificationUrl)) ? $verificationUrl : null,
         ]);
     }
 }
