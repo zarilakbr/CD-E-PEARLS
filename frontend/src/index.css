@@ -1,0 +1,178 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Jost:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Semantic tokens mapped to CSS variables */
+  --color-bg-base: var(--bg);
+  --color-bg-dash: var(--bg-dash);
+  --color-bg-alt: var(--bg-alt);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-2);
+  --color-theme-border: var(--border);
+  --color-theme-text: var(--text);
+  --color-theme-text-muted: var(--text-2);
+  --color-theme-accent: var(--accent);
+
+  /* Palette Tokens CD'E Pearls */
+  --color-ivory: #FBF8F3;
+  --color-champagne: #F3EBDD;
+  --color-blush: #F1E4DC;
+  --color-navy: #12263A;
+  --color-ocean: #1B3A57;
+  --color-midnight: #0D1C2B;
+  --color-gold: #8A6A2F;
+  --color-gold-light: #D9B877;
+  --color-rose-gold: #B98B73;
+
+  /* Legacy aliases for backward compatibility */
+  --color-ground-site: var(--bg);
+  --color-ground-dashboard: var(--bg-dash);
+  --color-card-border: var(--border);
+  --color-navy-hover: #1A3652;
+  --color-gold-text: var(--accent);
+  --color-text-secondary: var(--text-2);
+  --color-placeholder-bg: #EDE6DA;
+  --color-placeholder-border: #D9CFBF;
+  --color-placeholder-line: #B9AC96;
+}
+
+:root {
+  /* Mode Terang (Default) */
+  --bg: #FBF8F3;
+  --bg-dash: #F4F1EB;
+  --bg-alt: #F3EBDD;
+  --surface: #FFFFFF;
+  --surface-2: #FBF8F3;
+  --border: #E6DDD0;
+  --text: #12263A;
+  --text-2: #4A5666;
+  --accent: #8A6A2F;
+
+  --ivory: #FBF8F3;
+  --champagne: #F3EBDD;
+  --blush: #F1E4DC;
+  --navy: #12263A;
+  --ocean: #1B3A57;
+  --midnight: #0D1C2B;
+  --gold: #8A6A2F;
+  --gold-light: #D9B877;
+  --rose-gold: #B98B73;
+
+  --ground-site: #FBF8F3;
+  --ground-dashboard: #F4F1EB;
+  --card-border: #E6DDD0;
+  --navy-hover: #1A3652;
+  --gold-text: #8A6A2F;
+  --text-secondary: #4A5666;
+}
+
+:root[data-theme="dark"],
+html.dark {
+  /* Mode Gelap (Semantic Tokens) */
+  --bg: #0B1622;
+  --bg-dash: #0B1622;
+  --bg-alt: #0F1D2C;
+  --surface: #12263A;
+  --surface-2: #1B3A57;
+  --border: #28445F;
+  --text: #F3EDE2;
+  --text-2: #B8C3CF;
+  --accent: #D9B877;
+
+  --ground-site: #0B1622;
+  --ground-dashboard: #0B1622;
+  --card-border: #28445F;
+  --text-secondary: #B8C3CF;
+}
+
+/* Transisi halus saat ganti tema selama 350ms */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease, fill 300ms ease, stroke 300ms ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transition,
+  html.theme-transition * {
+    transition: none !important;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar for wide tables */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #F4F1EB;
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #D9CFBF;
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #B9AC96;
+}
+
+/* Infinite luxury marquee for pearl varieties */
+@keyframes pearlMarquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes pearlMarqueeReverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-pearl-marquee {
+  display: flex;
+  width: max-content;
+  animation: pearlMarquee 38s linear infinite;
+  will-change: transform;
+}
+
+.animate-pearl-marquee-reverse {
+  display: flex;
+  width: max-content;
+  animation: pearlMarqueeReverse 42s linear infinite;
+  will-change: transform;
+}
+
+.animate-pearl-marquee:hover,
+.animate-pearl-marquee-reverse:hover {
+  animation-play-state: paused;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

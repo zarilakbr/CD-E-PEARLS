@@ -27,32 +27,56 @@
 ## 1. Arsitektur Sistem
 
 ```
-CUSTOMER LAYER (frontend/)               ADMIN LAYER TERPISAH (admin/)
-├── index.html (5 Kategori & Filter)    ├── index.html (Pusat Kontrol Super Admin)
-├── customizer.html (Atelier 3D PBR)    ├── css/admin.css
-├── cart.html (Invoice WA & Pelacak)    └── js/admin.js (RBAC & Controller)
-├── customer.html (Dashboard Pembeli)        ├── Dashboard & KPI Omset
-├── about.html (Edukasi Budidaya)            ├── Katalog Produk & 5 Kategori
-├── contact.html (Concierge Senggigi)        ├── Stok Butir Mutiara (+/-)
-├── faq.html (Tanya Jawab Interaktif)        ├── Pesanan & Verifikasi Lunas (PAID)
-└── blog.html (Jurnal Gemologi Mutiara)      ├── WhatsApp Leads CRM
-                                             ├── Daftar Pelanggan & Ulasan
-                                             ├── Admin Users (Super Admin Only)
-                                             ├── Laporan & Audit Logs (Super Admin Only)
-                                             └── Pengaturan Gateway WhatsApp
-
-                    SHARED STATE LAYER (store.js & whatsappService.js)
-        CDEStore -- Central State, RBAC, Leads CRM, Audit Logs & LocalStorage
-        Products (5 Kategori) | Orders (Dual-Status) | Users | Leads | Settings
-
-                    BROWSER PERSISTENCE (localStorage)
-   cde_pearls_products_v3 | cde_pearls_categories_v1 | cde_pearls_cart_v2
-   cde_pearls_orders_v2   | cde_pearls_users_v1      | cde_pearls_leads_v1
-   cde_pearls_settings_v2 | cde_pearls_audit_logs_v1 | cde_pearls_reviews_v1
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       CLIENT TIER: REACT 19 SPA (frontend/)                 │
+├──────────────────────────────────────┬──────────────────────────────────────┤
+│ CUSTOMER-FACING APPLICATION          │ SPI (SISTEM PENGENDALI INTERNAL)     │
+│ • HomePage.tsx (5 Kategori & Filter) │ • AdminPortalPage.tsx (Shadcn UI)    │
+│ • ThreeCustomizer.tsx (3D Atelier)   │   ├── Dashboard & KPI Omset          │
+│ • CartPage.tsx (Invoice & Tracker)   │   ├── Pengendali Katalog (11 Spek)   │
+│ • CustomerDashboardPage.tsx (4 Tab)  │   ├── 5 Kategori Showcase & Stats    │
+│ • AboutPage.tsx (Budidaya Lombok)    │   ├── Stok Butir Mutiara (+/-)       │
+│ • ContactPage.tsx (Concierge Leads)  │   ├── Pesanan & Verifikasi Lunas     │
+│ • FaqPage.tsx (Accordion Gemologi)   │   ├── WhatsApp Leads CRM (4 Status)  │
+│ • BlogPage.tsx (Modal Jurnal Baca)   │   ├── Direktori Pelanggan & Ulasan   │
+│                                      │   ├── Akses Staf Atelier (Owner)     │
+│ Context & State Management:          │   ├── Laporan Omset & Audit Logs     │
+│ AuthContext | CartContext | Wishlist │   └── Pengaturan Gateway WhatsApp    │
+└──────────────────────────────────────┴──────────────────────────────────────┘
+                                    │
+                         HTTP REST / JSON / Bearer Token
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                   SERVER TIER: LARAVEL 11 RESTful API (backend/)            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • Laravel Sanctum (Token-Based Auth & RBAC Middleware)                      │
+│ • API Controllers:                                                          │
+│   ├── AuthController (/api/login, /api/register, /api/user)                 │
+│   ├── ProductController (/api/products CRUD, filter, grade, variety)        │
+│   ├── CategoryController (/api/categories)                                  │
+│   ├── OrderController (/api/orders, /api/orders/lookup, /api/orders/{id})   │
+│   ├── LeadController (/api/leads CRM status)                                │
+│   ├── ReviewController (/api/reviews)                                       │
+│   ├── SettingController (/api/settings)                                     │
+│   └── AdminController (/api/admin/dashboard, /api/realtime/events, logs)    │
+│ • Real-time Synchronizer: Event polling endpoint (/api/realtime/events)     │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                              Eloquent ORM
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DATA PERSISTENCE TIER (SQLite / MySQL)                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Tables: users, categories, products, orders, order_items, whatsapp_leads,  │
+│         reviews, audit_logs, settings, personal_access_tokens               │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Teknologi Stack:**
-- **Frontend & Styling:** HTML5 Semantik, Vanilla CSS3 (Deep Navy `#0B1F33`, Pearl White `#F8F7F2`, Champagne Gold `#C9A96E`)
+**Teknologi Stack (v4.0):**
+- **Frontend & Styling:** React 19, TypeScript, Vite, Tailwind CSS v4, Shadcn/UI primitives, Lucide Icons, Three.js OrbitControls 360°.
+- **Owner Approved Luxury Palette:** Canvas Soft Warm Dusty Rose Terracotta (`#E3CAC3`), Curved Header & Footer Cokelat Terracotta (`#BF9384`), Rich Dark Espresso (`#382218`), Honey Caramel Gold (`#BD8F4B`), Crimson Coral Promo (`#BA4E4E`), Pure White Cards (`#FFFFFF`).
+- **Backend API:** Laravel 11 (PHP 8.5) RESTful API, Laravel Sanctum Token Authentication, Eloquent ORM.
+- **Database:** SQLite (local development zero-config) / MySQL (production ready) dengan migrasi skema relasional terstruktur dan data seeder.
 - **Typography:** Inter (UI & Data) + Playfair Display (Luxury Headings)
 - **Icons:** Lucide Icons (stroke: 1.8–2px, rounded, tanpa emoji)
 - **Logic & Store:** Vanilla JavaScript ES6+ (Event-driven Store Architecture)

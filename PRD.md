@@ -1,26 +1,26 @@
-# Product Requirements Document (PRD) v3.0
+# Product Requirements Document (PRD) v4.0
 ## Platform E-Commerce & Atelier Perhiasan Mutiara "CD'E Pearls Lombok"
 
-- **Dokumen Versi**: 3.0.0 (Enterprise Release - Deep Navy & Pearl White Luxury Theme, Lucide Icons, Dual-Status Workflow, 5 Kategori Terpisah, WhatsApp Leads CRM & Isolated Super Admin RBAC)
+- **Dokumen Versi**: 4.0.0 (Modern Enterprise Release - React 19, TypeScript, Tailwind CSS v4, Shadcn/UI, Three.js 3D Studio, Laravel 11 RESTful API, Owner Approved Luxury Terracotta Palette, Dual-Status Workflow, & Isolated Super Admin RBAC)
 - **Status**: Disetujui & Selesai Diimplementasikan (Fully Implemented)
-- **Terakhir Diperbarui**: September 2026
+- **Terakhir Diperbarui**: 28 Oktober 2026
 - **Target Pengguna**: Konsumen Perhiasan Mewah, Kolektor Mutiara, Pemesan Kustom Atelier, & Administrator Butik
 
 ---
 
 ## 1. Ringkasan Eksekutif & Visi Produk
 
-**CD'E Pearls Lombok** adalah platform digital perhiasan mutiara air laut (*South Sea Pearls* - *Pinctada maxima*) asal Lombok, Nusa Tenggara Barat. Platform ini memadukan estetika perhiasan mewah bertaraf internasional dengan kemudahan transaksi concierge melalui integrasi **WhatsApp Service**, studio kustomisasi 3D WebGL interaktif, Customer Dashboard terpadu, dan portal Super Admin terisolasi penuh dengan sistem Role-Based Access Control (RBAC).
+**CD'E Pearls Lombok** adalah platform digital perhiasan mutiara air laut (*South Sea Pearls* - *Pinctada maxima*) asal Lombok, Nusa Tenggara Barat. Platform ini memadukan estetika perhiasan mewah bertaraf internasional dengan kemudahan transaksi concierge melalui integrasi **WhatsApp Service**, studio kustomisasi 3D WebGL interaktif (Three.js), Customer Dashboard terpadu, dan portal Super Admin terisolasi penuh dengan sistem Role-Based Access Control (RBAC), dibangun menggunakan arsitektur modern **React 19 + Tailwind CSS v4 + Shadcn/UI** di sisi frontend dan **Laravel 11 RESTful API** di sisi backend.
 
 ### Pilar Utama Produk:
-1. **Palet Warna Mewah Eksekutif**:
-   - **Deep Navy (`#0B1F33`)**: Header navbar, tombol primer, heading utama, footer, dan sidebar eksekutif.
-   - **Pearl White (`#F8F7F2`)**: Latar belakang kanvas utama etalase dan portal.
-   - **Champagne Gold (`#C9A96E`)**: Aksen perhiasan mewah, border aktif, lencana sertifikat, harga investasi.
-   - **Soft Blue (`#8FAFC4`)**: Aksen sekunder, tag varietas mutiara, highlight informasi.
-   - **Dark Text (`#17202A`)**: Tipografi heading dan body text kontras tinggi.
-   - **Light Gray (`#EEF1F3`)**: Garis batas pembagi, kartu latar, dan tabel data.
-   - **WhatsApp Green (`#25D366`)**: Tombol interaktif chat konsultasi, order invoice, dan quick CRM link.
+1. **Palet Warna Resmi Pemilik (Owner Approved Luxury Palette)**:
+   - **Canvas / Page Background (`#E3CAC3`)**: Soft Warm Dusty Rose Terracotta yang memberikan kesan hangat, mewah, dan eksklusif.
+   - **Curved Header & Footer (`#BF9384`)**: Cokelat Terracotta dengan lengkungan sudut elegan (`border-radius: 36px / 32px`).
+   - **Tipografi & Ikon Utama (`#382218`)**: Rich Dark Espresso dengan kontras tinggi yang mudah dibaca dan prestisius.
+   - **Tombol Aksi Utama (`#BD8F4B`, hover `#A87834`)**: Honey Caramel Gold dengan teks putih (`#FFFFFF`).
+   - **Harga Promo (`#BA4E4E`) & Coretan Harga (`#96857D`)**: Crimson Coral Red dan Muted Taupe.
+   - **Kartu Produk (`#FFFFFF`)**: Putih bersih dengan border halus (`#E8D8D3`) dan shadow lembut.
+   - **WhatsApp Resmi (`#25D366`, hover `#1EBE5D`)**: Emerald Green resmi untuk jalur komunikasi concierge langsung.
 2. **Standar Ikon Minimalis**: Menggunakan **Lucide Icons** (stroke 1.8–2px, rounded corner, modern, elegan) secara konsisten di seluruh halaman tanpa emoji ataupun ikon pihak ketiga yang tidak serasi.
 3. **Pemisahan Kategori Mutlak (5 Kategori Perhiasan)**:
    - Kalung Mutiara (*Necklaces*)
@@ -30,9 +30,10 @@
    - Mutiara Lepas (*Loose Pearls*)
    Kelima kategori dipisahkan secara tegas di etalase, filter, maupun sistem inventaris admin tanpa percampuran.
 4. **Layanan WhatsApp Service Terintegrasi**: WhatsApp berfungsi sebagai media konsultasi gemologi personal (`generateProductConsultationMessage`), invoice pemesanan terstruktur (`generateOrderMessage`), dan pencatatan prospek ke WhatsApp Leads CRM.
-5. **Customer Dashboard**: Portal mandiri pelanggan (`frontend/customer.html`) dengan 4 modul: Profil Pengguna, Riwayat Pesanan dengan Pelacak Resi, Wishlist, dan Ulasan Testimoni.
-6. **Isolasi Total Super Admin (Admin Cloaking & RBAC)**: Portal administrasi beroperasi privat di `/admin/index.html` dan sama sekali tidak memiliki tautan di antarmuka pelanggan. Memiliki autentikasi RBAC untuk `SUPER_ADMIN` (akses penuh, laporan finansial, audit log, admin users) dan `ADMIN` (operasional katalog, stok, pesanan, leads, ulasan).
-7. **Studio Kustomisasi 3D WebGL (Three.js Atelier)**: Visualizer 3D putar 360°, pemilihan material PBR nacre mutiara laut dan rangka emas 18K/perak 925, slider diameter mutiara 9–14 mm, serta kalkulator harga dinamis.
+5. **Customer Dashboard**: Portal mandiri pelanggan (`CustomerDashboardPage.tsx`) dengan 4 modul: Profil Pengguna, Riwayat Pesanan dengan Pelacak Resi & Dual-Status, Wishlist, dan Ulasan Testimoni.
+6. **SPI (Sistem Pengendali Internal Khusus Owner Butik)**: Portal administrasi beroperasi privat sebagai **SPI (Sistem Pengendali Internal)** khusus bagi Pemilik Butik (**Owner: Hj. Baiq Ratna Sari**). Seluruh akun/modul staf ditiadakan sesuai mandat pemilik. 100% menggunakan primitif **Shadcn UI** dan **Lucide React Icons** mencakup 10 modul eksekutif lengkap (Dashboard KPI & Omset, Katalog CRUD 11 Parameter, Monitoring 5 Kategori, Stok Butir Mutiara, Pesanan & Verifikasi Lunas PAID, WhatsApp Leads CRM, Pelanggan, Ulasan, Finansial & Audit Logs, Gateway WA).
+7. **Studio Kustomisasi 3D WebGL (Three.js Atelier)**: Visualizer 3D putar 360° dengan OrbitControls, simulasi PBR nacre mutiara laut (4 varietas) dan rangka emas 18K/perak 925 (4 jenis), slider diameter mutiara 9–14 mm, geometri 5 basis perhiasan, serta kalkulator harga dinamis.
+8. **Backend API Realtime & Database Relasional**: Laravel 11 RESTful API dengan Laravel Sanctum, SQLite/MySQL, migrasi relasional, dual-status lifecycle, audit logs, dan endpoint polling real-time `/api/realtime/events`.
 
 ---
 

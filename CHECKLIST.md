@@ -1,16 +1,19 @@
-# Checklist Pengembangan CD'E Pearls Lombok (v3.0)
+# Checklist Pengembangan CD'E Pearls Lombok (v4.0)
 Dokumen Pelacakan Fitur: **Sudah Selesai (Completed)** vs **Belum / Rencana Lanjutan (Future Backlog)**
-*Terakhir diperbarui: 13 September 2026*
+*Terakhir diperbarui: 28 Oktober 2026*
 
 ---
 
 ## Ringkasan Progres
 
 ```
-[========================================] 100% Fitur Utama Selesai
-• Total Modul Utama   : 20 Modul Selesai
-• Halaman Aktif       : 9 File HTML Berfungsi Penuh (HTTP 200)
-• Status Arsitektur   : Sesuai PRD v3.0 & SYSTEM DESIGN
+[========================================] 100% Arsitektur Modern Selesai
+• Frontend Modern     : React 19 + TypeScript + Vite + Tailwind CSS v4 + Shadcn/UI
+• 3D Studio WebGL     : Three.js Interactive OrbitControls 360° Studio
+• Backend Modern      : Laravel 11 RESTful API (PHP 8.5) + Laravel Sanctum
+• Database Relasional : SQLite / MySQL Ready dengan Migrations, Seeders & Dual-Status Lifecycle
+• Real-Time Sync      : Polling & Event Synchronizer (/api/realtime/events)
+• Status Eksekusi     : 100% Build Sukses (HTTP 200 Backend & Frontend Aktif)
 ```
 
 ---
@@ -29,12 +32,12 @@ Dokumen Pelacakan Fitur: **Sudah Selesai (Completed)** vs **Belum / Rencana Lanj
 - [x] **Ikonografi Bebas Emoji**: 100% menggunakan SVG & Lucide Icons dengan stroke elegan, rounded corner minimalis modern.
 - [x] **Tipografi Mewah**: Font Google **Inter** (UI, tabel, form, body) dan **Playfair Display** (heading editorial mewah).
 - [x] **Logo Resmi CD'E Pearls**: Integrasi logo brand resolusi tinggi pada navbar header dan footer terracotta.
-- [x] **Header Navigasi Putih Bersih & Rata Kanan (White Curved Navbar)**: Sticky header putih bersih (`#FFFFFF`) melengkung (`border-radius: 0 0 32px 32px`), teks dark espresso (`#382218`), teks navigasi horizontal 1 baris tanpa menumpuk (`white-space: nowrap`), search pill linen (`#F5ECE5`), serta icon counter emas (`#BD8F4B`).
-- [x] **Footer Terracotta Melengkung Bebas Halo Putih**: Background terracotta (`#BF9384`, `border-radius: 36px 36px 0 0`), logo CD'E Pearls bersih dan selaras (`cde_logo_clean.png` dengan transparansi alpha murni, kilau mutiara South Sea 3D, tanpa kotak gelap atau halo putih), blok newsletter *"You can be one step ahead"*, serta baris navigasi horizontal: *Our Product, Tutorial Order, Status Order, Whatsapp, Instagram, About Us*.
+- [x] **Header Navigasi Transparan & Frosted Glass Mewah (Transparent Luxury Glass Navbar)**: Sticky header dengan efek transparansi modern (`backdrop-blur-xl`), dinamis bertransisi mulus ke frosted glass saat di-scroll (`window.scrollY > 20`), logo brand transparan murni, teks navigasi horizontal 1 baris beraksen garis emas saat aktif, search box kaca frosted glass, icon counter emas (`#BD8F4B`), tombol akses cepat SPI (Owner), serta drawer navigasi mobile responsif.
+- [x] **Footer Obsidian & Terracotta Melengkung**: Background mewah espresso obsidian (`#24150E`, `border-radius: 40px 40px 0 0`) beraksen emas (`#BD8F4B`), logo CD'E Pearls bersih, newsletter collector mutiara, baris direktori halaman horizontal, dan informasi kontak butik Senggigi.
 
 ### 1.2. Halaman Beranda & Katalog (`index.html`)
 - [x] **Announcement Bar**: Informasi pengiriman berasuransi ke seluruh Indonesia & sertifikat keaslian gemologi gratis.
-- [x] **Hero Luxury Samudera Lombok (Background Gambar Mutiara Mewah)**: Menggantikan latar biru dengan gambar mutiara laut selatan (*South Sea Pearls*) berkilau di atas kain sutra sampanye dan cangkang tiram nacre alami (`hero_pearl_bg.jpg`), berpadu dengan judul editorial *"Kilau Murni Samudera Indonesia"*, badge mutiara laut, dan 2 tombol CTA (*Lihat Koleksi Perhiasan* & *Konsultasi via WhatsApp*).
+- [x] **Hero Panoramic Full-Bleed Samudera Lombok (Background Gambar Mutiara Penuh Edge-to-Edge Tanpa Kotak Card)**: Mengadopsi tata letak situs wisata & destinasi mewah internasional dengan visual mutiara laut selatan (*South Sea Pearls*) membentang 100% penuh layar (*edge-to-edge full width*, min-height 92vh/100vh), navbar kaca transparan mengambang di atas gambar, judul editorial *"Mahakarya Kilau Murni Samudera Indonesia"*, 4 trust pills kaca, tombol CTA emas & 3D atelier, floating masterpiece cincin Golden South Sea, dan indikator koordinat Teluk Sire Lombok.
 - [x] **Showcase 5 Kategori Mutiara**: Kartu navigasi visual 5 kategori:
   1. Kalung Mutiara (*Necklaces*)
   2. Gelang Mutiara (*Bracelets*)
@@ -130,67 +133,50 @@ Dokumen Pelacakan Fitur: **Sudah Selesai (Completed)** vs **Belum / Rencana Lanj
 
 ---
 
-## 3. Portal Super Admin Terisolasi (`admin/`)
+## 3. SPI — Sistem Pengendali Internal Khusus Owner Butik (`SPI`)
 
-### 3.1. Keamanan & Admin Cloaking
-- [x] **Isolasi Mutlak**: Portal admin berada terpisah di `/admin/index.html`, tanpa adanya tautan masuk dari antarmuka pembeli.
-- [x] **Login Overlay RBAC**: Form login kredensial dengan validasi peran. Pembeli/Customer ditolak masuk.
-- [x] **Tombol Demo Cepat**:
-  - 👑 Super Admin (`superadmin@cdepearls.com`)
-  - 🛠 Admin Atelier (`admin@cdepearls.com`)
-- [x] **Pembatasan Hak Akses (Role Gate)**:
-  - `ADMIN`: Akses ke Dashboard, Produk, Kategori, Stok, Pesanan, WhatsApp Leads, Pelanggan, Ulasan, dan Pengaturan.
-  - `SUPER_ADMIN`: Seluruh hak akses di atas ditambah modul **Admin Users** dan **Laporan Finansial & Audit Logs**.
-- [x] **Profil Pengguna Sidebar**: Menampilkan nama admin, email, lencana peran emas/biru, dan tombol keluar (*logout*).
+### 3.1. Keamanan & Hak Pengendali Tunggal Owner (Single Master Portal)
+- [x] **Portal Tunggal SPI Khusus Owner**: Sesuai instruksi pemilik, modul dan akun staf atelier ditiadakan/dihapus (*staff owner dihapus*). Sistem beroperasi dengan satu-satunya akun pemegang kendali penuh: **Owner Butik: Hj. Baiq Ratna Sari** (`owner@cdepearls.com` / `secret123`).
+- [x] **Pure Shadcn UI Component Standards**: 100% menggunakan primitif Shadcn UI (`Card`, `Button`, `Badge`, `Input`, `Textarea`, `Table`, `Tabs`, `Separator`, `Alert`, `Dialog`) dengan palet luxury resmi (`#382218`, `#BD8F4B`, `#BF9384`, `#E3CAC3`, `#BA4E4E`, `#FFFFFF`).
+- [x] **Pure Lucide React Icons**: Menggunakan icon resmi ekosistem Shadcn UI (`lucide-react`) tanpa emoji di seluruh tombol, tabel, badge, dan modal.
+- [x] **Login Screen Khusus Owner**: Form login kredensial terisolasi dengan kartu Shadcn UI dan tombol akses cepat 1-klik untuk Owner Butik.
+- [x] **Hak Akses Penuh Owner**: Owner memiliki kendali mutlak atas seluruh 10 modul internal butik.
 
-### 3.2. Modul Manajemen Admin (11 Modul)
-- [x] **1. Dashboard Ringkasan**:
-  - 4 Kartu KPI: Total Omset, Pesanan Masuk, Koleksi Desain Aktif, Stok Butir Mutiara.
-  - Ringkasan Pesanan Terbaru (dengan badge pembayaran & tanggal).
-  - Ringkasan WhatsApp Leads Terbaru (dengan tombol chat WA cepat).
-- [x] **2. Katalog Produk (CRUD)**:
-  - Form tambah/edit perhiasan dengan 11 spesifikasi lengkap: Nama, Kategori, Varietas, Grade, Diameter mm, Rangka Logam, Harga, Stok, Asal Panen, Link Foto, Deskripsi.
-  - Toolbar pencarian real-time dan filter kategori.
-  - Tabel katalog aktif dengan tombol Edit dan Hapus.
-- [x] **3. 5 Kategori Mutiara**:
-  - Kartu monitoring 5 kategori perhiasan dengan jumlah produk aktif di masing-masing kategori.
-  - Tombol navigasi instan untuk memfilter produk sesuai kategori yang dipilih.
-- [x] **4. Stok Butir Mutiara**:
-  - Banner peringatan otomatis jika ada stok mutiara yang menipis (<= 3 butir) atau habis.
-  - Kontrol penyesuaian cepat tombol `+` dan `-` per butir mutiara yang langsung tersimpan ke sistem.
-- [x] **5. Pesanan & Verifikasi Pembayaran**:
-  - Filter pesanan: Semua, Menunggu Pembayaran, Lunas (`PAID`), Diproses Atelier, dan Dikirim.
-  - Kotak pencarian pesanan berdasarkan ID, nama pembeli, atau nomor telepon.
-  - Kartu pesanan lengkap dengan rincian barang, total biaya, kurir, dan alamat.
-  - Tombol *"Konfirmasi Lunas (PAID)"* untuk memvalidasi pembayaran transfer pelanggan.
-  - Pengubah status pengerjaan atelier Lombok (`PENDING`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `COMPLETED`).
-  - Input nomor resi pengiriman berasuransi (otomatis terintegrasi ke pelacak pelanggan).
-  - Tombol WhatsApp pesan langsung ke pembeli mengenai update status pesanan.
-- [x] **6. WhatsApp Leads CRM**:
-  - Tabel catatan seluruh calon pembeli yang menekan tombol konsultasi atau pemesanan WhatsApp.
+### 3.2. 10 Modul Pengendalian Internal SPI (Tata Letak Standard & Lengkap)
+- [x] **1. Dashboard Eksekutif SPI (Standard 2-Column Responsive Layout)**:
+  - 4 Kartu KPI Standard: Total Omset (PAID), Pesanan Masuk, Koleksi Desain Aktif, Stok Butir Mutiara (lengkap dengan badge tren).
+  - Kolom Utama (65%): Tabel Pesanan Terbaru Butik (status pembayaran, status atelier, aksi verifikasi & chat WA) + Ringkasan Distribusi 5 Kategori.
+  - Kolom Samping (35%): Widget Peringatan Stok Menipis (&le; 3 butir) dengan tombol cepat `+`/`-`, Widget WhatsApp Leads Baru dengan tombol chat WA instan, dan Pintasan Cepat Owner.
+- [x] **2. Pengendalian Katalog Perhiasan (CRUD 11 Parameter Gemologi)**:
+  - Toolbar pencarian & filter, badge total koleksi aktif.
+  - Tabel Shadcn UI untuk pengelolaan 11 spesifikasi lengkap: Nama, Kategori, Varietas, Grade AAA/AA+, Diameter mm, Rangka Logam 18K, Harga, Stok, Asal Panen Teluk Sire, Link Foto, Deskripsi Gemologi.
+  - Modal Shadcn UI (`Dialog`) untuk Tambah & Edit Perhiasan.
+- [x] **3. Monitoring 5 Kategori Mutiara**:
+  - Kartu monitoring 5 kategori perhiasan (Kalung, Gelang, Anting, Cincin, Mutiara Lepas) dengan hitungan item real-time.
+- [x] **4. Pengendalian Stok Butir Mutiara**:
+  - Peringatan inventaris otomatis (`Alert destructive`) jika stok butir mutiara &le; 3 butir di atelier.
+  - Tombol aksi cepat `+` dan `-` per butir mutiara yang langsung tersimpan secara live ke database.
+- [x] **5. Verifikasi Pembayaran & Pesanan Masuk (Dual-Status Lifecycle)**:
+  - Filter pembayaran (Semua, Menunggu Pembayaran, Lunas PAID) & kotak pencarian.
+  - Kartu & tabel pesanan dengan validasi status pembayaran (`PAID` vs `WAITING_PAYMENT`).
+  - Tombol aksi *"Konfirmasi Lunas (PAID)"* untuk memvalidasi transfer bank.
+  - Pengubah status pengerjaan atelier (`PENDING`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `COMPLETED`).
+  - Input nomor resi pengiriman berasuransi yang langsung terhubung ke pelacak pesanan pelanggan.
+  - Tombol WhatsApp pesan langsung ke pembeli.
+- [x] **6. Audit Prospek WhatsApp Leads CRM**:
+  - Filter status leads (Semua, Baru, Deal) & tombol *"Catat Prospek Baru"*.
+  - Tabel catatan seluruh calon pembeli dari tombol konsultasi atau pemesanan WhatsApp.
   - Dropdown pengubah status follow-up: `NEW`, `CONTACTED`, `DEAL`, `CANCELLED`.
-  - Tombol *"Buka Chat WA"* yang langsung menghubungkan staf butik ke percakapan WhatsApp calon pembeli.
-  - Tombol *"+ Catat Lead Baru"* untuk memasukkan data calon pembeli offline secara manual.
-- [x] **7. Daftar Pelanggan**:
-  - Direktori seluruh pelanggan terdaftar beserta email, nomor WhatsApp, alamat pengiriman, dan akumulasi total belanja.
-- [x] **8. Ulasan Pelanggan**:
-  - Moderasi ulasan testimoni pembeli dengan rating bintang.
-  - Tombol hapus ulasan jika tidak sesuai ketentuan butik.
-- [x] **9. Admin Users (Khusus Super Admin)**:
-  - Tabel seluruh staf administrator butik.
-  - Formulir penambahan staf admin baru (Nama, Email, Peran: `ADMIN` atau `SUPER_ADMIN`).
-  - Fitur ganti peran dan hapus staf admin (dengan proteksi tidak dapat menghapus akun sendiri).
-- [x] **10. Laporan Finansial & Audit Logs (Khusus Super Admin)**:
-  - Total Pendapatan Terverifikasi (`PAID`).
-  - Nilai Rata-rata Pesanan (*Average Order Value* - AOV).
-  - Total Butir Mutiara Terjual.
-  - Tabel distribusi omset penjualan per 5 kategori mutiara.
-  - Tabel Log Audit Sistem (mencatat waktu, email pengguna, peran, aksi operasi, dan detail perubahan).
-- [x] **11. Pengaturan Gateway WhatsApp**:
-  - Formulir konfigurasi nomor WhatsApp concierge butik (format internasional 62).
-  - Alamat galeri & butik resmi Lombok.
-  - Penutup pesan konfirmasi WhatsApp.
-  - Pratinjau langsung (*Live Preview*) format invoice pesan WhatsApp.
+  - Tombol direct WhatsApp dan modal Shadcn UI untuk mencatat lead offline baru.
+- [x] **7. Pengendalian Direktori Pelanggan**:
+  - Tabel seluruh pelanggan terdaftar beserta kontak WhatsApp dan alamat pengiriman.
+- [x] **8. Moderasi Ulasan & Testimoni Pelanggan**:
+  - Kartu ulasan testimoni pembeli dengan rating bintang gemologi dan tombol hapus ulasan.
+- [x] **9. Laporan Finansial & Jejak Audit (Audit Logs)**:
+  - Rekapitulasi omset bersih perhiasan lunas (`total_paid_revenue`), AOV (*Average Order Value*), dan total transaksi lunas.
+  - Tabel Jejak Rekam Audit Aktivitas (*Immutable Audit Logs*) mencatat waktu, pelaksana, aksi, dan detail operasi.
+- [x] **10. Pengendalian Gateway WhatsApp Butik**:
+  - Formulir konfigurasi nomor WhatsApp concierge butik (format 62) dan alamat galeri atelier resmi.
 
 ---
 
@@ -202,18 +188,17 @@ Dokumen Pelacakan Fitur: **Sudah Selesai (Completed)** vs **Belum / Rencana Lanj
 
 ---
 
-## 5. Yang Belum / Rencana Lanjutan (Future Backlog / Fase Produksi)
+## 5. Status Migrasi Arsitektur & Rencana Lanjutan
 
-Bagian ini mencakup fitur opsional untuk fase deployment live server / produksi komersial tingkat lanjut:
-
-| Modul / Fitur | Status | Keterangan & Rencana Implementasi |
+| Modul / Fitur | Status | Keterangan & Catatan Implementasi |
 |---|:---:|---|
-| **Backend API & Database Cloud** (PostgreSQL / Supabase / Node.js) | *Pending / Backlog* | Saat ini sistem menggunakan LocalStorage yang telah terintegrasi penuh. Jika butik ingin sinkronisasi multi-device antar komputer staf yang berbeda lokasi secara live tanpa LocalStorage bersama, dapat disambungkan ke REST API / Supabase. |
-| **Integrasi WhatsApp Business Cloud API (Meta Webhook)** | *Pending / Backlog* | Saat ini integrasi menggunakan deep-link resmi `https://wa.me/` (100% bebas biaya langganan). Untuk pesan otomatis server-to-server bot tanpa perlu membuka aplikasi WhatsApp, diperlukan pendaftaran nomor resmi Meta Cloud API. |
-| **Manajemen Banner Promo Dinamis di Admin** | *Pending / Backlog* | Saat ini banner promosi dan hero section dikelola melalui template HTML dengan desain luxury. Dapat ditambahkan form upload banner kustom di menu admin Settings jika diinginkan. |
-| **Editor CMS Blog di Admin** | *Pending / Backlog* | Saat ini 4 artikel edukasi gemologi telah tertanam rapi di `blog.html` beserta modal baca interaktif. Form penambahan artikel blog baru langsung dari admin panel dapat ditambahkan di fase berikutnya. |
-| **Deployment Custom Domain & SSL** | *Pending / Backlog* | Menghubungkan platform ke domain utama (contoh: `cdepearls.com`) dan subdomain admin privat (contoh: `admin.cdepearls.com`) di hosting cPanel/Vercel/Netlify. |
+| **Backend RESTful API (Laravel 11)** | **SELESAI (Completed)** | Berjalan di `backend/` menggunakan PHP 8.5 & Laravel 11. Sanctum authentication, 8 API Controller, 34 rute RESTful, dan seeder data lengkap. |
+| **Frontend Modern (React + Shadcn/UI + Tailwind)** | **SELESAI (Completed)** | Berjalan di `frontend/` menggunakan React 19, TypeScript, Vite, Tailwind CSS v4, dan komponen Shadcn/UI dengan palet luxury resmi terracotta. |
+| **Studio 3D WebGL (Three.js)** | **SELESAI (Completed)** | Komponen `ThreeCustomizer.tsx` dengan rotasi 360°, pemilihan varietas mutiara & jenis emas 18K, slider ukuran mm, dan kalkulasi harga instan. |
+| **Real-time Synchronizer** | **SELESAI (Completed)** | Endpoint `/api/realtime/events` dan auto-polling pada Admin Portal untuk update pesanan & lead baru tanpa reload. |
+| **Integrasi WhatsApp Business Cloud API (Meta Webhook)** | *Pending / Backlog Opsional* | Saat ini integrasi menggunakan deep-link resmi `https://wa.me/` (100% bebas biaya langganan). Untuk webhook otomatis server-to-server bot, siap dikonfigurasi pada route webhook Laravel jika diperlukan. |
+| **Deployment Custom Domain & SSL** | *Pending / Backlog Produksi* | Siap dideploy ke VPS / server produksi dengan Nginx reverse proxy mengarah ke port 8000 (Laravel) dan port 5173 atau static build `dist/` (React). |
 
 ---
 
-*Dokumen ini merupakan catatan status resmi pengerjaan platform CD'E Pearls Lombok v3.0.*
+*Dokumen ini merupakan catatan status resmi pengerjaan platform CD'E Pearls Lombok v4.0.*

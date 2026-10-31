@@ -1,0 +1,43 @@
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+frontend/.env
+backend/.env
+backend/.env.backup
+backend/.env.production
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/vendor/
+backend/node_modules/
+
+# Build artifacts & caches
+dist/
+frontend/dist/
+backend/public/build/
+backend/public/storage/
+backend/storage/*.key
+backend/storage/framework/cache/*
+!backend/storage/framework/cache/.gitignore
+backend/storage/framework/sessions/*
+!backend/storage/framework/sessions/.gitignore
+backend/storage/framework/views/*
+!backend/storage/framework/views/.gitignore
+backend/storage/logs/*
+!backend/storage/logs/.gitignore
+
+# Testing outputs
+playwright-report/
+frontend/playwright-report/
+test-results/
+frontend/test-results/
+.phpunit.result.cache
+backend/.phpunit.result.cache
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
