@@ -40,6 +40,7 @@ interface CustomerPortalProps {
   onNavigate?: (tab: string) => void;
   onLogout: () => void;
   onAddToCart?: (productName: string) => void;
+  initialMenu?: string;
 }
 
 export const CustomerPortal: React.FC<CustomerPortalProps> = ({
@@ -48,9 +49,25 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   onNavigate,
   onLogout,
   onAddToCart,
+  initialMenu,
 }) => {
   const { user } = useAuth();
-  const [activeMenu, setActiveMenu] = useState<string>('summary');
+  const [activeMenu, setActiveMenu] = useState<string>(() => {
+    if (initialMenu) return initialMenu;
+    const path = typeof window !== 'undefined' ? window.location.pathname : '';
+    if (path === '/akun/pesanan') return 'orders';
+    if (path === '/akun/status-pengiriman') return 'tracking';
+    if (path === '/akun/favorit') return 'wishlist';
+    if (path === '/akun/alamat') return 'addresses';
+    if (path === '/akun/profil') return 'profile';
+    return 'summary';
+  });
+
+  useEffect(() => {
+    if (initialMenu) {
+      setActiveMenu(initialMenu);
+    }
+  }, [initialMenu]);
 
   // Customer Orders State
   const [orders] = useState<MockOrder[]>(mockOrders);
@@ -139,6 +156,18 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
   const handleSelectMenu = (id: string) => {
     setActiveMenu(id);
+    const pathMap: Record<string, string> = {
+      summary: '/akun',
+      orders: '/akun/pesanan',
+      tracking: '/akun/status-pengiriman',
+      wishlist: '/akun/favorit',
+      addresses: '/akun/alamat',
+      profile: '/akun/profil',
+    };
+    const targetPath = pathMap[id] || '/akun';
+    if (typeof window !== 'undefined' && window.location.pathname !== targetPath) {
+      window.history.pushState({}, '', targetPath);
+    }
   };
 
   const handleSearchTracking = (e: React.FormEvent) => {

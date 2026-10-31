@@ -1,11 +1,18 @@
 import React from 'react';
 import { ArrowRight, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
 
+import { useNavigate } from 'react-router-dom';
+
 interface EducationPageProps {
-  onNavigateCatalog: () => void;
+  onNavigateCatalog?: () => void;
 }
 
 export const EducationPage: React.FC<EducationPageProps> = ({ onNavigateCatalog }) => {
+  const navigate = useNavigate();
+  const handleNavCatalog = () => {
+    if (onNavigateCatalog) onNavigateCatalog();
+    else navigate('/katalog');
+  };
   const pillars = [
     {
       title: '1. Kilau (Mirror Luster)',
@@ -185,7 +192,7 @@ export const EducationPage: React.FC<EducationPageProps> = ({ onNavigateCatalog 
       <div className="text-center pt-4">
         <button
           type="button"
-          onClick={onNavigateCatalog}
+          onClick={handleNavCatalog}
           className="min-h-[48px] px-8 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] active:scale-95 transition-all text-sm font-semibold inline-flex items-center gap-2 shadow-md cursor-pointer"
         >
           <span>Jelajahi Koleksi Mutiara Bersertifikat</span>

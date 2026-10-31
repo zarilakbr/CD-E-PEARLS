@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { UserProfileDropdown } from '../components/common/UserProfileDropdown';
 import {
   Heart,
@@ -39,13 +40,12 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
   cartCount = 2,
   wishlistCount = 3,
   userRole: _userRole = 'user',
-  onOpenLogin,
   onLogout,
   children,
 }) => {
   const { t, i18n } = useTranslation();
   const { resolvedTheme, toggleTheme } = useTheme();
-  const { user, isAuthenticated, logout: authLogout, openAuthModal } = useAuth();
+  const { user, isAuthenticated, logout: authLogout } = useAuth();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [emailInput, setEmailInput] = useState('');
@@ -301,7 +301,7 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
             {/* Wishlist */}
             <button
               type="button"
-              onClick={() => onNavigate('akun')}
+              onClick={() => onNavigate('favorit')}
               aria-label="Koleksi Favorit"
               className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-inherit hover:opacity-80 transition-opacity cursor-pointer"
             >
@@ -359,24 +359,22 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
               />
             ) : (
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <button
-                  type="button"
-                  onClick={() => (onOpenLogin ? onOpenLogin() : openAuthModal('login'))}
-                  className="min-h-[38px] px-3 sm:px-3.5 rounded-full text-xs font-semibold text-inherit hover:opacity-85 transition-opacity cursor-pointer border border-current/25"
+                <Link
+                  to="/masuk"
+                  className="min-h-[38px] px-3 sm:px-3.5 rounded-full text-xs font-semibold text-inherit hover:opacity-85 transition-opacity cursor-pointer border border-current/25 inline-flex items-center justify-center"
                 >
                   {t('auth.login', 'Masuk')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openAuthModal('register')}
-                  className={`min-h-[38px] px-3.5 sm:px-4 rounded-full text-xs font-semibold tracking-wide transition-all cursor-pointer shadow-xs ${
+                </Link>
+                <Link
+                  to="/daftar"
+                  className={`min-h-[38px] px-3.5 sm:px-4 rounded-full text-xs font-semibold tracking-wide transition-all cursor-pointer shadow-xs inline-flex items-center justify-center ${
                     isOverDark && !isScrolled
                       ? 'bg-[#D9B877] text-[#12263A] hover:bg-[#E5C98F]'
                       : 'bg-[#12263A] text-white hover:bg-[#1A3652] dark:bg-[#D9B877] dark:text-[#12263A]'
                   }`}
                 >
                   {t('auth.register', 'Daftar')}
-                </button>
+                </Link>
               </div>
             )}
           </div>
@@ -452,27 +450,20 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      if (onOpenLogin) onOpenLogin();
-                      else openAuthModal('login');
-                    }}
+                  <Link
+                    to="/masuk"
+                    onClick={() => setMobileMenuOpen(false)}
                     className="flex-1 min-h-[44px] px-4 rounded-full border border-[var(--border)] text-[var(--text)] text-xs font-semibold flex items-center justify-center cursor-pointer hover:bg-[var(--surface-2)] transition-colors"
                   >
                     <span>{t('auth.login', 'Masuk')}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      openAuthModal('register');
-                    }}
+                  </Link>
+                  <Link
+                    to="/daftar"
+                    onClick={() => setMobileMenuOpen(false)}
                     className="flex-1 min-h-[44px] px-4 rounded-full bg-[#12263A] dark:bg-[#D9B877] text-white dark:text-[#12263A] text-xs font-semibold flex items-center justify-center cursor-pointer shadow-xs"
                   >
                     <span>{t('auth.register', 'Daftar')}</span>
-                  </button>
+                  </Link>
                 </div>
               )}
             </div>

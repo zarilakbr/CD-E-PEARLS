@@ -30,15 +30,22 @@ const getItemImage = (category: string) => {
   return '/images/hero_pearl_shell.jpg';
 };
 
+import { useNavigate } from 'react-router-dom';
+
 interface CartPageProps {
   onNavigateHome?: () => void;
-  onNavigateCatalog: () => void;
+  onNavigateCatalog?: () => void;
+  onNavigateCheckout?: () => void;
+  onNavigate?: (tab: string) => void;
 }
 
 export const CartPage: React.FC<CartPageProps> = ({
   onNavigateHome: _onNavigateHome,
   onNavigateCatalog,
+  onNavigateCheckout,
+  onNavigate: _onNavigate,
 }) => {
+  const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
       id: 1,
@@ -239,7 +246,7 @@ export const CartPage: React.FC<CartPageProps> = ({
             {/* Tombol Checkout */}
             <button
               type="button"
-              onClick={() => alert('Lanjut ke tahap pembayaran (Checkout)')}
+              onClick={() => onNavigateCheckout ? onNavigateCheckout() : navigate('/checkout')}
               className="w-full min-h-[48px] rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] active:scale-95 transition-all text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-md"
             >
               <span>Lanjut ke Pembayaran (Checkout)</span>

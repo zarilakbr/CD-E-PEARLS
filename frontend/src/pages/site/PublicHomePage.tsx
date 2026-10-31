@@ -267,8 +267,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
                       width={460}
                       height={460}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
-                      // @ts-expect-error fetchpriority attribute
-                      fetchpriority="high"
+                      fetchPriority="high"
                       decoding="async"
                     />
                   </picture>

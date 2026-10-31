@@ -1,22 +1,46 @@
-import React, { useState, useEffect, Component, type ErrorInfo, type ReactNode, Suspense } from 'react';
-import { AuthProvider, useAuth, type UserRole } from './context/AuthContext';
-import { CartProvider } from './context/CartContext';
-import { WishlistProvider } from './context/WishlistContext';
+import React, { useState, Component, type ErrorInfo, type ReactNode, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { CartProvider, useCart } from './context/CartContext';
+import { WishlistProvider, useWishlist } from './context/WishlistContext';
 import { SiteLayout } from './layouts/SiteLayout';
-import { PublicHomePage } from './pages/site/PublicHomePage';
-import { CatalogPage } from './pages/site/CatalogPage';
-import { CartPage } from './pages/site/CartPage';
-import { AccessDeniedPage } from './pages/common/AccessDeniedPage';
 import { ProductDetailModal } from './components/product/ProductDetailModal';
-import { AuthModal } from './components/auth/AuthModal';
+import { RouteGuard } from './routes/RouteGuard';
 
 // Code-splitting via React.lazy
+const PublicHomePage = React.lazy(() => import('./pages/site/PublicHomePage').then((m) => ({ default: m.PublicHomePage })));
+const CatalogPage = React.lazy(() => import('./pages/site/CatalogPage').then((m) => ({ default: m.CatalogPage })));
+const CartPage = React.lazy(() => import('./pages/site/CartPage').then((m) => ({ default: m.CartPage })));
+const WishlistPage = React.lazy(() => import('./pages/site/WishlistPage').then((m) => ({ default: m.WishlistPage })));
+const CheckoutPage = React.lazy(() => import('./pages/site/CheckoutPage').then((m) => ({ default: m.CheckoutPage })));
+const CertificateCheckPage = React.lazy(() => import('./pages/site/CertificateCheckPage').then((m) => ({ default: m.CertificateCheckPage })));
+const OrderTrackingPage = React.lazy(() => import('./pages/site/OrderTrackingPage').then((m) => ({ default: m.OrderTrackingPage })));
+const ProductDetailPage = React.lazy(() => import('./pages/site/ProductDetailPage').then((m) => ({ default: m.ProductDetailPage })));
 const Studio3DPage = React.lazy(() => import('./pages/site/Studio3DPage').then((m) => ({ default: m.Studio3DPage })));
 const EducationPage = React.lazy(() => import('./pages/site/EducationPage').then((m) => ({ default: m.EducationPage })));
 const AboutPage = React.lazy(() => import('./pages/site/AboutPage').then((m) => ({ default: m.AboutPage })));
+const ContactPage = React.lazy(() => import('./pages/site/ContactPage').then((m) => ({ default: m.ContactPage })));
+const TermsPage = React.lazy(() => import('./pages/site/TermsPage').then((m) => ({ default: m.TermsPage })));
+const PrivacyPage = React.lazy(() => import('./pages/site/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
+const HelpCenterPage = React.lazy(() => import('./pages/site/HelpCenterPage').then((m) => ({ default: m.HelpCenterPage })));
+
+// Auth Pages
+const LoginPage = React.lazy(() => import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
+const RegisterPage = React.lazy(() => import('./pages/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = React.lazy(() => import('./pages/auth/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = React.lazy(() => import('./pages/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
+const VerifyEmailPage = React.lazy(() => import('./pages/auth/VerifyEmailPage').then((m) => ({ default: m.VerifyEmailPage })));
+const GoogleCallbackPage = React.lazy(() => import('./pages/auth/GoogleCallbackPage').then((m) => ({ default: m.GoogleCallbackPage })));
+
+// Portals
 const AdminPortal = React.lazy(() => import('./pages/admin/AdminPortal').then((m) => ({ default: m.AdminPortal })));
 const SpiPortal = React.lazy(() => import('./pages/spi/SpiPortal').then((m) => ({ default: m.SpiPortal })));
 const CustomerPortal = React.lazy(() => import('./pages/customer/CustomerPortal').then((m) => ({ default: m.CustomerPortal })));
+
+// Error Pages
+const AccessDeniedPage = React.lazy(() => import('./pages/common/AccessDeniedPage').then((m) => ({ default: m.AccessDeniedPage })));
+const NotFoundPage = React.lazy(() => import('./pages/common/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
+const ServerErrorPage = React.lazy(() => import('./pages/common/ServerErrorPage').then((m) => ({ default: m.ServerErrorPage })));
 
 import {
   mockProducts,
@@ -35,15 +59,6 @@ import {
   type MockSpiFinding,
 } from './data/mock';
 
-/**
- * =========================================================================================
- * PERHATIAN KEAMANAN SISTEM:
- * Pengecekan peran (Route Guard) di front-end ini menyelaraskan tampilan UI dengan server session.
- * Di lingkungan produksi, otorisasi RBAC (user/admin/spi) dan seluruh aksi sensitif telah
- * ditegakkan secara ketat di sisi backend Laravel API middleware.
- * =========================================================================================
- */
-
 // Error Boundary to prevent blank page crashes
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -56,7 +71,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('CD\'E Pearls Runtime Error caught by boundary:', error, errorInfo);
+    console.error("CD'E Pearls Runtime Error caught by boundary:", error, errorInfo);
   }
 
   render() {
@@ -93,66 +108,90 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 
 // Luxury loading skeleton during lazy chunk loading
 const PageSkeleton: React.FC = () => (
-  <div className="min-h-[60vh] bg-[#FBF8F3] flex flex-col items-center justify-center p-8 text-center">
+  <div className="min-h-[60vh] bg-[#FBF8F3] dark:bg-[#0D1C2B] flex flex-col items-center justify-center p-8 text-center">
     <div className="relative w-12 h-12 mb-4">
-      <div className="absolute inset-0 rounded-full border-2 border-[#E6DDD0]" />
+      <div className="absolute inset-0 rounded-full border-2 border-[#E6DDD0] dark:border-white/10" />
       <div className="absolute inset-0 rounded-full border-2 border-[#8A6A2F] border-t-transparent animate-spin" />
     </div>
     <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-[#8A6A2F]">
       CD'E Pearls Lombok
     </span>
-    <p className="text-xs text-[#4A5666] mt-1 font-light">
+    <p className="text-xs text-[#4A5666] dark:text-[#D9B877] mt-1 font-light">
       Memuat modul atelier...
     </p>
   </div>
 );
 
-// Helper to resolve route from URL pathname
-function getInitialTabFromLocation(): string {
-  const path = window.location.pathname.toLowerCase();
-  if (path === '/spi' || path.startsWith('/spi/')) return 'spi';
-  if (path === '/admin' || path.startsWith('/admin/')) return 'admin';
-  if (path === '/akun' || path.startsWith('/akun/')) return 'akun';
-  if (path === '/koleksi' || path === '/catalog') return 'catalog';
-  if (path === '/studio') return 'studio';
-  if (path === '/edukasi' || path === '/education') return 'education';
-  if (path === '/tentang' || path === '/about') return 'about';
-  if (path === '/keranjang' || path === '/cart') return 'keranjang';
-  return 'home';
-}
+// Wrapper for public boutique layout
+const PublicBoutiqueLayout: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { items } = useCart();
+  const { wishlist } = useWishlist();
+  const { logout } = useAuth();
 
-const tabToPathMap: Record<string, string> = {
-  home: '/',
-  catalog: '/koleksi',
-  studio: '/studio',
-  education: '/edukasi',
-  about: '/tentang',
-  keranjang: '/keranjang',
-  akun: '/akun',
-  admin: '/admin',
-  spi: '/spi',
+  const getActiveTab = () => {
+    const p = location.pathname;
+    if (p === '/') return 'home';
+    if (p.startsWith('/katalog')) return 'catalog';
+    if (p.startsWith('/studio')) return 'studio';
+    if (p.startsWith('/edukasi')) return 'education';
+    if (p.startsWith('/tentang')) return 'about';
+    return 'home';
+  };
+
+  const handleNavigate = (tab: string) => {
+    const pathMap: Record<string, string> = {
+      home: '/',
+      catalog: '/katalog',
+      studio: '/studio',
+      customizer: '/studio',
+      education: '/edukasi',
+      about: '/tentang',
+      keranjang: '/keranjang',
+      cart: '/keranjang',
+      favorit: '/favorit',
+      akun: '/akun',
+      customer: '/akun',
+      admin: '/admin',
+      spi: '/spi',
+      faq: '/bantuan',
+      contact: '/kontak',
+    };
+    navigate(pathMap[tab] || '/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSearch = (q: string) => {
+    navigate(`/katalog?search=${encodeURIComponent(q)}`);
+  };
+
+  const cartCount = items.reduce((sum: number, item: any) => sum + item.quantity, 0);
+
+  return (
+    <SiteLayout
+      currentTab={getActiveTab()}
+      onNavigate={handleNavigate}
+      onSearch={handleSearch}
+      cartCount={cartCount}
+      wishlistCount={wishlist.length}
+      onLogout={async () => {
+        await logout();
+        navigate('/');
+      }}
+    >
+      <Outlet />
+    </SiteLayout>
+  );
 };
 
 const AppContent: React.FC = () => {
-  const {
-    user,
-    role,
-    isAuthenticated,
-    isLoading: isAuthLoading,
-    logout,
-    isAuthModalOpen,
-    authModalTab,
-    openAuthModal,
-    closeAuthModal,
-  } = useAuth();
+  const navigate = useNavigate();
+  const { user, role, logout } = useAuth();
 
-  // Navigation & View State
-  const [currentTab, setCurrentTab] = useState<string>(() => getInitialTabFromLocation());
-  const [selectedCatalogCategory, setSelectedCatalogCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [cartCount, setCartCount] = useState<number>(2);
+  // Selected Product Modal preview from catalog
   const [selectedProduct, setSelectedProduct] = useState<MockProduct | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Centralized Live Data States (Shared across Admin & SPI)
@@ -164,57 +203,7 @@ const AppContent: React.FC = () => {
   const [staffAccounts, setStaffAccounts] = useState<MockStaffAccount[]>(mockStaffAccounts);
   const [findings, setFindings] = useState<MockSpiFinding[]>(mockSpiFindings);
 
-  // Check OAuth callback errors or notifications in URL
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const authError = params.get('auth_error');
-      if (authError === 'ROLE_NOT_PERMITTED') {
-        setToastMessage('⚠️ Akun Google hanya untuk pelanggan butik. Akun staf (Admin & SPI) harus masuk menggunakan kredensial internal butik.');
-        setTimeout(() => setToastMessage(null), 6000);
-      } else if (authError === 'EMAIL_NOT_VERIFIED') {
-        setToastMessage('⚠️ Alamat email Google Anda belum diverifikasi oleh Google.');
-        setTimeout(() => setToastMessage(null), 5000);
-      } else if (authError === 'RATE_LIMIT_EXCEEDED') {
-        const retryAfter = params.get('retry_after') || 'beberapa';
-        setToastMessage(`⚠️ Terlalu banyak percobaan. Harap tunggu ${retryAfter} detik.`);
-        setTimeout(() => setToastMessage(null), 5000);
-      } else if (authError === 'OAUTH_FAILED') {
-        setToastMessage('⚠️ Autentikasi Google dibatalkan atau tidak selesai.');
-        setTimeout(() => setToastMessage(null), 4000);
-      }
-    }
-  }, []);
-
-  // Synchronize browser history and popstate
-  useEffect(() => {
-    const onPopState = () => {
-      const tab = getInitialTabFromLocation();
-      setCurrentTab(tab);
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
-
-  const handleNavigate = (tab: string, categoryFilter?: string) => {
-    setCurrentTab(tab);
-    if (categoryFilter) {
-      setSelectedCatalogCategory(categoryFilter);
-    }
-    const targetPath = tabToPathMap[tab] || '/';
-    if (window.location.pathname !== targetPath) {
-      window.history.pushState({}, '', targetPath);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleHeaderSearch = (query: string) => {
-    setSearchQuery(query);
-    handleNavigate('catalog');
-  };
-
   const handleAddToCart = (productName: string) => {
-    setCartCount((prev) => prev + 1);
     setToastMessage(`✓ ${productName} berhasil ditambahkan ke keranjang belanja.`);
     setTimeout(() => setToastMessage(null), 3500);
   };
@@ -222,28 +211,6 @@ const AppContent: React.FC = () => {
   const handleSelectProduct = (product: MockProduct) => {
     setSelectedProduct(product);
     setIsDetailModalOpen(true);
-  };
-
-  const handleLoginSuccess = (loginRole: UserRole, name: string) => {
-    closeAuthModal();
-    if (loginRole === 'spi') {
-      handleNavigate('spi');
-      setToastMessage(`🛡️ Selamat datang, ${name} (Portal SPI)`);
-    } else if (loginRole === 'admin') {
-      handleNavigate('admin');
-      setToastMessage(`⚙️ Selamat datang, ${name} (Portal Admin)`);
-    } else {
-      handleNavigate('akun');
-      setToastMessage(`✨ Selamat datang kembali, ${name}!`);
-    }
-    setTimeout(() => setToastMessage(null), 4000);
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    handleNavigate('home');
-    setToastMessage('Anda telah keluar dari akun.');
-    setTimeout(() => setToastMessage(null), 3000);
   };
 
   // SPI Approval System Handlers
@@ -258,7 +225,6 @@ const AppContent: React.FC = () => {
     };
     setApprovals((prev) => [newApproval, ...prev]);
 
-    // Record submission into SPI Audit Trail
     const maxLogId = auditLogs.length > 0 ? Math.max(...auditLogs.map((l) => l.id)) : 100;
     const newAudit: MockSpiAuditLog = {
       id: maxLogId + 1,
@@ -283,7 +249,6 @@ const AppContent: React.FC = () => {
 
     const now = new Date().toISOString().replace('T', ' ').slice(0, 16);
 
-    // 1. Mark approval as approved
     setApprovals((prev) =>
       prev.map((a) =>
         a.id === id
@@ -298,14 +263,9 @@ const AppContent: React.FC = () => {
       )
     );
 
-    // 2. Execute business state modifications based on approval type
     if (item.type === 'KONFIRMASI_PEMBAYARAN') {
       setOrders((prev) =>
-        prev.map((o) =>
-          o.id === item.targetId
-            ? { ...o, status: 'Dikemas' as const }
-            : o
-        )
+        prev.map((o) => (o.id === item.targetId ? { ...o, status: 'Dikemas' as const } : o))
       );
     } else if (item.type === 'PERUBAHAN_HARGA' && item.payload?.productId) {
       const newPrice = Number(item.payload.newPrice);
@@ -329,15 +289,10 @@ const AppContent: React.FC = () => {
       );
     } else if (item.type === 'PEMBATALAN_PESANAN') {
       setOrders((prev) =>
-        prev.map((o) =>
-          o.id === item.targetId
-            ? { ...o, status: 'Dibatalkan' as const }
-            : o
-        )
+        prev.map((o) => (o.id === item.targetId ? { ...o, status: 'Dibatalkan' as const } : o))
       );
     }
 
-    // 3. Record decision in SPI Audit Trail
     const maxLogId = auditLogs.length > 0 ? Math.max(...auditLogs.map((l) => l.id)) : 100;
     const auditEntry: MockSpiAuditLog = {
       id: maxLogId + 1,
@@ -396,7 +351,6 @@ const AppContent: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Staff Account Management Handlers
   const handleToggleStaffStatus = (id: number) => {
     const staff = staffAccounts.find((s) => s.id === id);
     if (!staff) return;
@@ -428,7 +382,6 @@ const AppContent: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Findings Handlers
   const handleAddFinding = (findingData: Omit<MockSpiFinding, 'id' | 'date'>) => {
     const maxId = findings.length > 0 ? Math.max(...findings.map((f) => f.id)) : 0;
     const now = new Date().toISOString().split('T')[0];
@@ -446,7 +399,10 @@ const AppContent: React.FC = () => {
     setFindings((prev) =>
       prev.map((f) =>
         f.id === id
-          ? { ...f, status: f.status === 'Dalam Investigasi' ? ('Selesai' as const) : ('Dalam Investigasi' as const) }
+          ? {
+              ...f,
+              status: f.status === 'Dalam Investigasi' ? ('Selesai' as const) : ('Dalam Investigasi' as const),
+            }
           : f
       )
     );
@@ -460,291 +416,304 @@ const AppContent: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // =========================================================================
-  // ROUTE GUARDS (Strict RBAC):
-  // 1. /spi -> SPI role ONLY
-  // 2. /admin -> Admin & SPI role ONLY
-  // 3. /akun -> Customer & Authenticated ONLY
-  // =========================================================================
-
-  const effectiveRole: UserRole = role || 'user';
-
-  // 1. SPI Route (/spi)
-  if (currentTab === 'spi') {
-    if (isAuthLoading) {
-      return <PageSkeleton />;
-    }
-
-    if (!isAuthenticated || effectiveRole !== 'spi') {
-      return (
-        <>
-          <AccessDeniedPage
-            currentRole={effectiveRole}
-            attemptedPath="/spi"
-            onNavigateHome={() => handleNavigate('home')}
-            onNavigateDashboard={() => handleNavigate(effectiveRole === 'admin' ? 'admin' : 'akun')}
-            onOpenLogin={() => openAuthModal('login')}
-            onLogout={handleLogout}
-          />
-          <AuthModal
-            isOpen={isAuthModalOpen}
-            onClose={closeAuthModal}
-            onLoginSuccess={handleLoginSuccess}
-            initialRole="spi"
-            initialTab={authModalTab}
-          />
-        </>
-      );
-    }
-
-    return (
-      <Suspense fallback={<PageSkeleton />}>
-        <SpiPortal
-          onNavigateHome={() => handleNavigate('home')}
-          onOpenAdmin={() => handleNavigate('admin')}
-          onLogout={handleLogout}
-          approvals={approvals}
-          onApprove={handleApprove}
-          onReject={handleReject}
-          auditLogs={auditLogs}
-          staffAccounts={staffAccounts}
-          onToggleStaffStatus={handleToggleStaffStatus}
-          onAddStaffAccount={(staffItem) => {
-            setStaffAccounts((prev) => [
-              ...prev,
-              {
-                id: prev.length + 1,
-                ...staffItem,
-                status: 'Aktif',
-                lastActive: 'Baru Dibuat',
-              },
-            ]);
-            setToastMessage(`✓ Akun admin ${staffItem.name} berhasil ditambahkan oleh SPI.`);
-            setTimeout(() => setToastMessage(null), 3500);
-          }}
-          findings={findings}
-          onAddFinding={handleAddFinding}
-          onToggleFindingStatus={handleToggleFindingStatus}
-          onDeleteFinding={handleDeleteFinding}
-          products={products}
-          orders={orders}
-          stockItems={stockItems}
-        />
-        {toastMessage && (
-          <div className="fixed top-6 right-6 z-50 px-5 py-3 rounded-full bg-[#12263A] text-white text-xs font-semibold shadow-xl border border-[#D9B877]/40 animate-in fade-in slide-in-from-top-2">
-            {toastMessage}
-          </div>
-        )}
-      </Suspense>
-    );
-  }
-
-  // 2. Admin Route (/admin)
-  if (currentTab === 'admin') {
-    if (isAuthLoading) {
-      return <PageSkeleton />;
-    }
-
-    if (!isAuthenticated || (effectiveRole !== 'admin' && effectiveRole !== 'spi')) {
-      return (
-        <>
-          <AccessDeniedPage
-            currentRole={effectiveRole}
-            attemptedPath="/admin"
-            onNavigateHome={() => handleNavigate('home')}
-            onNavigateDashboard={() => handleNavigate(effectiveRole === 'user' ? 'akun' : 'home')}
-            onOpenLogin={() => openAuthModal('login')}
-            onLogout={handleLogout}
-          />
-          <AuthModal
-            isOpen={isAuthModalOpen}
-            onClose={closeAuthModal}
-            onLoginSuccess={handleLoginSuccess}
-            initialRole="admin"
-            initialTab={authModalTab}
-          />
-        </>
-      );
-    }
-
-    return (
-      <Suspense fallback={<PageSkeleton />}>
-        <AdminPortal
-          userRole={effectiveRole}
-          onNavigateHome={() => handleNavigate('home')}
-          onReturnToSpi={() => handleNavigate('spi')}
-          onLogout={handleLogout}
-          products={products}
-          setProducts={setProducts}
-          orders={orders}
-          setOrders={setOrders}
-          stockItems={stockItems}
-          setStockItems={setStockItems}
-          onAddApproval={handleAddApproval}
-          onLogActivity={(action, target, oldValue, newValue) => {
-            const now = new Date().toISOString().replace('T', ' ').slice(0, 16);
-            const maxLogId = auditLogs.length > 0 ? Math.max(...auditLogs.map((l) => l.id)) : 100;
-            const newAudit: MockSpiAuditLog = {
-              id: maxLogId + 1,
-              timestamp: now,
-              user: user?.name || 'Admin',
-              role: effectiveRole,
-              action,
-              target,
-              oldValue,
-              newValue,
-              status: 'Disetujui',
-              ipAddress: '127.0.0.1',
-            };
-            setAuditLogs((prev) => [newAudit, ...prev]);
-          }}
-        />
-        {toastMessage && (
-          <div className="fixed top-6 right-6 z-50 px-5 py-3 rounded-full bg-[#12263A] text-white text-xs font-semibold shadow-xl border border-[#D9B877]/40 animate-in fade-in slide-in-from-top-2">
-            {toastMessage}
-          </div>
-        )}
-      </Suspense>
-    );
-  }
-
-  // 3. Customer Portal Route (/akun)
-  if (currentTab === 'akun') {
-    if (isAuthLoading) {
-      return <PageSkeleton />;
-    }
-
-    if (!isAuthenticated) {
-      return (
-        <>
-          <AccessDeniedPage
-            currentRole={effectiveRole}
-            attemptedPath="/akun"
-            onNavigateHome={() => handleNavigate('home')}
-            onNavigateDashboard={() => handleNavigate('home')}
-            onOpenLogin={() => openAuthModal('login')}
-            onLogout={handleLogout}
-          />
-          <AuthModal
-            isOpen={isAuthModalOpen}
-            onClose={closeAuthModal}
-            onLoginSuccess={handleLoginSuccess}
-            initialRole="user"
-            initialTab={authModalTab}
-          />
-        </>
-      );
-    }
-
-    return (
-      <Suspense fallback={<PageSkeleton />}>
-        <CustomerPortal
-          onNavigateHome={() => handleNavigate('home')}
-          onNavigateCatalog={() => handleNavigate('catalog')}
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
-          onAddToCart={handleAddToCart}
-        />
-        {toastMessage && (
-          <div className="fixed top-6 right-6 z-50 px-5 py-3 rounded-full bg-[#12263A] text-white text-xs font-semibold shadow-xl border border-[#D9B877]/40 animate-in fade-in slide-in-from-top-2">
-            {toastMessage}
-          </div>
-        )}
-      </Suspense>
-    );
-  }
-
-  // 4. Public Website Views wrapped in SiteLayout
   return (
-    <SiteLayout
-      currentTab={currentTab}
-      onNavigate={handleNavigate}
-      onSearch={handleHeaderSearch}
-      cartCount={cartCount}
-      wishlistCount={3}
-      userRole={effectiveRole}
-      onOpenLogin={() => openAuthModal('login')}
-      onLogout={handleLogout}
-    >
-      {/* Toast Notification */}
+    <Suspense fallback={<PageSkeleton />}>
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 px-5 py-3 rounded-full bg-[#12263A] text-white text-xs font-semibold shadow-xl border border-[#D9B877]/40 animate-in fade-in slide-in-from-top-2 flex items-center gap-2">
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-full bg-[#12263A] text-white text-xs font-semibold shadow-2xl border border-[#D9B877]/40 animate-in fade-in slide-in-from-bottom-4 duration-300 flex items-center gap-2"
+        >
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Public Pages Switcher with Suspense */}
-      <Suspense fallback={<PageSkeleton />}>
-        {currentTab === 'home' && (
-          <PublicHomePage
-            onNavigate={handleNavigate}
-            onAddToCart={handleAddToCart}
-            onSelectProduct={handleSelectProduct}
+      {selectedProduct && (
+        <ProductDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+          product={selectedProduct}
+          onAddToCart={handleAddToCart}
+        />
+      )}
+
+      <Routes>
+        {/* ========================================================
+            1. RUTE PUBLIK BOUTIQUE (DILENGKAPI DENGAN SITELAYOUT)
+           ======================================================== */}
+        <Route element={<PublicBoutiqueLayout />}>
+          <Route
+            path="/"
+            element={
+              <PublicHomePage
+                onNavigate={(tab) => {
+                  if (tab === 'catalog') navigate('/katalog');
+                  else if (tab === 'customizer' || tab === 'studio') navigate('/studio');
+                  else if (tab === 'education') navigate('/edukasi');
+                  else if (tab === 'about') navigate('/tentang');
+                  else if (tab === 'cart') navigate('/keranjang');
+                  else if (tab === 'customer' || tab === 'akun') navigate('/akun');
+                  else if (tab === 'admin') navigate('/admin');
+                  else if (tab === 'spi') navigate('/spi');
+                  else navigate('/');
+                }}
+                onAddToCart={handleAddToCart}
+                onSelectProduct={handleSelectProduct}
+              />
+            }
           />
-        )}
-
-        {currentTab === 'catalog' && (
-          <CatalogPage
-            onAddToCart={handleAddToCart}
-            onSelectProduct={handleSelectProduct}
-            initialCategory={selectedCatalogCategory}
-            initialSearch={searchQuery}
+          <Route
+            path="/katalog"
+            element={
+              <CatalogPage
+                onAddToCart={handleAddToCart}
+                onSelectProduct={handleSelectProduct}
+              />
+            }
           />
-        )}
-
-        {currentTab === 'studio' && (
-          <Studio3DPage
-            onAddToCart={(item) => handleAddToCart(item.name)}
-            onNavigate={handleNavigate}
+          <Route path="/studio" element={<Studio3DPage onAddToCart={handleAddToCart} />} />
+          <Route path="/edukasi" element={<EducationPage />} />
+          <Route path="/tentang" element={<AboutPage />} />
+          <Route path="/kontak" element={<ContactPage />} />
+          <Route path="/kebijakan-privasi" element={<PrivacyPage />} />
+          <Route path="/syarat-ketentuan" element={<TermsPage />} />
+          <Route path="/bantuan" element={<HelpCenterPage />} />
+          <Route path="/cek-sertifikat" element={<CertificateCheckPage />} />
+          <Route path="/lacak-pesanan" element={<OrderTrackingPage />} />
+          <Route
+            path="/keranjang"
+            element={
+              <CartPage
+                onNavigateCatalog={() => navigate('/katalog')}
+                onNavigateCheckout={() => navigate('/checkout')}
+              />
+            }
           />
-        )}
+          <Route path="/favorit" element={<WishlistPage />} />
+          <Route path="/produk/:id" element={<ProductDetailPage />} />
+        </Route>
 
-        {currentTab === 'education' && (
-          <EducationPage onNavigateCatalog={() => handleNavigate('catalog')} />
-        )}
+        {/* ========================================================
+            2. RUTE AUTHENTICATION KHUSUS (AUTHLAYOUT)
+           ======================================================== */}
+        <Route
+          path="/masuk"
+          element={
+            <RouteGuard allowedRoles={['guest']}>
+              <LoginPage />
+            </RouteGuard>
+          }
+        />
+        <Route
+          path="/daftar"
+          element={
+            <RouteGuard allowedRoles={['guest']}>
+              <RegisterPage />
+            </RouteGuard>
+          }
+        />
+        <Route
+          path="/lupa-kata-sandi"
+          element={
+            <RouteGuard allowedRoles={['guest']}>
+              <ForgotPasswordPage />
+            </RouteGuard>
+          }
+        />
+        <Route
+          path="/atur-ulang-kata-sandi"
+          element={
+            <RouteGuard allowedRoles={['guest']}>
+              <ResetPasswordPage />
+            </RouteGuard>
+          }
+        />
+        <Route
+          path="/verifikasi-email"
+          element={
+            <RouteGuard allowedRoles={['public', 'user']}>
+              <VerifyEmailPage />
+            </RouteGuard>
+          }
+        />
+        <Route
+          path="/auth/google/callback"
+          element={
+            <RouteGuard allowedRoles={['public']}>
+              <GoogleCallbackPage />
+            </RouteGuard>
+          }
+        />
 
-        {currentTab === 'about' && <AboutPage />}
+        {/* ========================================================
+            3. RUTE CHECKOUT TERPROTEKSI
+           ======================================================== */}
+        <Route
+          path="/checkout"
+          element={
+            <RouteGuard allowedRoles={['user', 'admin', 'spi']}>
+              <CheckoutPage />
+            </RouteGuard>
+          }
+        />
 
-        {currentTab === 'keranjang' && (
-          <CartPage
-            onNavigateHome={() => handleNavigate('home')}
-            onNavigateCatalog={() => handleNavigate('catalog')}
+        {/* ========================================================
+            4. RUTE PORTAL PELANGGAN (/akun/*)
+           ======================================================== */}
+        {[
+          { path: '/akun', menu: 'summary' },
+          { path: '/akun/pesanan', menu: 'orders' },
+          { path: '/akun/status-pengiriman', menu: 'tracking' },
+          { path: '/akun/favorit', menu: 'wishlist' },
+          { path: '/akun/alamat', menu: 'addresses' },
+          { path: '/akun/profil', menu: 'profile' },
+        ].map(({ path, menu }) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <RouteGuard allowedRoles={['user']}>
+                <CustomerPortal
+                  initialMenu={menu}
+                  onNavigateHome={() => navigate('/')}
+                  onNavigateCatalog={() => navigate('/katalog')}
+                  onNavigate={(tab) => navigate(`/${tab}`)}
+                  onLogout={async () => {
+                    await logout();
+                    navigate('/');
+                  }}
+                  onAddToCart={handleAddToCart}
+                />
+              </RouteGuard>
+            }
           />
-        )}
-      </Suspense>
+        ))}
 
-      {/* Product Detail Modal */}
-      <ProductDetailModal
-        product={selectedProduct}
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        onAddToCart={handleAddToCart}
-      />
+        {/* ========================================================
+            5. RUTE PORTAL ADMIN (/admin/*)
+           ======================================================== */}
+        {[
+          { path: '/admin', menu: 'dashboard' },
+          { path: '/admin/produk', menu: 'products' },
+          { path: '/admin/kategori', menu: 'categories' },
+          { path: '/admin/pesanan', menu: 'orders' },
+          { path: '/admin/pelanggan', menu: 'customers' },
+          { path: '/admin/stok', menu: 'stock' },
+          { path: '/admin/sertifikat', menu: 'certificates' },
+          { path: '/admin/laporan', menu: 'reports' },
+          { path: '/admin/pengaturan', menu: 'settings' },
+        ].map(({ path, menu }) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <RouteGuard allowedRoles={['admin']}>
+                <AdminPortal
+                  initialMenu={menu}
+                  onNavigateHome={() => navigate('/')}
+                  onLogout={async () => {
+                    await logout();
+                    navigate('/');
+                  }}
+                  products={products}
+                  setProducts={setProducts}
+                  orders={orders}
+                  setOrders={setOrders}
+                  stockItems={stockItems}
+                  setStockItems={setStockItems}
+                  onAddApproval={handleAddApproval}
+                />
+              </RouteGuard>
+            }
+          />
+        ))}
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={closeAuthModal}
-        onLoginSuccess={handleLoginSuccess}
-        initialRole={effectiveRole}
-        initialTab={authModalTab}
-      />
-    </SiteLayout>
+        {/* ========================================================
+            6. RUTE PORTAL SPI (/spi/*)
+           ======================================================== */}
+        {[
+          { path: '/spi', menu: 'ringkasan' },
+          { path: '/spi/log-aktivitas', menu: 'log-aktivitas' },
+          { path: '/spi/persetujuan', menu: 'persetujuan' },
+          { path: '/spi/akun-role', menu: 'akun-role' },
+          { path: '/spi/laporan-audit', menu: 'laporan-audit' },
+        ].map(({ path, menu }) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <RouteGuard allowedRoles={['spi']}>
+                <SpiPortal
+                  initialMenu={menu}
+                  onNavigateHome={() => navigate('/')}
+                  onOpenAdmin={() => navigate('/admin')}
+                  onLogout={async () => {
+                    await logout();
+                    navigate('/');
+                  }}
+                  approvals={approvals}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                  auditLogs={auditLogs}
+                  staffAccounts={staffAccounts}
+                  onToggleStaffStatus={handleToggleStaffStatus}
+                  findings={findings}
+                  onAddFinding={handleAddFinding}
+                  onToggleFindingStatus={handleToggleFindingStatus}
+                  onDeleteFinding={handleDeleteFinding}
+                  products={products}
+                  orders={orders}
+                  stockItems={stockItems}
+                />
+              </RouteGuard>
+            }
+          />
+        ))}
+
+        {/* ========================================================
+            7. RUTE SISTEM (403, 404, 500, WILDCARD)
+           ======================================================== */}
+        <Route
+          path="/403"
+          element={
+            <AccessDeniedPage
+              currentRole={role || 'user'}
+              attemptedPath="/terlarang"
+              onNavigateHome={() => navigate('/')}
+              onNavigateDashboard={() =>
+                navigate(role === 'admin' ? '/admin' : role === 'spi' ? '/spi' : '/akun')
+              }
+              onOpenLogin={async () => {
+                await logout();
+                navigate('/masuk');
+              }}
+              onLogout={async () => {
+                await logout();
+                navigate('/');
+              }}
+            />
+          }
+        />
+        <Route path="/404" element={<NotFoundPage />} />
+        <Route path="/500" element={<ServerErrorPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Suspense>
   );
 };
 
-export const App: React.FC = () => {
+export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <AppContent />
-          </WishlistProvider>
-        </CartProvider>
-      </AuthProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <AppContent />
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   );
-};
-
-export default App;
+}

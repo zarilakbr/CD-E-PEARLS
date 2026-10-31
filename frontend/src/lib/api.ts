@@ -95,6 +95,14 @@ export const authApi = {
     return `${API_BASE_URL}/auth/google/redirect`;
   },
 
+  getGoogleAuthUrl(role: string = 'user', next?: string): string {
+    const params = new URLSearchParams();
+    if (role) params.set('role', role);
+    if (next) params.set('next', next);
+    const q = params.toString();
+    return `${API_BASE_URL}/auth/google/redirect${q ? `?${q}` : ''}`;
+  },
+
   async getMe(): Promise<UserResponse> {
     const res = await apiClient.get<{ success: boolean; user: UserResponse }>('/auth/me');
     return res.data.user;
@@ -160,12 +168,15 @@ export const authApi = {
     return res.data;
   },
 
-  async forgotPassword(email: string, turnstile_token?: string) {
-    const res = await apiClient.post('/auth/forgot-password', { email, turnstile_token });
+  async forgotPassword(dataOrEmail: string | { email: string; turnstile_token?: string }, turnstile_token?: string) {
+    const payload = typeof dataOrEmail === 'string'
+      ? { email: dataOrEmail, turnstile_token }
+      : dataOrEmail;
+    const res = await apiClient.post('/auth/forgot-password', payload);
     return res.data;
   },
 
-  async resetPassword(data: { token: string; email: string; password: string; password_confirmation: string }) {
+  async resetPassword(data: { token: string; email: string; password: string; password_confirmation: string; turnstile_token?: string }) {
     const res = await apiClient.post('/auth/reset-password', data);
     return res.data;
   },
@@ -178,9 +189,10 @@ export const authApi = {
     return res.data;
   },
 
-  async verifyEmail(id: number | string, hash: string) {
+  async verifyEmail(id: number | string, hash: string, queryParams?: Record<string, string>) {
     const res = await apiClient.get<{ success: boolean; message: string; user: UserResponse }>(
-      `/auth/verify-email/${id}/${hash}`
+      `/auth/verify-email/${id}/${hash}`,
+      { params: queryParams }
     );
     return res.data;
   },
@@ -265,6 +277,35 @@ export const customerApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return res.data;
+  },
+};
+
+export const orderApi = {
+  async createOrder(data: any) {
+    const res = await apiClient.post('/orders', data);
+    return res.data.data;
+  },
+
+  async track(query: string) {
+    const res = await apiClient.get(`/orders/lookup/${query}`);
+    return res.data.data;
+  },
+
+  async lookup(code: string) {
+    const res = await apiClient.get(`/orders/lookup/${code}`);
+    return res.data.data;
+  },
+
+  async getOrder(id: string | number) {
+    return customerApi.getOrder(id);
+  },
+
+  async cancelOrder(id: string | number) {
+    return customerApi.cancelOrder(id);
+  },
+
+  async uploadProof(id: string | number, form: FormData) {
+    return customerApi.uploadPaymentProof(id, form);
   },
 };
 

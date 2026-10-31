@@ -95,6 +95,7 @@ interface AdminPortalProps {
   setStockItems?: React.Dispatch<React.SetStateAction<MockStockItem[]>>;
   onAddApproval?: (approval: Omit<MockApprovalItem, 'id' | 'requestDate' | 'status'>) => void;
   onLogActivity?: (action: string, target: string, oldValue: string, newValue: string) => void;
+  initialMenu?: string;
 }
 
 export const AdminPortal: React.FC<AdminPortalProps> = ({
@@ -110,10 +111,22 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   setStockItems: propSetStockItems,
   onAddApproval,
   onLogActivity,
+  initialMenu,
 }) => {
   const { user } = useAuth();
   const [activeMenu, setActiveMenu] = useState<string>(() => {
+    if (initialMenu) return initialMenu;
     if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path === '/admin/produk') return 'products';
+      if (path === '/admin/kategori') return 'categories';
+      if (path === '/admin/pesanan') return 'orders';
+      if (path === '/admin/pelanggan') return 'customers';
+      if (path === '/admin/stok') return 'stock';
+      if (path === '/admin/sertifikat') return 'certificates';
+      if (path === '/admin/laporan') return 'reports';
+      if (path === '/admin/pengaturan') return 'settings';
+
       const params = new URLSearchParams(window.location.search);
       const m = params.get('menu');
       if (m && ['dashboard', 'products', 'categories', 'orders', 'customers', 'stock', 'certificates', 'reports', 'settings'].includes(m)) {
@@ -122,6 +135,31 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     }
     return 'dashboard';
   });
+
+  React.useEffect(() => {
+    if (initialMenu) {
+      setActiveMenu(initialMenu);
+    }
+  }, [initialMenu]);
+
+  const handleSelectAdminMenu = (menuId: string) => {
+    setActiveMenu(menuId);
+    const pathMap: Record<string, string> = {
+      dashboard: '/admin',
+      products: '/admin/produk',
+      categories: '/admin/kategori',
+      orders: '/admin/pesanan',
+      customers: '/admin/pelanggan',
+      stock: '/admin/stok',
+      certificates: '/admin/sertifikat',
+      reports: '/admin/laporan',
+      settings: '/admin/pengaturan',
+    };
+    const targetPath = pathMap[menuId] || '/admin';
+    if (typeof window !== 'undefined' && window.location.pathname !== targetPath) {
+      window.history.pushState({}, '', targetPath);
+    }
+  };
 
   // Products state (CRUD)
   const [internalProducts, setInternalProducts] = useState<MockProduct[]>(mockProducts);
@@ -602,7 +640,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       sidebarTitle={userRole === 'spi' ? 'Menu Operasional (Akses SPI)' : 'Menu Operasional Admin'}
       menuItems={menuItems}
       activeMenuId={activeMenu}
-      onSelectMenu={setActiveMenu}
+      onSelectMenu={handleSelectAdminMenu}
       userRole={userRole}
       userName={user?.name || (userRole === 'spi' ? 'Hj. Baiq Ratna Sari' : 'Budi Santoso (Admin Toko)')}
       userEmail={user?.email || (userRole === 'spi' ? 'owner.spi@cdepearls.com' : 'admin@cdepearls.com')}

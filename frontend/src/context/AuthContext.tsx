@@ -88,8 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         queryClient.clear();
         setIsAuthModalOpen(false);
         if (typeof window !== 'undefined') {
-          window.history.replaceState({}, '', '/');
-          window.dispatchEvent(new PopStateEvent('popstate'));
+          window.location.href = '/';
         }
       } else if (data?.type === 'LOGIN') {
         fetchCurrentUser();
@@ -198,10 +197,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('cde_auth_sync', JSON.stringify({ event: 'LOGOUT', timestamp: Date.now() }));
       } catch {}
 
-      // Navigate back to root and replace history state (prevents back-button resurrecting views)
+      // Navigate back to root
       if (typeof window !== 'undefined') {
-        window.history.replaceState({}, '', '/');
-        window.dispatchEvent(new PopStateEvent('popstate'));
+        window.location.href = '/';
       }
     }
   }, []);

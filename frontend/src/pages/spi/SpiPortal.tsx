@@ -49,6 +49,7 @@ interface SpiPortalProps {
   products?: MockProduct[];
   orders?: MockOrder[];
   stockItems?: MockStockItem[];
+  initialMenu?: string;
 }
 
 export const SpiPortal: React.FC<SpiPortalProps> = ({
@@ -67,10 +68,18 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
   onAddFinding,
   onToggleFindingStatus,
   onDeleteFinding,
+  initialMenu,
 }) => {
   const { user } = useAuth();
   const [activeMenu, setActiveMenu] = useState<string>(() => {
+    if (initialMenu) return initialMenu;
     if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path === '/spi/log-aktivitas') return 'log-aktivitas';
+      if (path === '/spi/persetujuan') return 'persetujuan';
+      if (path === '/spi/akun-role') return 'akun-role';
+      if (path === '/spi/laporan-audit') return 'laporan-audit';
+
       const params = new URLSearchParams(window.location.search);
       const m = params.get('menu');
       if (m && ['ringkasan', 'log-aktivitas', 'persetujuan', 'akun-role', 'laporan-audit'].includes(m)) {
@@ -79,6 +88,27 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
     }
     return 'ringkasan';
   });
+
+  React.useEffect(() => {
+    if (initialMenu) {
+      setActiveMenu(initialMenu);
+    }
+  }, [initialMenu]);
+
+  const handleSelectSpiMenu = (menuId: string) => {
+    setActiveMenu(menuId);
+    const pathMap: Record<string, string> = {
+      ringkasan: '/spi',
+      'log-aktivitas': '/spi/log-aktivitas',
+      persetujuan: '/spi/persetujuan',
+      'akun-role': '/spi/akun-role',
+      'laporan-audit': '/spi/laporan-audit',
+    };
+    const targetPath = pathMap[menuId] || '/spi';
+    if (typeof window !== 'undefined' && window.location.pathname !== targetPath) {
+      window.history.pushState({}, '', targetPath);
+    }
+  };
 
   // Persetujuan Tab Filter ('Semua' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak')
   const [approvalTab, setApprovalTab] = useState<'Semua' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak'>('Menunggu Persetujuan');
@@ -188,7 +218,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
   return (
     <SpiDashboardLayout
       activeMenuId={activeMenu}
-      onSelectMenu={(menuId) => setActiveMenu(menuId)}
+      onSelectMenu={handleSelectSpiMenu}
       pendingApprovalsCount={pendingApprovals.length}
       userName={user?.name || 'Satuan Pengawas Internal'}
       userEmail={user?.email || 'owner.spi@cdepearls.com'}

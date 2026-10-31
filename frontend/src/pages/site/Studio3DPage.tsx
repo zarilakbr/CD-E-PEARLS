@@ -7,7 +7,7 @@ import {
 import { ThreeCustomizer } from '../../components/atelier/ThreeCustomizer';
 
 interface Studio3DPageProps {
-  onAddToCart: (item: any) => void;
+  onAddToCart?: (item: any) => void;
   onNavigate?: (tab: string) => void;
 }
 
@@ -262,7 +262,7 @@ export const Studio3DPage: React.FC<Studio3DPageProps> = ({
             <button
               type="button"
               onClick={() => {
-                onAddToCart({
+                onAddToCart?.({
                   id: Date.now(),
                   name: `${jewelryType} Kustom (${variety})`,
                   pearlSize,
