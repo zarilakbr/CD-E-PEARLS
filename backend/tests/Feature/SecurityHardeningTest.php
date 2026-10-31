@@ -219,3 +219,4 @@ test('email verification requires valid temporary signed URL', function () {
     $user->refresh();
     expect($user->email_verified_at)->not->toBeNull();
 });
+

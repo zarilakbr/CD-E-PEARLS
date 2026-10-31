@@ -198,8 +198,8 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
             })}
           </nav>
 
-          {/* Kolom Cari Berbentuk Pil di Header (Desktop) */}
-          <div className="hidden md:flex items-center flex-1 max-w-xs lg:max-w-sm mx-1 sm:mx-2">
+          {/* Kolom Cari Berbentuk Pil di Header (Desktop) - min-w-0 mencegah overflow di 1024px */}
+          <div className="hidden md:flex items-center flex-1 min-w-0 max-w-[150px] lg:max-w-[190px] xl:max-w-sm mx-1 sm:mx-2">
             <form onSubmit={handleHeaderSearchSubmit} className="relative w-full">
               <input
                 type="text"
@@ -231,12 +231,12 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
           </div>
 
           {/* Controls: Bahasa (ID|EN), Tema (Pill Switch), Wishlist, Cart, User Profile */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Language Segmented Control ID | EN (TAHAP D) */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* Language Segmented Control ID | EN (TAHAP D) - hidden on mobile <sm, available in mobile drawer */}
             <div
               role="group"
               aria-label={t('common.switchLang', 'Pilih Bahasa')}
-              className={`inline-flex items-center p-0.5 rounded-lg border text-[11px] font-semibold transition-colors ${
+              className={`hidden sm:inline-flex items-center p-0.5 rounded-lg border text-[11px] font-semibold transition-colors ${
                 isOverDark && !isScrolled
                   ? 'border-white/20 bg-black/25 text-white'
                   : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)]'
@@ -272,14 +272,14 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
               </button>
             </div>
 
-            {/* Theme Switch Pill 56x28px dengan ikon Sun & Moon (TAHAP C) */}
+            {/* Theme Switch Pill 56x28px dengan ikon Sun & Moon (TAHAP C) - hidden on mobile <sm, available in mobile drawer */}
             <button
               type="button"
               role="switch"
               aria-checked={resolvedTheme === 'dark'}
               aria-label={t('common.switchTheme', 'Ganti tema tampilan')}
               onClick={toggleTheme}
-              className={`relative w-[56px] h-[28px] rounded-full p-1 transition-colors cursor-pointer flex items-center justify-between border shrink-0 ${
+              className={`hidden sm:flex relative w-[56px] h-[28px] rounded-full p-1 transition-colors cursor-pointer items-center justify-between border shrink-0 ${
                 resolvedTheme === 'dark'
                   ? 'bg-[#1D354E] border-[#D9B877]/50 text-[#D9B877]'
                   : isOverDark && !isScrolled
@@ -358,16 +358,16 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
                 align="right"
               />
             ) : (
-              <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <Link
                   to="/masuk"
-                  className="min-h-[38px] px-3 sm:px-3.5 rounded-full text-xs font-semibold text-inherit hover:opacity-85 transition-opacity cursor-pointer border border-current/25 inline-flex items-center justify-center"
+                  className="min-h-[36px] sm:min-h-[38px] px-2.5 sm:px-3.5 rounded-full text-xs font-semibold text-inherit hover:opacity-85 transition-opacity cursor-pointer border border-current/25 inline-flex items-center justify-center"
                 >
                   {t('auth.login', 'Masuk')}
                 </Link>
                 <Link
                   to="/daftar"
-                  className={`min-h-[38px] px-3.5 sm:px-4 rounded-full text-xs font-semibold tracking-wide transition-all cursor-pointer shadow-xs inline-flex items-center justify-center ${
+                  className={`hidden sm:inline-flex min-h-[38px] px-3.5 sm:px-4 rounded-full text-xs font-semibold tracking-wide transition-all cursor-pointer shadow-xs items-center justify-center ${
                     isOverDark && !isScrolled
                       ? 'bg-[#D9B877] text-[#12263A] hover:bg-[#E5C98F]'
                       : 'bg-[#12263A] text-white hover:bg-[#1A3652] dark:bg-[#D9B877] dark:text-[#12263A]'
@@ -466,6 +466,55 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
                   </Link>
                 </div>
               )}
+
+              {/* Mobile Drawer Language & Theme Controls (sm:hidden) */}
+              <div className="flex sm:hidden items-center justify-between pt-3 mt-1 border-t border-[var(--border)] px-1">
+                <span className="text-xs text-[var(--text-2)] font-medium">{t('common.settings', 'Pengaturan')}</span>
+                <div className="flex items-center gap-2">
+                  <div
+                    role="group"
+                    aria-label={t('common.switchLang', 'Pilih Bahasa')}
+                    className="inline-flex items-center p-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] text-[11px] font-semibold"
+                  >
+                    <button
+                      type="button"
+                      aria-pressed={currentLang === 'id'}
+                      onClick={() => handleLangChange('id')}
+                      className={`px-2 py-0.5 rounded-md ${currentLang === 'id' ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] font-bold shadow-2xs' : 'opacity-70'}`}
+                    >
+                      ID
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={currentLang === 'en'}
+                      onClick={() => handleLangChange('en')}
+                      className={`px-2 py-0.5 rounded-md ${currentLang === 'en' ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] font-bold shadow-2xs' : 'opacity-70'}`}
+                    >
+                      EN
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={resolvedTheme === 'dark'}
+                    aria-label={t('common.switchTheme', 'Ganti tema tampilan')}
+                    onClick={toggleTheme}
+                    className={`relative w-[52px] h-[26px] rounded-full p-1 flex items-center justify-between border cursor-pointer ${
+                      resolvedTheme === 'dark'
+                        ? 'bg-[#1D354E] border-[#D9B877]/50 text-[#D9B877]'
+                        : 'bg-[#EDE6DA] border-[#D9B877]/40 text-[#8A6A2F]'
+                    }`}
+                  >
+                    <Sun className="w-3 h-3 ml-0.5 z-10 pointer-events-none" />
+                    <Moon className="w-3 h-3 mr-0.5 z-10 pointer-events-none" />
+                    <span
+                      className={`absolute top-[2px] bottom-[2px] w-[20px] rounded-full shadow-sm transition-transform duration-200 ${
+                        resolvedTheme === 'dark' ? 'translate-x-[26px] bg-[#D9B877]' : 'translate-x-0 bg-white'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

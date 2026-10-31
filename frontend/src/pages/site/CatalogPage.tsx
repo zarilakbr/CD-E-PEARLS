@@ -125,10 +125,10 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
 
         {/* Header Halaman Koleksi */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[#E6DDD0]">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EDE6DA] border border-[#D9CFBF] mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#8A6A2F]" />
-              <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
+          <div className="min-w-0 max-w-full">
+            <div className="inline-flex max-w-full items-center gap-2 px-3 py-1 rounded-full bg-[#EDE6DA] border border-[#D9CFBF] mb-2 overflow-hidden">
+              <Sparkles className="w-3.5 h-3.5 text-[#8A6A2F] shrink-0" />
+              <span className="text-[11px] sm:text-[12px] uppercase tracking-[0.10em] sm:tracking-[0.16em] font-semibold text-[#8A6A2F] truncate">
                 Haute Joaillerie Atelier • Katalog Lengkap
               </span>
             </div>
@@ -146,9 +146,9 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
         </div>
 
         {/* Toolbar Pencarian & Pengurutan */}
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-white border border-[#E6DDD0] p-4 rounded-2xl shadow-xs">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-white border border-[#E6DDD0] p-3 sm:p-4 rounded-2xl shadow-xs">
           {/* Kolom Cari */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-md min-w-0">
             <Input
               type="text"
               placeholder="Cari nama kalung, cincin, anting..."
@@ -183,26 +183,26 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
           </div>
 
           {/* Sort & Filter Controls */}
-          <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0">
+          <div className="flex flex-wrap items-center justify-between lg:justify-end gap-2 sm:gap-3 w-full lg:w-auto">
             {/* Tombol Filter Mobile */}
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
-              className="lg:hidden"
+              className="lg:hidden flex-1 sm:flex-none justify-center"
             >
               <SlidersHorizontal className="w-4 h-4 text-[#8A6A2F]" />
               <span>Filter ({[selectedCategory, selectedVariety, selectedGrade, selectedMetal].filter(x => x !== 'all').length})</span>
             </Button>
 
             {/* Sort Select */}
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-[#4A5666] hidden sm:inline">Urutkan:</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs flex-1 sm:flex-none justify-end">
+              <span className="text-[#4A5666] hidden md:inline">Urutkan:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-semibold text-[#12263A] focus:outline-none focus:border-[#12263A] cursor-pointer"
+                className="w-full sm:w-auto min-h-[44px] px-3 sm:px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-semibold text-[#12263A] focus:outline-none focus:border-[#12263A] cursor-pointer"
               >
                 <option value="popular">Koleksi Terpopuler</option>
                 <option value="price-low">Harga: Terendah ke Tertinggi</option>
@@ -212,7 +212,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
             </div>
 
             {/* View Mode Grid 3 vs 4 & Reload */}
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <div className="hidden md:flex items-center gap-1 border border-[#E6DDD0] p-1 rounded-full bg-[#F4F1EB]">
                 <button
                   type="button"
@@ -417,8 +417,9 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                   />
                 </div>
                 <div
-                  className={`grid grid-cols-1 sm:grid-cols-2 ${gridColumns === '3' ? 'lg:grid-cols-3' : 'lg:grid-cols-3 xl:grid-cols-3'
-                    } gap-6`}
+                  className={`grid grid-cols-1 sm:grid-cols-2 ${
+                    gridColumns === '3' ? 'lg:grid-cols-2 xl:grid-cols-3' : 'lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'
+                  } gap-6`}
                 >
                   {Array.from({ length: 6 }).map((_, idx) => (
                     <ProductCardSkeleton key={idx} />
@@ -427,8 +428,9 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
               </div>
             ) : sortedProducts.length > 0 ? (
               <div
-                className={`grid grid-cols-1 sm:grid-cols-2 ${gridColumns === '3' ? 'lg:grid-cols-3' : 'lg:grid-cols-3 xl:grid-cols-3'
-                  } gap-6`}
+                className={`grid grid-cols-1 sm:grid-cols-2 ${
+                  gridColumns === '3' ? 'lg:grid-cols-2 xl:grid-cols-3' : 'lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'
+                } gap-6`}
               >
                 {sortedProducts.map((p) => (
                   <ProductCard
@@ -470,7 +472,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
 
             {/* Pagination Controls */}
             {sortedProducts.length > 0 && (
-              <div className="flex items-center justify-between pt-6 border-t border-[#E6DDD0] text-xs text-[#4A5666]">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-[#E6DDD0] text-xs text-[#4A5666] text-center sm:text-left">
                 <span>Menampilkan 1 - {sortedProducts.length} dari {sortedProducts.length} produk</span>
                 <div className="flex items-center gap-2">
                   <Button size="sm" variant="outline" disabled>
