@@ -45,4 +45,8 @@ return [
         'secret_key' => env('TURNSTILE_SECRET_KEY', '1x0000000000000000000000000000000AA'),
     ],
 
+    'cloudflare' => [
+        'trust' => env('CLOUDFLARE_TRUST_PROXIES', false),
+    ],
+
 ];
