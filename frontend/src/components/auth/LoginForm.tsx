@@ -48,7 +48,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, nextPath }) => 
 
   // Turnstile production check (Bagian 4.a)
   const isProd = import.meta.env.PROD;
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || (isProd ? '' : '1x00000000000000000000AA');
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const siteKey = (isLocalhost && !isProd)
+    ? '1x00000000000000000000AA'
+    : (import.meta.env.VITE_TURNSTILE_SITE_KEY || (isProd ? '' : '1x00000000000000000000AA'));
   const isTurnstileConfigured = Boolean(siteKey);
 
   const emailInputRef = useRef<HTMLInputElement | null>(null);
@@ -112,11 +115,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, nextPath }) => 
     setIsLoading(true);
 
     try {
+      const effectiveToken = turnstileToken || ((isLocalhost && !isProd) ? '1x00000000000000000000AA' : undefined);
       const res = await login({
         email: data.email,
         password: data.password,
         remember: data.remember,
-        turnstile_token: turnstileToken || undefined,
+        turnstile_token: effectiveToken,
       });
 
       if (res.success) {

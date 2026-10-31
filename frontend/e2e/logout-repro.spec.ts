@@ -191,6 +191,8 @@ test.describe('Tahap O - Bagian 3: Bug Logout Verifikasi', () => {
 
     // Tab B harus otomatis keluar tanpa refresh manual
     await expect(pageB).toHaveURL('/', { timeout: 10000 });
-    await expect(pageB.locator('a[href="/masuk"]').first()).toBeVisible();
+    const masukBtn = pageB.locator('a[href="/masuk"]').first();
+    await masukBtn.waitFor({ state: 'visible', timeout: 10000 });
+    await expect(masukBtn).toBeVisible();
   });
 });

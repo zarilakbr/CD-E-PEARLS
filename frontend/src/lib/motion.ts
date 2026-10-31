@@ -40,7 +40,7 @@ export function usePrefersReducedMotion(): boolean {
  * IntersectionObserver untuk scroll reveal (threshold: 0.1, sekali)
  */
 export function useScrollReveal<T extends HTMLElement = HTMLDivElement>(
-  threshold = 0.1
+  threshold = 0.05
 ) {
   const ref = useRef<T | null>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -63,7 +63,7 @@ export function useScrollReveal<T extends HTMLElement = HTMLDivElement>(
           }
         });
       },
-      { threshold }
+      { threshold, rootMargin: '0px 0px -20px 0px' }
     );
 
     observer.observe(el);

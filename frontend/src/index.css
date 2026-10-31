@@ -222,12 +222,24 @@ body {
   animation: badgePulse 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Touch feedback: scale 0.97 on active touch */
+/* Touch feedback: scale 0.97 on active touch with WebKit tap highlight disabled */
 .touch-feedback {
-  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
 }
 .touch-feedback:active {
   transform: scale(0.97);
+}
+
+/* WebKit backdrop blur support for iOS Safari */
+.backdrop-blur-md {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.backdrop-blur-sm {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }
 
 /* Safe Area Insets for Mobile Bottom Bar */
@@ -239,12 +251,20 @@ body {
 }
 
 /* Reduced motion preference (Q10C: ganti dengan fade pendek 150ms, opacity saja) */
+@keyframes fadeOnly {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: 150ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 150ms !important;
-    transform: none !important;
+  }
+  .animate-banner-load,
+  .animate-scroll-reveal {
+    animation: fadeOnly 150ms ease-out forwards !important;
   }
 }
 

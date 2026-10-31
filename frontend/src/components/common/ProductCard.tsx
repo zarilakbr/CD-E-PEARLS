@@ -63,6 +63,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <div
+      data-slot="product-card"
       onClick={onSelect}
       className={cn(
         'group relative bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-2.5 sm:p-3.5 flex flex-col justify-between cursor-pointer transition-all duration-200 select-none touch-feedback hover:border-[#8A6A2F]/60 hover:shadow-md',

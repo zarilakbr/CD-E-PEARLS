@@ -48,7 +48,10 @@ export const ResetPasswordForm: React.FC = () => {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const isProd = import.meta.env.PROD;
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || (isProd ? '' : '1x00000000000000000000AA');
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const siteKey = (isLocalhost && !isProd)
+    ? '1x00000000000000000000AA'
+    : (import.meta.env.VITE_TURNSTILE_SITE_KEY || (isProd ? '' : '1x00000000000000000000AA'));
   const isTurnstileConfigured = Boolean(siteKey);
 
   const {
@@ -104,7 +107,8 @@ export const ResetPasswordForm: React.FC = () => {
       return;
     }
 
-    if (isTurnstileConfigured && !turnstileToken) {
+    const effectiveToken = turnstileToken || ((isLocalhost && !isProd) ? '1x00000000000000000000AA' : undefined);
+    if (isTurnstileConfigured && !effectiveToken) {
       setServerError('Selesaikan verifikasi Cloudflare Turnstile terlebih dahulu.');
       return;
     }
@@ -117,7 +121,7 @@ export const ResetPasswordForm: React.FC = () => {
         email,
         password: data.password,
         password_confirmation: data.password_confirmation,
-        turnstile_token: turnstileToken || undefined,
+        turnstile_token: effectiveToken,
       });
 
       setIsSuccess(true);

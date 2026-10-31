@@ -18,6 +18,18 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'iphone-13',
+      use: { ...devices['iPhone 13'] },
+    },
+    {
+      name: 'pixel-7',
+      use: { ...devices['Pixel 7'] },
+    },
   ],
   webServer: {
     command: 'npm run dev',
@@ -26,4 +38,3 @@ export default defineConfig({
     timeout: 30000,
   },
 });
-

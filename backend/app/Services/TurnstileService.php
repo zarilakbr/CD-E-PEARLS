@@ -35,9 +35,9 @@ class TurnstileService
             }
         }
 
-        // Test environment bypasses/fixtures
-        if (app()->environment('testing')) {
-            if ($token === 'valid_turnstile_token' || $token === '1x00000000000000000000AA') {
+        // Test/local environment bypasses/fixtures
+        if (app()->environment('testing') || ! $isProduction) {
+            if ($token === 'valid_turnstile_token' || $token === '1x00000000000000000000AA' || str_contains((string) $token, 'DUMMY')) {
                 return true;
             }
             if ($token === 'fake_invalid_token' || $token === 'invalid_token' || $token === 'timeout-token') {

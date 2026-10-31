@@ -1,0 +1,117 @@
+[
+  {
+    "name": "beranda-360x740.png",
+    "url": "http://localhost:5173/",
+    "size": 174405
+  },
+  {
+    "name": "katalog-360x740.png",
+    "url": "http://localhost:5173/katalog",
+    "size": 158402
+  },
+  {
+    "name": "detail-360x740.png",
+    "url": "http://localhost:5173/produk/1",
+    "size": 152502
+  },
+  {
+    "name": "keranjang-360x740.png",
+    "url": "http://localhost:5173/keranjang",
+    "size": 70599
+  },
+  {
+    "name": "favorit-360x740.png",
+    "url": "http://localhost:5173/favorit",
+    "size": 38531
+  },
+  {
+    "name": "masuk-360x740.png",
+    "url": "http://localhost:5173/masuk",
+    "size": 83969
+  },
+  {
+    "name": "daftar-360x740.png",
+    "url": "http://localhost:5173/daftar",
+    "size": 92559
+  },
+  {
+    "name": "beranda-390x844.png",
+    "url": "http://localhost:5173/",
+    "size": 247580
+  },
+  {
+    "name": "katalog-390x844.png",
+    "url": "http://localhost:5173/katalog",
+    "size": 210731
+  },
+  {
+    "name": "katalog-filter-open-390x844.png",
+    "url": "http://localhost:5173/katalog",
+    "size": 64551
+  },
+  {
+    "name": "detail-390x844.png",
+    "url": "http://localhost:5173/produk/1",
+    "size": 173620
+  },
+  {
+    "name": "detail-accordion-open-390x844.png",
+    "url": "http://localhost:5173/produk/1",
+    "size": 59266
+  },
+  {
+    "name": "keranjang-390x844.png",
+    "url": "http://localhost:5173/keranjang",
+    "size": 77121
+  },
+  {
+    "name": "favorit-390x844.png",
+    "url": "http://localhost:5173/favorit",
+    "size": 42231
+  },
+  {
+    "name": "masuk-390x844.png",
+    "url": "http://localhost:5173/masuk",
+    "size": 95995
+  },
+  {
+    "name": "daftar-390x844.png",
+    "url": "http://localhost:5173/daftar",
+    "size": 112359
+  },
+  {
+    "name": "akun-pelanggan-360x740.png",
+    "url": "http://localhost:5173/akun",
+    "size": 116287
+  },
+  {
+    "name": "admin-360x740.png",
+    "url": "http://localhost:5173/admin",
+    "size": 110289
+  },
+  {
+    "name": "spi-360x740.png",
+    "url": "http://localhost:5173/spi",
+    "size": 112542
+  },
+  {
+    "name": "akun-pelanggan-390x844.png",
+    "url": "http://localhost:5173/akun",
+    "size": 125270
+  },
+  {
+    "name": "admin-390x844.png",
+    "url": "http://localhost:5173/admin",
+    "size": 123895
+  },
+  {
+    "name": "spi-390x844.png",
+    "url": "http://localhost:5173/spi",
+    "size": 123725
+  },
+  {
+    "name": "kontak-sheet-390.png",
+    "url": "local://contact-sheet",
+    "size": 755245
+  }
+]

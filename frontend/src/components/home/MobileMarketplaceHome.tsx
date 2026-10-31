@@ -42,7 +42,7 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
       action: () => navigate('/katalog'),
     },
     {
-      image: '/images/hero_pearl_model.jpg',
+      image: '/images/hero_pearl_dark_luxury.jpg',
       title: 'Kemewahan Alami Samudera Indonesia',
       subtitle: 'Kilau Cermin Mirror Luster',
       cta: 'Jelajahi Atelier',
@@ -97,7 +97,7 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
     .slice(0, 6);
 
   return (
-    <div className="w-full flex flex-col gap-5 px-3 py-3 bg-[var(--bg)] font-sans select-none pb-12">
+    <div data-slot="mobile-marketplace-home" className="w-full flex flex-col gap-5 px-3 py-3 bg-[var(--bg)] font-sans select-none pb-12">
       {/* ========================================================
           1. BANNER FOTO LEBAR PENUH (Carousel shadcn, max 3 slide)
          ======================================================== */}

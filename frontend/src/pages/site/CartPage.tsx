@@ -131,7 +131,7 @@ export const CartPage: React.FC<CartPageProps> = ({
       {/* ========================================================
           MOBILE VIEW (< lg) - MARKETPLACE STYLE (TAHAP Q7)
          ======================================================== */}
-      <div className="lg:hidden w-full flex flex-col pb-28 px-3 pt-3 space-y-3 bg-[var(--bg)]">
+      <div data-slot="mobile-cart" className="lg:hidden w-full flex flex-col pb-28 px-3 pt-3 space-y-3 bg-[var(--bg)]">
         {/* Header Tas Belanja */}
         <div className="flex items-center justify-between pb-2 border-b border-[var(--border)] px-1">
           <h2 className="font-serif text-lg font-bold text-[var(--text)]">
@@ -155,7 +155,7 @@ export const CartPage: React.FC<CartPageProps> = ({
               {cartItems.map((item) => (
                 <div
                   key={item.id}
-                  className="p-3 rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex items-center gap-3 shadow-2xs"
+                  className="p-2.5 sm:p-3 rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex items-center gap-2 sm:gap-3 shadow-2xs"
                 >
                   {/* Checkbox */}
                   <input
@@ -166,8 +166,8 @@ export const CartPage: React.FC<CartPageProps> = ({
                     aria-label={`Pilih ${item.name}`}
                   />
 
-                  {/* Foto 72px persegi */}
-                  <div className="w-[72px] h-[72px] rounded-xl overflow-hidden bg-[var(--surface-2)] border border-[var(--border)] shrink-0">
+                  {/* Foto 64px - 72px persegi */}
+                  <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl overflow-hidden bg-[var(--surface-2)] border border-[var(--border)] shrink-0">
                     <img
                       src={getItemImage(item.category)}
                       alt={item.name}
@@ -176,7 +176,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                   </div>
 
                   {/* Info: Nama 2 baris, varian kecil, harga, stepper, hapus */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-between h-[72px]">
+                  <div className="flex-1 min-w-0 flex flex-col justify-between h-16 sm:h-[72px]">
                     <div className="min-w-0">
                       <h3 className="font-serif text-xs font-bold text-[var(--text)] line-clamp-2 leading-tight">
                         {item.name}
@@ -187,31 +187,31 @@ export const CartPage: React.FC<CartPageProps> = ({
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-xs font-bold text-[#8A6A2F] dark:text-[#D9B877]">
+                      <span className="text-[11px] sm:text-xs font-bold text-[#8A6A2F] dark:text-[#D9B877] truncate mr-1">
                         Rp {(item.price * item.quantity).toLocaleString('id-ID')}
                       </span>
 
-                      <div className="flex items-center gap-2">
-                        {/* Stepper Kuantitas +/- 32px */}
-                        <div className="flex items-center border border-[var(--border)] rounded-lg bg-[var(--surface-2)] h-8">
+                      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        {/* Stepper Kuantitas +/- */}
+                        <div className="flex items-center border border-[var(--border)] rounded-lg bg-[var(--surface-2)] h-7 sm:h-8">
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.id, -1)}
-                            className="w-7 h-8 flex items-center justify-center text-[var(--text)] hover:opacity-80 active:scale-95 cursor-pointer touch-feedback"
+                            className="w-6 sm:w-7 h-7 sm:h-8 flex items-center justify-center text-[var(--text)] hover:opacity-80 active:scale-95 cursor-pointer touch-feedback"
                             aria-label="Kurangi jumlah"
                           >
-                            <Minus className="w-3 h-3" />
+                            <Minus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                           </button>
-                          <span className="w-6 text-center text-xs font-bold text-[var(--text)]">
+                          <span className="w-5 sm:w-6 text-center text-xs font-bold text-[var(--text)]">
                             {item.quantity}
                           </span>
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.id, 1)}
-                            className="w-7 h-8 flex items-center justify-center text-[var(--text)] hover:opacity-80 active:scale-95 cursor-pointer touch-feedback"
+                            className="w-6 sm:w-7 h-7 sm:h-8 flex items-center justify-center text-[var(--text)] hover:opacity-80 active:scale-95 cursor-pointer touch-feedback"
                             aria-label="Tambah jumlah"
                           >
-                            <Plus className="w-3 h-3" />
+                            <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                           </button>
                         </div>
 
@@ -219,7 +219,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                         <button
                           type="button"
                           onClick={() => removeItem(item.id)}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer touch-feedback"
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer touch-feedback"
                           aria-label={`Hapus ${item.name}`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />

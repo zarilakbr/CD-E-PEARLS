@@ -27,7 +27,7 @@ export const WishlistPage: React.FC = () => {
       {/* ========================================================
           MOBILE VIEW (< lg) - MARKETPLACE STYLE (TAHAP Q7)
          ======================================================== */}
-      <div className="lg:hidden w-full flex flex-col p-3 pb-24 space-y-3 bg-[var(--bg)]">
+      <div data-slot="mobile-wishlist" className="lg:hidden w-full flex flex-col p-3 pb-24 space-y-3 bg-[var(--bg)]">
         {/* Header Favorit */}
         <div className="flex items-center justify-between pb-2 border-b border-[var(--border)] px-1">
           <div>

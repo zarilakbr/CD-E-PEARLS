@@ -59,6 +59,37 @@ npm run build
 
 ---
 
+## 📱 Panduan Pengujian Langsung di Ponsel Fisik (LAN / Wi-Fi)
+
+Agar animasi, tata letak marketplace mobile, safe-area, dan interaksi sentuhan dapat diuji langsung dari browser HP pada jaringan Wi-Fi lokal yang sama:
+
+1. **Jalankan Frontend dengan Expose Host**:
+   ```bash
+   cd frontend
+   npm run dev -- --host 0.0.0.0
+   ```
+2. **Konfigurasi Alamat IP Laptop (Bukan `localhost`)**:
+   - Cari IP lokal laptop Anda (misal: `192.168.1.50` via `ipconfig` pada Windows).
+   - Di `frontend/.env.development` (atau konfigurasi runtime), arahkan:
+     ```env
+     VITE_API_URL=http://192.168.1.50:8000
+     ```
+3. **Konfigurasi Backend Laravel**:
+   - Di `backend/.env`, tambahkan IP lokal laptop ke whitelist Sanctum dan CORS:
+     ```env
+     SANCTUM_STATEFUL_DOMAINS=192.168.1.50:5173,localhost:5173,127.0.0.1:5173
+     CORS_ALLOWED_ORIGINS=http://192.168.1.50:5173,http://localhost:5173,http://127.0.0.1:5173
+     ```
+   - Jalankan backend dengan binding host lokal:
+     ```bash
+     cd backend
+     php artisan serve --host=0.0.0.0 --port=8000
+     ```
+4. **Buka di Browser Ponsel**:
+   Akses `http://192.168.1.50:5173` di Safari iOS atau Chrome Android. Semua animasi sentuhan (`touch-feedback`), dialog filter Sheet, bottom tab bar, dan efek blur header akan aktif secara native.
+
+---
+
 ## 🔑 Akun Bawaan Seeder Resmi
 
 Akun disemai secara otomatis dari variabel lingkungan `.env` lokal Anda:

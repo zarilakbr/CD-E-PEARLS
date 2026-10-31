@@ -6,9 +6,9 @@ test.describe('Q12: Real Backend UI Logout Test', () => {
   let realToken = '';
 
   test.beforeAll(() => {
-    // Generate temporary test token from real backend
-    const backendPath = path.resolve('..', 'backend', 'create-test-token.php');
-    const out = execSync(`php "${backendPath}"`, { encoding: 'utf-8' });
+    // Generate temporary test token from real backend with correct cwd
+    const backendDir = path.resolve('..', 'backend');
+    const out = execSync(`php create-test-token.php`, { cwd: backendDir, encoding: 'utf-8' });
     const match = out.match(/TOKEN=([^\r\n]+)/);
     if (!match) throw new Error('Failed to generate real test token from backend');
     realToken = match[1].trim();
@@ -33,9 +33,8 @@ test.describe('Q12: Real Backend UI Logout Test', () => {
       }
     });
 
-    // 1. Set real token in localStorage and visit /akun
-    await page.goto('http://localhost:5173/');
-    await page.evaluate((tok) => {
+    // 1. Set real token in localStorage via init script and visit /akun
+    await page.addInitScript((tok) => {
       localStorage.setItem('cde_auth_token', tok);
     }, realToken);
 

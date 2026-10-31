@@ -371,6 +371,12 @@ class AuthController extends Controller
             }
 
             // Link Google account for Customer
+            // If existing account was unverified, invalidate old password and revoke existing sessions
+            if (is_null($user->email_verified_at)) {
+                $user->tokens()->delete();
+                $user->password = null;
+            }
+
             $user->update([
                 'google_id' => $googleUser->getId(),
                 'avatar_url' => $googleUser->getAvatar() ?? $user->avatar_url,

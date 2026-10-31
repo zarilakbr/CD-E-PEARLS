@@ -23,7 +23,10 @@ export const ForgotPasswordForm: React.FC = () => {
   const [cooldown, setCooldown] = useState<number>(0);
 
   const isProd = import.meta.env.PROD;
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || (isProd ? '' : '1x00000000000000000000AA');
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const siteKey = (isLocalhost && !isProd)
+    ? '1x00000000000000000000AA'
+    : (import.meta.env.VITE_TURNSTILE_SITE_KEY || (isProd ? '' : '1x00000000000000000000AA'));
   const isTurnstileConfigured = Boolean(siteKey);
 
   const {
@@ -60,9 +63,10 @@ export const ForgotPasswordForm: React.FC = () => {
     setIsLoading(true);
 
     try {
+      const effectiveToken = turnstileToken || ((isLocalhost && !isProd) ? '1x00000000000000000000AA' : undefined);
       await authApi.forgotPassword({
         email: data.email,
-        turnstile_token: turnstileToken || undefined,
+        turnstile_token: effectiveToken,
       });
 
       setSuccessEmail(data.email);

@@ -183,4 +183,58 @@ test.describe('Tahap O - Bagian 1: Route Crawler & Guard Tests', () => {
       }
     }
   });
+
+  test('Customer (role: user) mencoba membuka /admin menerima blokir akses / 403', async ({ page }) => {
+    await page.route('**/api/v1/auth/me', (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id: 1, name: 'Siti Rahma', email: 'siti.rahma@gmail.com', role: 'user', status: 'active' },
+        }),
+      })
+    );
+
+    await page.goto('/admin');
+    await page.waitForLoadState('domcontentloaded');
+    // Verifikasi dialihkan ke 403 atau dilarang
+    const pageText = await page.locator('body').innerText();
+    expect(pageText.toLowerCase()).toMatch(/(akses ditolak|dilarang|403|unauthorized|masuk)/);
+  });
+
+  test('Admin (role: admin) mencoba membuka /spi menerima blokir akses / 403', async ({ page }) => {
+    await page.route('**/api/v1/auth/me', (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          user: { id: 2, name: 'Admin Operasional', email: 'admin@cdepearls.com', role: 'admin', status: 'active' },
+        }),
+      })
+    );
+
+    await page.goto('/spi');
+    await page.waitForLoadState('domcontentloaded');
+    const pageText = await page.locator('body').innerText();
+    expect(pageText.toLowerCase()).toMatch(/(akses ditolak|dilarang|403|unauthorized|masuk)/);
+  });
+
+  test('Rute tidak dikenal (/halaman-tidak-ada) menampilkan halaman 404', async ({ page }) => {
+    await page.route('**/api/v1/auth/me', (r) =>
+      r.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Unauthenticated.' }),
+      })
+    );
+
+    await page.goto('/halaman-tidak-ada-12345');
+    await page.waitForLoadState('domcontentloaded');
+    const h1 = page.locator('h1').first();
+    await expect(h1).toBeVisible();
+    const h1Text = await h1.innerText();
+    expect(h1Text).toMatch(/(404|Tidak Ditemukan|Not Found)/i);
+  });
 });

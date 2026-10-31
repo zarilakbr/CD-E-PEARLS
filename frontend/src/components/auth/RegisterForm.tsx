@@ -63,7 +63,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, nextPath 
 
   // Turnstile fail-closed check
   const isProd = import.meta.env.PROD;
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || (isProd ? '' : '1x00000000000000000000AA');
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const siteKey = (isLocalhost && !isProd)
+    ? '1x00000000000000000000AA'
+    : (import.meta.env.VITE_TURNSTILE_SITE_KEY || (isProd ? '' : '1x00000000000000000000AA'));
   const isTurnstileConfigured = Boolean(siteKey);
 
   const {
@@ -135,13 +138,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, nextPath 
     setIsLoading(true);
 
     try {
+      const effectiveToken = turnstileToken || ((isLocalhost && !isProd) ? '1x00000000000000000000AA' : undefined);
       const result = await registerAuth({
         name: data.name,
         email: data.email,
         phone: data.phone,
         password: data.password,
         password_confirmation: data.password_confirmation,
-        turnstile_token: turnstileToken || undefined,
+        turnstile_token: effectiveToken,
       });
 
       if (result.success) {
@@ -166,16 +170,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, nextPath 
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#12263A] dark:text-[#FBF8F3]">
-          {t('auth.registerTitle', 'Buat Akun Koleksi Baru')}
-        </h2>
-        <p className="text-xs sm:text-sm text-[#4A5666] dark:text-[#D9B877] mt-1 font-light">
-          {t('auth.registerSubtitle', 'Daftar untuk menikmati kurasi mutiara Lombok bersertifikat keaslian.')}
-        </p>
-      </div>
-
       {/* Server Error Alert */}
       {serverError && (
         <div
@@ -248,7 +242,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, nextPath 
               {...register('name')}
               aria-invalid={Boolean(errors.name)}
               aria-describedby={errors.name ? 'register-name-error' : undefined}
-              className={`w-full min-h-[44px] pl-10 pr-3.5 py-2 text-xs rounded-xl border bg-white dark:bg-[#12263A] text-[#12263A] dark:text-[#FBF8F3] placeholder:text-[#4A5666]/60 dark:placeholder:text-white/40 focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F] transition-all ${
+              className={`w-full min-h-[44px] pl-10 pr-3.5 py-2 text-base sm:text-xs rounded-xl border bg-white dark:bg-[#12263A] text-[#12263A] dark:text-[#FBF8F3] placeholder:text-[#4A5666]/60 dark:placeholder:text-white/40 focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F] transition-all ${
                 errors.name
                   ? 'border-red-500 focus:ring-red-400'
                   : 'border-[#E6DDD0] dark:border-white/10'
@@ -280,7 +274,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, nextPath 
               {...register('email')}
               aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? 'register-email-error' : undefined}
-              className={`w-full min-h-[44px] pl-10 pr-3.5 py-2 text-xs rounded-xl border bg-white dark:bg-[#12263A] text-[#12263A] dark:text-[#FBF8F3] placeholder:text-[#4A5666]/60 dark:placeholder:text-white/40 focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F] transition-all ${
+              className={`w-full min-h-[44px] pl-10 pr-3.5 py-2 text-base sm:text-xs rounded-xl border bg-white dark:bg-[#12263A] text-[#12263A] dark:text-[#FBF8F3] placeholder:text-[#4A5666]/60 dark:placeholder:text-white/40 focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F] transition-all ${
                 errors.email
                   ? 'border-red-500 focus:ring-red-400'
                   : 'border-[#E6DDD0] dark:border-white/10'
@@ -312,7 +306,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, nextPath 
               {...register('phone')}
               aria-invalid={Boolean(errors.phone)}
               aria-describedby={errors.phone ? 'register-phone-error' : undefined}
-              className={`w-full min-h-[44px] pl-10 pr-3.5 py-2 text-xs rounded-xl border bg-white dark:bg-[#12263A] text-[#12263A] dark:text-[#FBF8F3] placeholder:text-[#4A5666]/60 dark:placeholder:text-white/40 focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F] transition-all ${
+              className={`w-full min-h-[44px] pl-10 pr-3.5 py-2 text-base sm:text-xs rounded-xl border bg-white dark:bg-[#12263A] text-[#12263A] dark:text-[#FBF8F3] placeholder:text-[#4A5666]/60 dark:placeholder:text-white/40 focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F] transition-all ${
                 errors.phone
                   ? 'border-red-500 focus:ring-red-400'
                   : 'border-[#E6DDD0] dark:border-white/10'
@@ -344,7 +338,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, nextPath 
               {...register('password')}
               aria-invalid={Boolean(errors.password)}
               aria-describedby="register-password-strength"
-              className={`w-full min-h-[44px] pl-10 pr-10 py-2 text-xs rounded-xl border bg-white dark:bg-[#12263A] text-[#12263A] dark:text-[#FBF8F3] placeholder:text-[#4A5666]/60 dark:placeholder:text-white/40 focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F] transition-all ${
+              className={`w-full min-h-[44px] pl-10 pr-10 py-2 text-base sm:text-xs rounded-xl border bg-white dark:bg-[#12263A] text-[#12263A] dark:text-[#FBF8F3] placeholder:text-[#4A5666]/60 dark:placeholder:text-white/40 focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F] transition-all ${
                 errors.password
                   ? 'border-red-500 focus:ring-red-400'
                   : 'border-[#E6DDD0] dark:border-white/10'
@@ -409,7 +403,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, nextPath 
               aria-describedby={
                 errors.password_confirmation ? 'register-password-confirm-error' : undefined
               }
-              className={`w-full min-h-[44px] pl-10 pr-10 py-2 text-xs rounded-xl border bg-white dark:bg-[#12263A] text-[#12263A] dark:text-[#FBF8F3] placeholder:text-[#4A5666]/60 dark:placeholder:text-white/40 focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F] transition-all ${
+              className={`w-full min-h-[44px] pl-10 pr-10 py-2 text-base sm:text-xs rounded-xl border bg-white dark:bg-[#12263A] text-[#12263A] dark:text-[#FBF8F3] placeholder:text-[#4A5666]/60 dark:placeholder:text-white/40 focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F] transition-all ${
                 errors.password_confirmation
                   ? 'border-red-500 focus:ring-red-400'
                   : 'border-[#E6DDD0] dark:border-white/10'

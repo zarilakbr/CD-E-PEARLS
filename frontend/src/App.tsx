@@ -40,7 +40,7 @@ const SpiPortal = React.lazy(() => import('./pages/spi/SpiPortal').then((m) => (
 const CustomerPortal = React.lazy(() => import('./pages/customer/CustomerPortal').then((m) => ({ default: m.CustomerPortal })));
 
 // Error Pages
-const AccessDeniedPage = React.lazy(() => import('./pages/common/AccessDeniedPage').then((m) => ({ default: m.AccessDeniedPage })));
+import { AccessDeniedPage } from './pages/common/AccessDeniedPage';
 const NotFoundPage = React.lazy(() => import('./pages/common/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 const ServerErrorPage = React.lazy(() => import('./pages/common/ServerErrorPage').then((m) => ({ default: m.ServerErrorPage })));
 
