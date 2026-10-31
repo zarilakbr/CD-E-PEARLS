@@ -200,6 +200,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
             <div className="flex items-center gap-1.5 sm:gap-2 text-xs flex-1 sm:flex-none justify-end">
               <span className="text-[#4A5666] hidden md:inline">Urutkan:</span>
               <select
+                aria-label="Urutkan katalog perhiasan"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="w-full sm:w-auto min-h-[44px] px-3 sm:px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-semibold text-[#12263A] focus:outline-none focus:border-[#12263A] cursor-pointer"

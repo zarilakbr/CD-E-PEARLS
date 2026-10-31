@@ -437,6 +437,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
 
               {/* Varietas */}
               <select
+                aria-label="Pilih varietas mutiara laut"
                 value={varietyFilter}
                 onChange={(e) => setVarietyFilter(e.target.value)}
                 className="min-h-[38px] px-3 rounded-full bg-[#FBF8F3] border border-[#E6DDD0] text-[#12263A] focus:outline-none focus:border-[#8A6A2F] cursor-pointer"
@@ -449,6 +450,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
 
               {/* Grade */}
               <select
+                aria-label="Pilih grade mutiara"
                 value={gradeFilter}
                 onChange={(e) => setGradeFilter(e.target.value)}
                 className="min-h-[38px] px-3 rounded-full bg-[#FBF8F3] border border-[#E6DDD0] text-[#12263A] focus:outline-none focus:border-[#8A6A2F] cursor-pointer"
@@ -462,6 +464,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
             <div className="flex items-center gap-2">
               <span className="text-[#4A5666]">Urutkan:</span>
               <select
+                aria-label="Pilih urutan perhiasan"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="min-h-[38px] px-3 rounded-full bg-[#FBF8F3] border border-[#E6DDD0] text-[#12263A] font-medium focus:outline-none focus:border-[#8A6A2F] cursor-pointer"
