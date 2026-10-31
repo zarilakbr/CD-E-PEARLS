@@ -94,6 +94,7 @@ test.describe('Tahap O - Bagian 3: Bug Logout Verifikasi', () => {
   });
 
   test('d: login sebagai pelanggan tidak ada nama atau data admin di mana pun', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.route('**/api/v1/auth/me', async (route) => {
       await route.fulfill({
         status: 200,
@@ -118,8 +119,8 @@ test.describe('Tahap O - Bagian 3: Bug Logout Verifikasi', () => {
     await page.goto('/akun');
     await page.waitForLoadState('networkidle');
 
-    // Nama pelanggan tampil
-    await expect(page.getByText('Dewi Pelanggan').first()).toBeVisible();
+    // Nama pelanggan tampil di elemen yang terlihat
+    await expect(page.locator(':visible:text("Dewi Pelanggan")').first()).toBeVisible();
 
     // Nama admin "Budi Santoso" atau "Admin Operasional" tidak boleh ada di DOM
     await expect(page.getByText('Budi Santoso')).toHaveCount(0);
@@ -164,6 +165,8 @@ test.describe('Tahap O - Bagian 3: Bug Logout Verifikasi', () => {
 
     const pageA = await context.newPage();
     const pageB = await context.newPage();
+    await pageA.setViewportSize({ width: 1280, height: 800 });
+    await pageB.setViewportSize({ width: 1280, height: 800 });
 
     await pageA.addInitScript(() => {
       localStorage.setItem('cde_auth_token', 'admin-token');

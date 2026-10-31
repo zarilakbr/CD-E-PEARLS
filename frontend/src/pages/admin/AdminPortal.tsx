@@ -712,8 +712,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             }
           />
 
-          {/* 4 StatCards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* 4 StatCards (2 kolom di mobile, 4 kolom di desktop) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             <StatCard
               label="Total Penjualan"
               value="Rp 157.800.000"
@@ -771,7 +771,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             </div>
 
             {/* Recharts Line Chart */}
-            <div className="w-full h-[220px] lg:h-[280px]">
+            <div className="w-full h-[180px] lg:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={mockSalesChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E6DDD0" vertical={false} />
@@ -2415,7 +2415,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-4">
                 Penjualan per Periode
               </h3>
-              <div className="h-[220px] lg:h-[280px] w-full">
+              <div className="h-[180px] lg:h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={mockSalesChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E6DDD0" vertical={false} />
@@ -2435,7 +2435,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-4">
                 Penjualan per Kategori
               </h3>
-              <div className="h-[220px] lg:h-[280px] w-full">
+              <div className="h-[180px] lg:h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={mockCategorySalesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E6DDD0" vertical={false} />

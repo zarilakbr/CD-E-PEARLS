@@ -1,14 +1,17 @@
 import { test, expect } from '@playwright/test';
 
 const viewports = [
-  { name: 'Mobile Kecil (iPhone SE 1)', width: 320, height: 568 },
-  { name: 'Mobile Standar (iPhone SE 2)', width: 375, height: 667 },
-  { name: 'Mobile Besar (iPhone XR)', width: 414, height: 896 },
-  { name: 'Tablet Portrait (iPad)', width: 768, height: 1024 },
-  { name: 'Tablet Landscape (iPad Pro)', width: 1024, height: 1366 },
-  { name: 'Desktop Standar', width: 1280, height: 800 },
-  { name: 'Desktop Besar', width: 1440, height: 900 },
-  { name: 'Desktop Ultra Wide', width: 1920, height: 1080 },
+  { name: '320px', width: 320, height: 568 },
+  { name: '360px Portrait', width: 360, height: 740 },
+  { name: '360px Landscape', width: 740, height: 360 },
+  { name: '375px', width: 375, height: 667 },
+  { name: '390px Portrait', width: 390, height: 844 },
+  { name: '390px Landscape', width: 844, height: 390 },
+  { name: '412px', width: 412, height: 915 },
+  { name: '768px', width: 768, height: 1024 },
+  { name: '1024px', width: 1024, height: 768 },
+  { name: '1280px', width: 1280, height: 800 },
+  { name: '1920px', width: 1920, height: 1080 },
 ];
 
 const testRoutes = [

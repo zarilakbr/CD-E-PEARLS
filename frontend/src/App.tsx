@@ -6,6 +6,8 @@ import { WishlistProvider, useWishlist } from './context/WishlistContext';
 import { SiteLayout } from './layouts/SiteLayout';
 import { ProductDetailModal } from './components/product/ProductDetailModal';
 import { RouteGuard } from './routes/RouteGuard';
+import { BottomTabBar } from './components/common/BottomTabBar';
+import { Toaster } from 'sonner';
 
 // Code-splitting via React.lazy
 const PublicHomePage = React.lazy(() => import('./pages/site/PublicHomePage').then((m) => ({ default: m.PublicHomePage })));
@@ -572,7 +574,7 @@ const AppContent: React.FC = () => {
             key={path}
             path={path}
             element={
-              <RouteGuard allowedRoles={['user']}>
+              <RouteGuard allowedRoles={path === '/akun' ? ['public', 'user'] : ['user']}>
                 <CustomerPortal
                   initialMenu={menu}
                   onNavigateHome={() => navigate('/')}
@@ -698,6 +700,8 @@ const AppContent: React.FC = () => {
         <Route path="/500" element={<ServerErrorPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      <BottomTabBar />
+      <Toaster position="top-center" richColors />
     </Suspense>
   );
 };

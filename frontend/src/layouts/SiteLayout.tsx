@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { UserProfileDropdown } from '../components/common/UserProfileDropdown';
+import { SearchOverlay } from '../components/common/SearchOverlay';
 import {
   Heart,
   ShoppingBag,
-  User as UserIcon,
-  Menu as MenuIcon,
   X,
   Phone,
   Mail,
@@ -20,6 +19,12 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '../components/ui/accordion';
 
 interface SiteLayoutProps {
   currentTab: string;
@@ -47,7 +52,7 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
   const { resolvedTheme, toggleTheme } = useTheme();
   const { user, isAuthenticated, logout: authLogout } = useAuth();
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [headerSearch, setHeaderSearch] = useState('');
@@ -145,16 +150,6 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
         className={`sticky top-0 z-30 transition-all duration-200 px-4 sm:px-6 py-3 border-none shadow-none ${headerThemeClasses}`}
       >
         <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
-          {/* Mobile hamburger */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg text-inherit hover:opacity-80 transition-opacity cursor-pointer"
-            aria-label="Buka menu navigasi"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
-          </button>
-
           {/* Authentic Brand Logo CD'E Pearls */}
           <div
             onClick={() => onNavigate('home')}
@@ -164,14 +159,25 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
             <img
               src="/images/cde_logo.png"
               alt="CD'E Pearls Culture Pearls"
-              width={130}
-              height={42}
-              className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-102"
+              width={120}
+              height={38}
+              className="h-8 sm:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-102"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/images/cde_logo_clean.png';
               }}
             />
           </div>
+
+          {/* Kolom Cari Berbentuk Pil di Header Mobile (< lg) */}
+          <button
+            type="button"
+            onClick={() => setIsSearchOverlayOpen(true)}
+            className="lg:hidden flex-1 max-w-[240px] flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--surface-2)]/90 border border-[var(--border)] text-xs text-[var(--text-2)] hover:text-[var(--text)] transition-colors touch-feedback cursor-pointer shadow-2xs"
+            aria-label="Buka pencarian mutiara"
+          >
+            <Search className="w-3.5 h-3.5 text-[#8A6A2F] dark:text-[#D9B877] shrink-0" />
+            <span className="truncate">{t('common.searchPublicPlaceholder', 'Cari mutiara...')}</span>
+          </button>
 
           {/* Desktop Nav Links */}
           <nav className="hidden xl:flex items-center gap-6">
@@ -231,7 +237,7 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
           </div>
 
           {/* Controls: Bahasa (ID|EN), Tema (Pill Switch), Wishlist, Cart, User Profile */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className="hidden lg:flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Language Segmented Control ID | EN (TAHAP D) - hidden on mobile <sm, available in mobile drawer */}
             <div
               role="group"
@@ -379,276 +385,228 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
             )}
           </div>
         </div>
-
-        {/* Mobile Navigation Drawer */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden mt-3 pt-3 border-t border-[var(--border)] flex flex-col gap-2 pb-2 animate-in fade-in slide-in-from-top-2 bg-[var(--surface)] text-[var(--text)] p-4 rounded-2xl shadow-xl">
-            <form onSubmit={handleHeaderSearchSubmit} className="relative w-full mb-1">
-              <input
-                type="text"
-                placeholder={t('common.searchPublicPlaceholder', 'Cari koleksi mutiara...')}
-                value={headerSearch}
-                onChange={(e) => setHeaderSearch(e.target.value)}
-                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-xs text-[var(--text)] placeholder-[var(--text-2)]/60 focus:outline-none focus:border-[#8A6A2F]"
-              />
-              <Search className="w-4 h-4 text-[#8A6A2F] dark:text-[#D9B877] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </form>
-
-            {navLinks.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  onNavigate(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`min-h-[44px] px-4 rounded-xl text-left text-[15px] font-medium transition-all ${
-                  currentTab === item.id
-                    ? 'bg-[#12263A] text-[#D9B877] font-semibold'
-                    : 'text-[var(--text)] hover:bg-[var(--surface-2)]'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-
-            <div className="pt-2 mt-2 border-t border-[var(--border)] flex flex-col gap-2">
-              {isAuthenticated && user ? (
-                <div className="flex flex-col gap-2">
-                  <div className="p-3 rounded-xl bg-[var(--surface-2)] flex items-center justify-between">
-                    <div className="min-w-0 pr-2">
-                      <p className="text-xs font-semibold text-[var(--text)] font-serif truncate">{user.name}</p>
-                      <p className="text-[10px] text-[var(--text-2)] truncate">{user.email}</p>
-                    </div>
-                    <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#12263A] text-[#D9B877]">
-                      {user.role === 'spi' ? 'SPI' : user.role === 'admin' ? 'Admin' : 'Pelanggan'}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      if (user.role === 'spi') onNavigate('spi');
-                      else if (user.role === 'admin') onNavigate('admin');
-                      else onNavigate('akun');
-                    }}
-                    className="min-h-[44px] px-4 rounded-xl bg-[var(--surface-2)] text-[var(--text)] text-xs font-semibold flex items-center justify-between cursor-pointer"
-                  >
-                    <span>{user.role === 'spi' ? 'Portal SPI' : user.role === 'admin' ? 'Portal Admin' : 'Akun Saya'}</span>
-                    <UserIcon className="w-4 h-4 text-[#8A6A2F]" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      (onLogout || authLogout)();
-                    }}
-                    className="min-h-[44px] px-4 rounded-xl border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>{t('auth.logout', 'Keluar')}</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Link
-                    to="/masuk"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex-1 min-h-[44px] px-4 rounded-full border border-[var(--border)] text-[var(--text)] text-xs font-semibold flex items-center justify-center cursor-pointer hover:bg-[var(--surface-2)] transition-colors"
-                  >
-                    <span>{t('auth.login', 'Masuk')}</span>
-                  </Link>
-                  <Link
-                    to="/daftar"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex-1 min-h-[44px] px-4 rounded-full bg-[#12263A] dark:bg-[#D9B877] text-white dark:text-[#12263A] text-xs font-semibold flex items-center justify-center cursor-pointer shadow-xs"
-                  >
-                    <span>{t('auth.register', 'Daftar')}</span>
-                  </Link>
-                </div>
-              )}
-
-              {/* Mobile Drawer Language & Theme Controls (sm:hidden) */}
-              <div className="flex sm:hidden items-center justify-between pt-3 mt-1 border-t border-[var(--border)] px-1">
-                <span className="text-xs text-[var(--text-2)] font-medium">{t('common.settings', 'Pengaturan')}</span>
-                <div className="flex items-center gap-2">
-                  <div
-                    role="group"
-                    aria-label={t('common.switchLang', 'Pilih Bahasa')}
-                    className="inline-flex items-center p-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] text-[11px] font-semibold"
-                  >
-                    <button
-                      type="button"
-                      aria-pressed={currentLang === 'id'}
-                      onClick={() => handleLangChange('id')}
-                      className={`px-2 py-0.5 rounded-md ${currentLang === 'id' ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] font-bold shadow-2xs' : 'opacity-70'}`}
-                    >
-                      ID
-                    </button>
-                    <button
-                      type="button"
-                      aria-pressed={currentLang === 'en'}
-                      onClick={() => handleLangChange('en')}
-                      className={`px-2 py-0.5 rounded-md ${currentLang === 'en' ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] font-bold shadow-2xs' : 'opacity-70'}`}
-                    >
-                      EN
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={resolvedTheme === 'dark'}
-                    aria-label={t('common.switchTheme', 'Ganti tema tampilan')}
-                    onClick={toggleTheme}
-                    className={`relative w-[52px] h-[26px] rounded-full p-1 flex items-center justify-between border cursor-pointer ${
-                      resolvedTheme === 'dark'
-                        ? 'bg-[#1D354E] border-[#D9B877]/50 text-[#D9B877]'
-                        : 'bg-[#EDE6DA] border-[#D9B877]/40 text-[#8A6A2F]'
-                    }`}
-                  >
-                    <Sun className="w-3 h-3 ml-0.5 z-10 pointer-events-none" />
-                    <Moon className="w-3 h-3 mr-0.5 z-10 pointer-events-none" />
-                    <span
-                      className={`absolute top-[2px] bottom-[2px] w-[20px] rounded-full shadow-sm transition-transform duration-200 ${
-                        resolvedTheme === 'dark' ? 'translate-x-[26px] bg-[#D9B877]' : 'translate-x-0 bg-white'
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </header>
 
+      {/* Global Search Overlay (Command Palette) */}
+      <SearchOverlay open={isSearchOverlayOpen} onOpenChange={setIsSearchOverlayOpen} />
+
       {/* ========================================================
-          3. KONTEN HALAMAN WEBSITE
+          3. KONTEN HALAMAN WEBSITE (dengan padding bawah untuk tab bar)
          ======================================================== */}
-      <main className="flex-1 w-full">{children}</main>
+      <main className="flex-1 w-full pb-16 lg:pb-0">{children}</main>
 
       {/* ========================================================
           4. FOOTER WEBSITE (Midnight #0D1C2B)
          ======================================================== */}
-      <footer className="bg-[#0D1C2B] text-white pt-16 pb-12 border-t border-white/10">
+      <footer className="bg-[#0D1C2B] text-white pt-8 sm:pt-16 pb-12 border-t border-white/10">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 pb-12 border-b border-white/10">
-            {/* Col 1 & 2: Brand & Newsletter */}
-            <div className="lg:col-span-2 flex flex-col items-start gap-4">
-              <div className="flex flex-col items-start gap-2">
-                <img
-                  src="/images/cde_logo.png"
-                  alt="CD'E Pearls Culture Pearls"
-                  width={160}
-                  height={56}
-                  className="h-14 sm:h-16 w-auto object-contain brightness-110 drop-shadow-md"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/cde_logo_clean.png';
-                  }}
-                />
-                <span className="text-[10px] uppercase tracking-[0.26em] font-semibold text-[#D9B877] pl-1">
-                  {t('common.brandTagline', 'Lombok South Sea Haute Joaillerie')}
-                </span>
-              </div>
-
-              <p className="text-[14px] text-white/70 max-w-sm leading-relaxed">
-                {t('site.footer.description', 'Atelier perhiasan mutiara air laut selatan (South Sea Pearls) asli dari perairan budidaya Sekotong & Medana, Lombok. Dirangkai tangan dengan emas 18K solid dan sertifikat lab gemologi independen.')}
-              </p>
-
-              {/* Newsletter subscription form */}
-              <div className="w-full max-w-md mt-2">
-                <span className="text-[12px] uppercase tracking-[0.16em] text-[#D9B877] font-semibold block mb-2">
-                  {t('site.footer.newsletterTitle', 'Dapatkan Buletin Koleksi Khusus')}
-                </span>
-                <form onSubmit={handleSubscribe} className="flex items-center gap-2">
-                  <input
-                    type="email"
-                    required
-                    placeholder={t('site.footer.newsletterPlaceholder', 'Masukkan alamat email Anda')}
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    className="flex-1 min-h-[44px] px-4 rounded-full bg-white/10 border border-white/20 text-white placeholder-white/50 text-[14px] focus:outline-none focus:border-[#D9B877]"
-                  />
-                  <button
-                    type="submit"
-                    className="min-h-[44px] px-5 rounded-full bg-[#D9B877] text-[#12263A] font-semibold text-xs hover:bg-[#e4ca93] transition-colors inline-flex items-center gap-1.5 cursor-pointer shrink-0"
-                  >
-                    <span>{t('site.footer.subscribe', 'Daftar')}</span>
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
-                </form>
-                {subscribed && (
-                  <span className="text-xs text-[#E2F1E0] mt-2 block">
-                    {t('site.footer.subscribed', '✓ Terima kasih! Anda telah terdaftar dalam buletin eksklusif kami.')}
-                  </span>
-                )}
-              </div>
+          {/* Mobile Footer Accordion (< lg) - Q3.7 */}
+          <div className="lg:hidden pb-6 space-y-5">
+            <div className="flex flex-col items-center text-center gap-2">
+              <img
+                src="/images/cde_logo.png"
+                alt="CD'E Pearls Culture Pearls"
+                width={120}
+                height={40}
+                className="h-10 w-auto object-contain brightness-110"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/cde_logo_clean.png';
+                }}
+              />
+              <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#D9B877]">
+                {t('common.brandTagline', 'Lombok South Sea Haute Joaillerie')}
+              </span>
             </div>
 
-            {/* Col 3: Our Products */}
-            <div>
-              <h4 className="text-[12px] uppercase tracking-[0.16em] text-[#D9B877] font-semibold mb-4">
-                {t('site.footer.ourProducts', 'Koleksi Perhiasan')}
-              </h4>
-              <ul className="flex flex-col gap-2.5 text-[14px] text-white/70">
-                <li><button type="button" onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">Kalung Mutiara</button></li>
-                <li><button type="button" onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">Gelang Emas 18K</button></li>
-                <li><button type="button" onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">Anting Stud &amp; Drop</button></li>
-                <li><button type="button" onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">Cincin Solitaire</button></li>
-                <li><button type="button" onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">Mutiara Lepas Grade AAA</button></li>
-              </ul>
+            <Accordion type="single" collapsible className="w-full border-t border-b border-white/10 divide-y divide-white/10">
+              <AccordionItem value="tentang" className="border-none">
+                <AccordionTrigger className="text-white hover:text-[#D9B877] py-3 text-xs tracking-wide">
+                  Tentang Atelier
+                </AccordionTrigger>
+                <AccordionContent className="text-white/70 space-y-2 pt-1 pb-3 text-xs">
+                  <p><button type="button" onClick={() => onNavigate('about')} className="hover:text-white transition-colors cursor-pointer">Tentang CD'E Pearls</button></p>
+                  <p><button type="button" onClick={() => onNavigate('studio')} className="hover:text-white transition-colors cursor-pointer">Studio 3D Atelier</button></p>
+                  <p><button type="button" onClick={() => onNavigate('education')} className="hover:text-white transition-colors cursor-pointer">Edukasi &amp; Gradasi Mutiara</button></p>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="bantuan" className="border-none">
+                <AccordionTrigger className="text-white hover:text-[#D9B877] py-3 text-xs tracking-wide">
+                  Layanan &amp; Bantuan
+                </AccordionTrigger>
+                <AccordionContent className="text-white/70 space-y-2 pt-1 pb-3 text-xs">
+                  <p><button type="button" onClick={() => onNavigate('faq')} className="hover:text-white transition-colors cursor-pointer">Pusat Bantuan</button></p>
+                  <p><button type="button" onClick={() => onNavigate('lacak-pesanan')} className="hover:text-white transition-colors cursor-pointer">Lacak Status Pesanan</button></p>
+                  <p><button type="button" onClick={() => onNavigate('cek-sertifikat')} className="hover:text-white transition-colors cursor-pointer">Cek Sertifikat Gemologi</button></p>
+                  <p><button type="button" onClick={() => onNavigate('contact')} className="hover:text-white transition-colors cursor-pointer">Kontak Concierge</button></p>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="legal" className="border-none">
+                <AccordionTrigger className="text-white hover:text-[#D9B877] py-3 text-xs tracking-wide">
+                  Informasi Legal
+                </AccordionTrigger>
+                <AccordionContent className="text-white/70 space-y-2 pt-1 pb-3 text-xs">
+                  <p><button type="button" onClick={() => onNavigate('syarat-ketentuan')} className="hover:text-white transition-colors cursor-pointer">Syarat &amp; Ketentuan</button></p>
+                  <p><button type="button" onClick={() => onNavigate('kebijakan-privasi')} className="hover:text-white transition-colors cursor-pointer">Kebijakan Privasi</button></p>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            {/* Social Icons 36px Round Buttons */}
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-[#D9B877] hover:text-[#12263A] transition-colors flex items-center justify-center text-white text-xs"
+                aria-label="Instagram CD'E Pearls"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+              <a
+                href="mailto:concierge@cdepearls.com"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-[#D9B877] hover:text-[#12263A] transition-colors flex items-center justify-center text-white"
+                aria-label="Email Concierge"
+              >
+                <Mail className="w-4 h-4" />
+              </a>
+              <a
+                href="tel:+6281239001122"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-[#D9B877] hover:text-[#12263A] transition-colors flex items-center justify-center text-white"
+                aria-label="Telepon Butik"
+              >
+                <Phone className="w-4 h-4" />
+              </a>
             </div>
 
-            {/* Col 4: Layanan & Order */}
-            <div>
-              <h4 className="text-[12px] uppercase tracking-[0.16em] text-[#D9B877] font-semibold mb-4">
-                {t('site.footer.services', 'Layanan Butik')}
-              </h4>
-              <ul className="flex flex-col gap-2.5 text-[14px] text-white/70">
-                <li><button type="button" onClick={() => onNavigate('studio')} className="hover:text-white transition-colors cursor-pointer">Studio 3D Atelier</button></li>
-                <li><button type="button" onClick={() => onNavigate('education')} className="hover:text-white transition-colors cursor-pointer">Edukasi &amp; Gradasi Mutiara</button></li>
-                <li><button type="button" onClick={() => onNavigate('keranjang')} className="hover:text-white transition-colors cursor-pointer">Status Pesanan &amp; Resi</button></li>
-                <li><button type="button" onClick={() => onNavigate('akun')} className="hover:text-white transition-colors cursor-pointer">Portal Pelanggan</button></li>
-                <li><button type="button" onClick={() => onNavigate('admin')} className="hover:text-white transition-colors cursor-pointer">Portal Admin Toko</button></li>
-              </ul>
-            </div>
-
-            {/* Col 5: Contact & Concierge */}
-            <div>
-              <h4 className="text-[12px] uppercase tracking-[0.16em] text-[#D9B877] font-semibold mb-4">
-                Concierge Atelier
-              </h4>
-              <ul className="flex flex-col gap-3 text-[14px] text-white/70">
-                <li className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-[#D9B877]" />
-                  <span>+62 812-3900-1122</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-[#D9B877]" />
-                  <span>concierge@cdepearls.com</span>
-                </li>
-                <li className="pt-2">
-                  <a
-                    href="https://instagram.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs text-[#D9B877] hover:underline"
-                  >
-                    <span>Instagram: @cdepearlslombok</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </li>
-              </ul>
-            </div>
+            <p className="text-center text-[11px] text-white/50 pt-2 border-t border-white/10">
+              &copy; 2026 CD'E Pearls Lombok. Hak Cipta Dilindungi.
+            </p>
           </div>
 
-          {/* Copyright bar */}
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-white/60">
-            <div>
-              &copy; 2026 CD'E Pearls Lombok. {t('common.allRightsReserved', 'Hak Cipta Dilindungi Undang-Undang.')}
+          {/* Desktop Footer (hidden lg:block) */}
+          <div className="hidden lg:block">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 pb-12 border-b border-white/10">
+              {/* Col 1 & 2: Brand & Newsletter */}
+              <div className="lg:col-span-2 flex flex-col items-start gap-4">
+                <div className="flex flex-col items-start gap-2">
+                  <img
+                    src="/images/cde_logo.png"
+                    alt="CD'E Pearls Culture Pearls"
+                    width={160}
+                    height={56}
+                    className="h-14 sm:h-16 w-auto object-contain brightness-110 drop-shadow-md"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/cde_logo_clean.png';
+                    }}
+                  />
+                  <span className="text-[10px] uppercase tracking-[0.26em] font-semibold text-[#D9B877] pl-1">
+                    {t('common.brandTagline', 'Lombok South Sea Haute Joaillerie')}
+                  </span>
+                </div>
+
+                <p className="text-[14px] text-white/70 max-w-sm leading-relaxed">
+                  {t('site.footer.description', 'Atelier perhiasan mutiara air laut selatan (South Sea Pearls) asli dari perairan budidaya Sekotong & Medana, Lombok. Dirangkai tangan dengan emas 18K solid dan sertifikat lab gemologi independen.')}
+                </p>
+
+                {/* Newsletter subscription form */}
+                <div className="w-full max-w-md mt-2">
+                  <span className="text-[12px] uppercase tracking-[0.16em] text-[#D9B877] font-semibold block mb-2">
+                    {t('site.footer.newsletterTitle', 'Dapatkan Buletin Koleksi Khusus')}
+                  </span>
+                  <form onSubmit={handleSubscribe} className="flex items-center gap-2">
+                    <input
+                      type="email"
+                      required
+                      placeholder={t('site.footer.newsletterPlaceholder', 'Masukkan alamat email Anda')}
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      className="flex-1 min-h-[44px] px-4 rounded-full bg-white/10 border border-white/20 text-white placeholder-white/50 text-[14px] focus:outline-none focus:border-[#D9B877]"
+                    />
+                    <button
+                      type="submit"
+                      className="min-h-[44px] px-5 rounded-full bg-[#D9B877] text-[#12263A] font-semibold text-xs hover:bg-[#e4ca93] transition-colors inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+                    >
+                      <span>{t('site.footer.subscribe', 'Daftar')}</span>
+                      <Send className="w-3.5 h-3.5" />
+                    </button>
+                  </form>
+                  {subscribed && (
+                    <span className="text-xs text-[#E2F1E0] mt-2 block">
+                      {t('site.footer.subscribed', '✓ Terima kasih! Anda telah terdaftar dalam buletin eksklusif kami.')}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Col 3: Our Products */}
+              <div>
+                <h4 className="text-[12px] uppercase tracking-[0.16em] text-[#D9B877] font-semibold mb-4">
+                  {t('site.footer.ourProducts', 'Koleksi Perhiasan')}
+                </h4>
+                <ul className="flex flex-col gap-2.5 text-[14px] text-white/70">
+                  <li><button type="button" onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">Kalung Mutiara</button></li>
+                  <li><button type="button" onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">Gelang Emas 18K</button></li>
+                  <li><button type="button" onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">Anting Stud &amp; Drop</button></li>
+                  <li><button type="button" onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">Cincin Solitaire</button></li>
+                  <li><button type="button" onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">Mutiara Lepas Grade AAA</button></li>
+                </ul>
+              </div>
+
+              {/* Col 4: Layanan & Order */}
+              <div>
+                <h4 className="text-[12px] uppercase tracking-[0.16em] text-[#D9B877] font-semibold mb-4">
+                  {t('site.footer.services', 'Layanan Butik')}
+                </h4>
+                <ul className="flex flex-col gap-2.5 text-[14px] text-white/70">
+                  <li><button type="button" onClick={() => onNavigate('studio')} className="hover:text-white transition-colors cursor-pointer">Studio 3D Atelier</button></li>
+                  <li><button type="button" onClick={() => onNavigate('education')} className="hover:text-white transition-colors cursor-pointer">Edukasi &amp; Gradasi Mutiara</button></li>
+                  <li><button type="button" onClick={() => onNavigate('keranjang')} className="hover:text-white transition-colors cursor-pointer">Status Pesanan &amp; Resi</button></li>
+                  <li><button type="button" onClick={() => onNavigate('akun')} className="hover:text-white transition-colors cursor-pointer">Portal Pelanggan</button></li>
+                  <li><button type="button" onClick={() => onNavigate('admin')} className="hover:text-white transition-colors cursor-pointer">Portal Admin Toko</button></li>
+                </ul>
+              </div>
+
+              {/* Col 5: Contact & Concierge */}
+              <div>
+                <h4 className="text-[12px] uppercase tracking-[0.16em] text-[#D9B877] font-semibold mb-4">
+                  Concierge Atelier
+                </h4>
+                <ul className="flex flex-col gap-3 text-[14px] text-white/70">
+                  <li className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-[#D9B877]" />
+                    <span>+62 812-3900-1122</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-[#D9B877]" />
+                    <span>concierge@cdepearls.com</span>
+                  </li>
+                  <li className="pt-2">
+                    <a
+                      href="https://instagram.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs text-[#D9B877] hover:underline"
+                    >
+                      <span>Instagram: @cdepearlslombok</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </li>
+                </ul>
+              </div>
             </div>
-            <div className="flex items-center gap-6">
-              <span onClick={() => onNavigate('about')} className="hover:text-white cursor-pointer">{t('site.nav.about', 'Tentang Kami')}</span>
-              <span className="hover:text-white cursor-pointer">{t('common.privacyPolicy', 'Kebijakan Privasi')}</span>
-              <span className="hover:text-white cursor-pointer">{t('common.terms', 'Syarat & Ketentuan')}</span>
+
+            {/* Copyright bar */}
+            <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-white/60">
+              <div>
+                &copy; 2026 CD'E Pearls Lombok. {t('common.allRightsReserved', 'Hak Cipta Dilindungi Undang-Undang.')}
+              </div>
+              <div className="flex items-center gap-6">
+                <span onClick={() => onNavigate('about')} className="hover:text-white cursor-pointer">{t('site.nav.about', 'Tentang Kami')}</span>
+                <span className="hover:text-white cursor-pointer">{t('common.privacyPolicy', 'Kebijakan Privasi')}</span>
+                <span className="hover:text-white cursor-pointer">{t('common.terms', 'Syarat & Ketentuan')}</span>
+              </div>
             </div>
           </div>
         </div>

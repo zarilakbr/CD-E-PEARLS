@@ -116,7 +116,7 @@ test.describe('Tahap O - Bagian 1: Route Crawler & Guard Tests', () => {
     expect(page.url()).toContain('/masuk?next=%2Fspi');
   });
 
-  test('Guest membuka /akun otomatis dialihkan ke /masuk?next=%2Fakun', async ({ page }) => {
+  test('Guest membuka /akun melihat Hub Akun Tamu (Q2)', async ({ page }) => {
     await page.route('**/api/v1/auth/me', (r) =>
       r.fulfill({
         status: 401,
@@ -126,8 +126,26 @@ test.describe('Tahap O - Bagian 1: Route Crawler & Guard Tests', () => {
     );
 
     await page.goto('/akun');
-    await page.waitForURL((url) => url.pathname === '/masuk' && url.searchParams.get('next') === '/akun');
-    expect(page.url()).toContain('/masuk?next=%2Fakun');
+    await page.waitForLoadState('networkidle');
+    expect(page.url()).toContain('/akun');
+    const heading = await page.locator('h1').textContent();
+    expect(heading).toContain('Akun Koleksi Tamu');
+    const masukBtn = page.getByRole('button', { name: /masuk/i });
+    expect(await masukBtn.count()).toBeGreaterThanOrEqual(1);
+  });
+
+  test('Guest membuka sub-rute /akun/pesanan otomatis dialihkan ke /masuk?next=%2Fakun%2Fpesanan', async ({ page }) => {
+    await page.route('**/api/v1/auth/me', (r) =>
+      r.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Unauthenticated.' }),
+      })
+    );
+
+    await page.goto('/akun/pesanan');
+    await page.waitForURL((url) => url.pathname === '/masuk' && url.searchParams.get('next') === '/akun/pesanan');
+    expect(page.url()).toContain('/masuk?next=%2Fakun%2Fpesanan');
   });
 
   test('Guest membuka /checkout otomatis dialihkan ke /masuk?next=%2Fcheckout', async ({ page }) => {

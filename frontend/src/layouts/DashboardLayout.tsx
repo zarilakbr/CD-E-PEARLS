@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Menu as MenuIcon,
-  X,
   Search,
   ChevronRight,
   ChevronLeft,
   Calendar,
 } from 'lucide-react';
+import { Sheet, SheetContent, SheetTitle } from '../components/ui/sheet';
 import { UserProfileDropdown } from '../components/common/UserProfileDropdown';
 import { DASHBOARD_BANNERS } from '../data/dashboardBanners';
 import { useTranslation } from 'react-i18next';
@@ -138,30 +138,116 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <div className="min-h-[100dvh] flex flex-row bg-[var(--bg-dash)] text-[var(--text)] font-sans relative overflow-x-hidden">
-      {/* Mobile Backdrop */}
-      {mobileMenuOpen && (
-        <div
-          onClick={() => setMobileMenuOpen(false)}
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-xs transition-opacity"
-          aria-hidden="true"
-        />
-      )}
+      {/* ========================================================
+          1. SIDEBAR MOBILE (shadcn Sheet, side="left")
+         ======================================================== */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="p-0 w-[260px] bg-gradient-to-b from-[#12263A] to-[#0D1C2B] text-white border-r border-white/10 flex flex-col justify-between [&>button]:text-white">
+          <SheetTitle className="sr-only">{sidebarTitle}</SheetTitle>
+          {/* Top Logo */}
+          <div className="p-3.5 border-b border-white/10 flex items-center justify-between">
+            <div
+              onClick={() => {
+                if (onNavigateHome) onNavigateHome();
+                setMobileMenuOpen(false);
+              }}
+              className="cursor-pointer group select-none py-1 overflow-hidden"
+              title="Kembali ke Beranda Toko CD'E Pearls"
+            >
+              <div className="p-1.5 rounded-xl bg-white/95 border border-white/20 shadow-xs inline-flex items-center justify-center">
+                <img
+                  src="/images/cde_logo.png"
+                  alt="CD'E Pearls"
+                  width={120}
+                  height={36}
+                  className="h-8 w-auto object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/images/cde_logo_clean.png';
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Nav Items */}
+          <div className="p-3 flex-1 overflow-y-auto custom-scrollbar">
+            <div className="px-3 py-1.5 mb-1">
+              <span className="text-[11px] uppercase tracking-[0.16em] font-semibold text-[#D9B877]">
+                {sidebarTitle}
+              </span>
+            </div>
+
+            <nav className="flex flex-col gap-1">
+              {menuItems.map((item) => {
+                const isActive = activeMenuId === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      onSelectMenu(item.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`min-h-[44px] w-full px-3 py-2.5 rounded-xl text-[14px] font-medium flex items-center justify-between transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-white/12 text-[#D9B877] font-semibold shadow-xs'
+                        : 'text-white/80 hover:text-white hover:bg-white/6'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 truncate">
+                      {item.icon && (
+                        <span className={isActive ? 'text-[#D9B877]' : 'text-white/70'}>
+                          {item.icon}
+                        </span>
+                      )}
+                      <span className="truncate">{item.label}</span>
+                    </div>
+
+                    {item.badge !== undefined && (
+                      <span className="ml-2 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#D9B877]/20 text-[#D9B877] border border-[#D9B877]/40">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Bottom Action */}
+          <div className="p-3 border-t border-white/10 flex flex-col gap-2">
+            {onNavigateHome && (
+              <button
+                type="button"
+                onClick={() => {
+                  onNavigateHome();
+                  setMobileMenuOpen(false);
+                }}
+                title="Lihat Website Toko"
+                className="w-full min-h-[44px] px-3 rounded-xl text-xs font-medium text-white/70 hover:text-[#D9B877] hover:bg-white/5 flex items-center justify-between transition-all cursor-pointer"
+              >
+                <span>{t('common.viewStore', 'Lihat Website Toko')}</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* ========================================================
-          1. SIDEBAR KIRI (Desktop: Collapsible with Tooltips)
+          1. SIDEBAR KIRI DESKTOP (Collapsible with Tooltips)
          ======================================================== */}
       <aside
         ref={sidebarRef}
-        className={`fixed lg:sticky top-0 bottom-0 z-50 lg:z-30 shrink-0 bg-gradient-to-b from-[#12263A] to-[#0D1C2B] text-white flex flex-col justify-between min-h-[100dvh] transition-all duration-300 ease-in-out border-r border-white/5 ${
+        className={`hidden lg:flex lg:sticky top-0 bottom-0 z-30 shrink-0 bg-gradient-to-b from-[#12263A] to-[#0D1C2B] text-white flex-col justify-between min-h-[100dvh] transition-all duration-300 ease-in-out border-r border-white/5 ${
           isCollapsed ? 'lg:w-[72px]' : 'lg:w-[240px]'
-        } w-[240px] ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}`}
+        }`}
       >
         {/* Top: Logo Resmi di Sidebar Desktop */}
         <div className="p-3.5 border-b border-white/10 flex items-center justify-between">
           <div
             onClick={() => {
               if (onNavigateHome) onNavigateHome();
-              setMobileMenuOpen(false);
             }}
             className="cursor-pointer group select-none py-1 overflow-hidden"
             title="Kembali ke Beranda Toko CD'E Pearls"
@@ -184,20 +270,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <button
             type="button"
             onClick={toggleCollapse}
-            className="hidden lg:flex p-1.5 rounded-lg text-white/60 hover:text-[#D9B877] hover:bg-white/10 transition-colors cursor-pointer"
+            className="flex p-1.5 rounded-lg text-white/60 hover:text-[#D9B877] hover:bg-white/10 transition-colors cursor-pointer"
             title={isCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
-
-          {/* Tombol Tutup Mobile Drawer */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(false)}
-            className="lg:hidden min-h-[44px] min-w-[44px] flex items-center justify-center text-white/80 hover:text-white p-2 rounded-lg cursor-pointer"
-            aria-label="Tutup menu navigasi"
-          >
-            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -220,7 +296,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     type="button"
                     onClick={() => {
                       onSelectMenu(item.id);
-                      setMobileMenuOpen(false);
                     }}
                     className={`min-h-[44px] w-full px-3 py-2.5 rounded-xl text-[14px] font-medium flex items-center transition-all cursor-pointer ${
                       isCollapsed ? 'justify-center' : 'justify-between'
@@ -266,7 +341,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               type="button"
               onClick={() => {
                 onNavigateHome();
-                setMobileMenuOpen(false);
               }}
               title="Lihat Website Toko"
               className={`w-full min-h-[44px] px-3 rounded-xl text-xs font-medium text-white/70 hover:text-[#D9B877] hover:bg-white/5 flex items-center transition-all cursor-pointer ${

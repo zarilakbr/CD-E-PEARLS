@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -13,6 +14,11 @@ import {
   Trash2,
   CreditCard,
   ChevronRight,
+  Package,
+  CheckCircle2,
+  RotateCcw,
+  HelpCircle,
+  Settings,
 } from 'lucide-react';
 import { DashboardLayout, type DashboardMenuItem } from '../../layouts/DashboardLayout';
 import { PageHeader } from '../../components/common/PageHeader';
@@ -24,6 +30,8 @@ import { ProductCard } from '../../components/common/ProductCard';
 import { mockOrders, mockProducts, type MockOrder } from '../../data/mock';
 import { authApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { GuestAccountHub } from './GuestAccountHub';
+import { SiteLayout } from '../../layouts/SiteLayout';
 
 const getItemImage = (name: string) => {
   const n = (name || '').toLowerCase();
@@ -52,6 +60,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   initialMenu,
 }) => {
   const { user } = useAuth();
+
   const [activeMenu, setActiveMenu] = useState<string>(() => {
     if (initialMenu) return initialMenu;
     const path = typeof window !== 'undefined' ? window.location.pathname : '';
@@ -180,6 +189,21 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     setSearchedTrackingOrder(found || null);
   };
 
+  if (!user) {
+    return (
+      <SiteLayout
+        currentTab="akun"
+        onNavigate={(tab) => {
+          if (tab === 'home') onNavigateHome();
+          else if (tab === 'catalog') onNavigateCatalog();
+          else if (onNavigate) onNavigate(tab);
+        }}
+      >
+        <GuestAccountHub />
+      </SiteLayout>
+    );
+  }
+
   return (
     <DashboardLayout
       sidebarTitle="Akun Saya"
@@ -208,11 +232,170 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           4.1 RINGKASAN
          ======================================================== */}
       {activeMenu === 'summary' && (
-        <div className="space-y-8 animate-in fade-in duration-300">
-          <PageHeader
-            title={`Halo, ${profileData.name}`}
-            description="Selamat datang di akun pribadi perhiasan CD'E Pearls. Pantau pesanan aktif Anda dan koleksi mutiara favorit."
-          />
+        <>
+          {/* MOBILE MARKETPLACE SUMMARY (< lg) - TAHAP Q8 */}
+          <div className="lg:hidden space-y-4 pb-24 animate-in fade-in duration-300">
+            {/* Foto profil kecil + nama + email + status keanggotaan (Emas/Perak) */}
+            <div className="bg-white dark:bg-[#12263A] border border-[var(--border)] rounded-2xl p-4 flex items-center justify-between shadow-2xs">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#D9B877] shrink-0 shadow-xs">
+                  <img
+                    src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80"
+                    alt={profileData.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-sm text-[var(--text)] truncate">{profileData.name}</h3>
+                  <p className="text-xs text-[var(--text-2)] truncate">{profileData.email}</p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#D9B877]/20 text-[#8A6A2F] dark:text-[#D9B877] border border-[#D9B877]/30 shrink-0 ml-2">
+                Member Emas
+              </span>
+            </div>
+
+            {/* Lima status pesanan ala marketplace: Belum bayar, Dikemas, Dikirim, Selesai, Retur */}
+            <div className="bg-white dark:bg-[#12263A] border border-[var(--border)] rounded-2xl p-3 shadow-2xs">
+              <div className="text-[12px] font-semibold text-[var(--text)] mb-2 px-1">
+                Status Pesanan
+              </div>
+              <div className="grid grid-cols-5 gap-1 text-center">
+                {[
+                  { label: 'Belum bayar', icon: CreditCard, count: orders.filter(o => o.status === 'Menunggu Pembayaran').length, tab: 'Menunggu Pembayaran' },
+                  { label: 'Dikemas', icon: Package, count: orders.filter(o => o.status === 'Dikemas').length, tab: 'Dikemas' },
+                  { label: 'Dikirim', icon: Truck, count: orders.filter(o => o.status === 'Dikirim').length, tab: 'Dikirim' },
+                  { label: 'Selesai', icon: CheckCircle2, count: orders.filter(o => o.status === 'Selesai').length, tab: 'Selesai' },
+                  { label: 'Retur', icon: RotateCcw, count: 0, tab: 'Semua' },
+                ].map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setOrderStatusTab(item.tab);
+                        handleSelectMenu('my_orders');
+                      }}
+                      className="flex flex-col items-center justify-center p-2 rounded-xl hover:bg-[var(--bg-dash)] transition-colors relative cursor-pointer"
+                    >
+                      <div className="relative">
+                        <Icon className="w-5 h-5 text-[#8A6A2F] dark:text-[#D9B877]" />
+                        {item.count > 0 && (
+                          <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-[#BA4E4E] text-white text-[10px] font-bold flex items-center justify-center">
+                            {item.count}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] mt-1.5 text-[var(--text-2)] font-medium truncate w-full">
+                        {item.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Pesanan aktif terakhir (maksimal 2 kartu ringkas dengan status, foto kecil, tombol 'Lacak', 'Ulas', 'Beli lagi') */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-semibold text-[var(--text)]">Pesanan Terakhir</span>
+                <button
+                  type="button"
+                  onClick={() => handleSelectMenu('my_orders')}
+                  className="text-xs text-[#8A6A2F] dark:text-[#D9B877] font-semibold hover:underline"
+                >
+                  Lihat Semua
+                </button>
+              </div>
+
+              {orders.slice(0, 2).map((ord) => (
+                <div key={ord.id} className="bg-white dark:bg-[#12263A] border border-[var(--border)] rounded-2xl p-3 space-y-2.5 shadow-2xs">
+                  <div className="flex items-center justify-between text-xs pb-2 border-b border-[var(--border)]">
+                    <span className="font-mono text-[var(--text-2)]">{ord.id}</span>
+                    <StatusBadge status={ord.status} />
+                  </div>
+                  <div className="flex gap-3 items-center">
+                    <img
+                      src={getItemImage(ord.items[0]?.name || '')}
+                      alt={ord.items[0]?.name || ''}
+                      className="w-12 h-12 rounded-lg object-cover border border-[var(--border)] shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-[var(--text)] line-clamp-1">{ord.items[0]?.name}</p>
+                      <p className="text-xs font-bold text-[#8A6A2F] dark:text-[#D9B877] mt-0.5">Rp {ord.total.toLocaleString('id-ID')}</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2 border-t border-[var(--border)]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedOrder(ord);
+                        handleSelectMenu('my_orders');
+                      }}
+                      className="px-3 py-1.5 rounded-lg border border-[var(--border)] text-xs font-medium text-[var(--text)] hover:bg-[var(--bg-dash)] transition-colors"
+                    >
+                      Lacak
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toast.success(`Ulasan untuk pesanan ${ord.id} dibuka`);
+                      }}
+                      className="px-3 py-1.5 rounded-lg border border-[var(--border)] text-xs font-medium text-[var(--text)] hover:bg-[var(--bg-dash)] transition-colors"
+                    >
+                      Ulas
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onAddToCart) onAddToCart(ord.items[0]?.name);
+                        toast.success(`✓ Ditambahkan ke keranjang belanja`);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-[#D9B877] text-[#12263A] text-xs font-semibold hover:bg-[#E5C98F] transition-colors"
+                    >
+                      Beli lagi
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tautan baris: Alamat Tersimpan, Pengaturan Akun, Bantuan, Keluar */}
+            <div className="bg-white dark:bg-[#12263A] border border-[var(--border)] rounded-2xl divide-y divide-[var(--border)] overflow-hidden shadow-2xs">
+              {[
+                { label: 'Alamat Tersimpan', icon: MapPin, onClick: () => handleSelectMenu('addresses') },
+                { label: 'Pengaturan Akun', icon: Settings, onClick: () => handleSelectMenu('profile') },
+                { label: 'Bantuan', icon: HelpCircle, onClick: () => { window.location.href = '/bantuan'; } },
+                { label: 'Keluar', icon: LogOut, onClick: () => setIsLogoutDialogOpen(true), isDanger: true },
+              ].map((row, idx) => {
+                const Icon = row.icon;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={row.onClick}
+                    className={`w-full min-h-[48px] px-4 py-3 flex items-center justify-between text-xs font-medium transition-colors hover:bg-[var(--bg-dash)] cursor-pointer ${
+                      row.isDanger ? 'text-[#BA4E4E]' : 'text-[var(--text)]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-4 h-4" />
+                      <span>{row.label}</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 opacity-50" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* DESKTOP SUMMARY (lg:block) */}
+          <div className="hidden lg:block space-y-8 animate-in fade-in duration-300">
+            <PageHeader
+              title={`Halo, ${profileData.name}`}
+              description="Selamat datang di akun pribadi perhiasan CD'E Pearls. Pantau pesanan aktif Anda dan koleksi mutiara favorit."
+            />
 
           {/* 3 Kartu Ringkasan Pelanggan */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -411,6 +594,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             </div>
           </div>
         </div>
+        </>
       )}
 
       {/* ========================================================

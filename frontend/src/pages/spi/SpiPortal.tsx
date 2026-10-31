@@ -263,8 +263,8 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
             </div>
           )}
 
-          {/* Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Metric Cards (2 kolom di mobile, 4 kolom di desktop) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <StatCard
               label="Menunggu Persetujuan"
               value={`${pendingApprovals.length} Pengajuan`}

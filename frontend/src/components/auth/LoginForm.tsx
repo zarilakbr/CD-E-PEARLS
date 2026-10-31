@@ -310,20 +310,22 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, nextPath }) => 
           </label>
         </div>
 
-        {/* Turnstile Widget */}
+        {/* Turnstile Widget (dengan scaling aman di layar 320px) */}
         {isTurnstileConfigured ? (
-          <div className="flex justify-center py-1">
-            <Turnstile
-              siteKey={siteKey}
-              onSuccess={(token) => setTurnstileToken(token)}
-              onError={() => setTurnstileToken(null)}
-              onExpire={() => setTurnstileToken(null)}
-              options={{
-                theme: resolvedTheme === 'dark' ? 'dark' : 'light',
-                language: i18n.language?.startsWith('en') ? 'en' : 'id',
-                size: 'normal',
-              }}
-            />
+          <div className="w-full max-w-full overflow-hidden flex justify-center py-1">
+            <div className="scale-90 xs:scale-100 origin-center max-w-full">
+              <Turnstile
+                siteKey={siteKey}
+                onSuccess={(token) => setTurnstileToken(token)}
+                onError={() => setTurnstileToken(null)}
+                onExpire={() => setTurnstileToken(null)}
+                options={{
+                  theme: resolvedTheme === 'dark' ? 'dark' : 'light',
+                  language: i18n.language?.startsWith('en') ? 'en' : 'id',
+                  size: 'normal',
+                }}
+              />
+            </div>
           </div>
         ) : isProd ? (
           <p className="text-xs text-amber-600 text-center">

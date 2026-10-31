@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { ProductCard } from '../../components/common/ProductCard';
 import { PearlVarietiesMarquee } from '../../components/home/PearlVarietiesMarquee';
+import { MobileMarketplaceHome } from '../../components/home/MobileMarketplaceHome';
 import { mockCategories, mockProducts, type MockProduct } from '../../data/mock';
 
 interface PublicHomePageProps {
@@ -157,8 +158,18 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
 
   return (
     <div className="w-full flex flex-col font-sans">
-      {/* ========================================================
-          1. HERO SECTION (HAUTE JOAILLERIE SAMUDERA INDONESIA)
+      {/* MOBILE VIEW (< lg): TAMPILAN MARKETPLACE (TAHAP Q) */}
+      <div className="lg:hidden w-full">
+        <MobileMarketplaceHome
+          onSelectProduct={onSelectProduct || (() => {})}
+          onAddToCart={onAddToCart}
+        />
+      </div>
+
+      {/* DESKTOP VIEW (lg+): TERKUNCI & TETAP ELEGAN */}
+      <div className="hidden lg:flex flex-col w-full">
+        {/* ========================================================
+            1. HERO SECTION (HAUTE JOAILLERIE SAMUDERA INDONESIA)
           Latar: Gradien ivory (#FBF8F3) ke champagne (#F3EBDD)
           + Kilau mutiara (radial-gradient putih 60% di sudut kanan atas)
           + Foto dalam bingkai bulat
@@ -899,6 +910,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
           </a>
         </div>
       </section>
+      </div>
     </div>
   );
 };

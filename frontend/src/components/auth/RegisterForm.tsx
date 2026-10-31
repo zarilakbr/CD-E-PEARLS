@@ -466,17 +466,19 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, nextPath 
 
         {/* Cloudflare Turnstile */}
         {isTurnstileConfigured && (
-          <div className="pt-2 flex justify-center">
-            <Turnstile
-              siteKey={siteKey}
-              onSuccess={(token) => setTurnstileToken(token)}
-              onError={() => setServerError('Verifikasi keamanan Cloudflare gagal.')}
-              onExpire={() => setTurnstileToken(null)}
-              options={{
-                theme: 'auto',
-                size: 'normal',
-              }}
-            />
+          <div className="pt-2 w-full max-w-full overflow-hidden flex justify-center">
+            <div className="scale-90 xs:scale-100 origin-center max-w-full">
+              <Turnstile
+                siteKey={siteKey}
+                onSuccess={(token) => setTurnstileToken(token)}
+                onError={() => setServerError('Verifikasi keamanan Cloudflare gagal.')}
+                onExpire={() => setTurnstileToken(null)}
+                options={{
+                  theme: 'auto',
+                  size: 'normal',
+                }}
+              />
+            </div>
           </div>
         )}
 
