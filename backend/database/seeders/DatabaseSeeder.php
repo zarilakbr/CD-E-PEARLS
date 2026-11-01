@@ -23,10 +23,27 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Seed Accounts strictly from environment or high-entropy random generation
-        $userPassword = env('SEED_USER_PASSWORD') ?: Str::random(32);
-        $adminPassword = env('SEED_ADMIN_PASSWORD') ?: Str::random(32);
-        $spiPassword = env('SEED_SPI_PASSWORD') ?: Str::random(32);
+        // 1. Seed Accounts strictly from environment; fail hard if missing in non-testing
+        $isTesting = app()->environment('testing');
+        $userPassword = env('SEED_USER_PASSWORD');
+        $adminPassword = env('SEED_ADMIN_PASSWORD');
+        $spiPassword = env('SEED_SPI_PASSWORD');
+
+        if (! $isTesting) {
+            if (empty($userPassword)) {
+                throw new \RuntimeException('Seeder gagal: Variabel environment SEED_USER_PASSWORD belum diatur. Seeder dilarang membuat sandi acak diam-diam di lingkungan selain testing.');
+            }
+            if (empty($adminPassword)) {
+                throw new \RuntimeException('Seeder gagal: Variabel environment SEED_ADMIN_PASSWORD belum diatur. Seeder dilarang membuat sandi acak diam-diam di lingkungan selain testing.');
+            }
+            if (empty($spiPassword)) {
+                throw new \RuntimeException('Seeder gagal: Variabel environment SEED_SPI_PASSWORD belum diatur. Seeder dilarang membuat sandi acak diam-diam di lingkungan selain testing.');
+            }
+        } else {
+            $userPassword = $userPassword ?: 'TestUserPass123!';
+            $adminPassword = $adminPassword ?: 'TestAdminPass123!';
+            $spiPassword = $spiPassword ?: 'TestSpiPass123!';
+        }
 
         $user = User::updateOrCreate(
             ['email' => env('SEED_USER_EMAIL', 'siti.rahma@gmail.com')],

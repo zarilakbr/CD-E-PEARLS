@@ -222,6 +222,15 @@ class AuthController extends Controller
             ], Response::HTTP_FORBIDDEN);
         }
 
+        // 5b. Email verification check
+        if (empty($user->email_verified_at)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'ACCOUNT_UNVERIFIED',
+                'message' => 'Akun Anda belum diverifikasi. Silakan periksa kotak masuk email Anda atau kirim ulang tautan verifikasi.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
         // 6. Success: clear counters and update timestamp
         RateLimiter::clear($emailKey);
         $user->update([
@@ -229,7 +238,9 @@ class AuthController extends Controller
             'last_login_at' => now(),
         ]);
 
-        Auth::login($user, (bool) ($validated['remember'] ?? false));
+        if (Auth::guard('web') instanceof \Illuminate\Contracts\Auth\StatefulGuard) {
+            Auth::guard('web')->login($user, (bool) ($validated['remember'] ?? false));
+        }
 
         if ($request->hasSession()) {
             $request->session()->regenerate();

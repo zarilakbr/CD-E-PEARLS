@@ -142,6 +142,39 @@ php artisan view:cache
 
 ---
 
+## 5B. Deploy Frontend ke Cloudflare Pages / Workers
+
+Untuk deployment frontend ke Cloudflare (Workers Static Assets / Cloudflare Pages):
+
+### A. Build Configuration di Cloudflare Dashboard
+- **Framework Preset**: Vite
+- **Root Directory**: `frontend`
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+
+### B. Variabel Lingkungan Build (Cloudflare Build Variables)
+Variabel berikut wajib diisi di dashboard Cloudflare (Settings > Environment variables / Build variables):
+- `VITE_API_URL`: Endpoint basis API backend (contoh: `https://api.cdepearls.com/api/v1`).
+- `VITE_TURNSTILE_SITE_KEY`: Site key widget Cloudflare Turnstile yang terdaftar untuk domain frontend.
+
+> [!NOTE]
+> Variabel berawalan `VITE_*` dibaca saat proses kompilasi (`npm run build`) dan tertanam langsung ke dalam aset statis JavaScript/HTML.
+
+### C. Konfigurasi Backend Terkait
+Di sisi backend (`backend/.env`), pastikan variabel berikut diselaraskan:
+- `FRONTEND_URL`: URL publik frontend (misal `https://cdepearlslombok.workers.dev` atau `https://cdepearls.com`).
+- **Origin CORS**: Origin frontend wajib diizinkan di middleware CORS backend (misal via `cors.php` atau `SANCTUM_STATEFUL_DOMAINS` / `CORS_ALLOWED_ORIGINS`).
+- `GOOGLE_REDIRECT_URI`: URI callback OAuth Google (`${APP_URL}/api/v1/auth/google/callback`).
+- **Hostname Turnstile**: Tambahkan domain frontend ke daftar domain yang diizinkan pada dashboard Cloudflare Turnstile.
+
+### D. Arsitektur Autentikasi: Bearer Token vs Cookie Sesi
+Aplikasi ini menggunakan autentikasi **Bearer Token (Laravel Sanctum Personal Access Token)**:
+- Token disimpan di `localStorage` peramban klien dan dikirimkan pada setiap panggilan API via header `Authorization: Bearer <token>`.
+- Karena tidak bergantung pada cookie sesi stateful (`Set-Cookie`), **domain frontend dan domain backend API boleh berada pada hostname/domain yang berbeda** (misal: frontend di Cloudflare `cdepearls.workers.dev` dan API di VPS `api.cdepearls.com`).
+- **Persyaratan Wajib**: Backend API harus mengizinkan origin frontend pada response header CORS (`Access-Control-Allow-Origin: <FRONTEND_URL>`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers: Authorization, Content-Type`).
+
+---
+
 ## 6. Daftar Akun Awal & Kredensial Resmi
 
 Setelah migrasi awal dan seeding dijalankan, 3 akun resmi aktif tersedia untuk login:
@@ -160,7 +193,7 @@ Setelah migrasi awal dan seeding dijalankan, 3 akun resmi aktif tersedia untuk l
    ```bash
    php artisan test
    ```
-   Pastikan seluruh 43 pengujian fitur (Autentikasi, Kunci Akun, RBAC, IDOR, Otorisasi SPI, Google OAuth, Rate Limit, Turnstile, Logout) berstatus **PASSED (100%)**.
+   Pastikan seluruh 56 pengujian fitur (Autentikasi, Kunci Akun, RBAC, IDOR, Otorisasi SPI, Google OAuth, Rate Limit, Turnstile, Logout, Role Redirection) berstatus **PASSED**.
 2. Buka URL frontend dan verifikasi cookie `laravel_session` serta token CSRF tersimpan dengan flag `SameSite=Lax` dan `Secure`.
 3. Verifikasi alur otorisasi sensitif: perubahan harga produk di atas 10% wajib masuk ke antrean persetujuan `/spi`.
 
@@ -205,5 +238,51 @@ Setelah migrasi awal dan seeding dijalankan, 3 akun resmi aktif tersedia untuk l
 4. Kunci Uji Coba Cloudflare (Testing Mode):
    - Sitekey Dummy Testing: `1x00000000000000000000AA` (selalu lolos di lingkungan dev/staging)
    - Secret Key Dummy Testing: `1x0000000000000000000000000000000AA`
+
+---
+
+## 9. Manajemen Akun Staf via Artisan CLI
+
+Manajemen kredensial akun staf internal (`admin@cdepearls.com`, `owner.spi@cdepearls.com`, dan `siti.rahma@gmail.com`) dikelola secara aman melalui perintah Artisan tanpa mengekspos kata sandi atau hash di log konsol.
+
+> [!CAUTION]
+> **PERINGATAN KEAMANAN PRODUKSI**:
+> DILARANG KERAS menjalankan perintah modifikasi akun atau kata sandi pada database produksi tanpa izin tertulis eksplisit dari pemilik sistem. Seluruh tindakan audit tercatat di log internal.
+
+### A. Memeriksa Status Akun Resmi (`cde:seed-accounts --check`)
+
+Perintah ini memeriksa apakah akun seed dan peran sistem terdaftar di database tanpa membocorkan hash kata sandi:
+
+```bash
+# Di lingkungan lokal atau Railway shell:
+php artisan cde:seed-accounts --check
+```
+
+Perintah akan menampilkan tabel status:
+- Email pengguna
+- Nama
+- Peran (`user`, `admin`, `spi`)
+- Status verifikasi email (`Terverifikasi` / `Belum`)
+- Status kata sandi terkonfigurasi (`Tersedia` / `Kosong`)
+
+### B. Mengubah Kata Sandi Staf Secara Aman (`cde:set-password`)
+
+Untuk mengubah atau mereset kata sandi staf secara langsung via shell server (misal Railway CLI / SSH container) tanpa meninggalkan jejak plain text di riwayat terminal:
+
+```bash
+# Sintaks perintah:
+php artisan cde:set-password <email>
+
+# Contoh:
+php artisan cde:set-password admin@cdepearls.com
+```
+
+Mekanisme keamanan:
+1. Input kata sandi baru diminta melalui prompt rahasia yang tersembunyi (`$this->secret()`) tanpa echo karakter di layar.
+2. Input konfirmasi kata sandi wajib cocok persis dengan input pertama.
+3. Panjang kata sandi minimal 8 karakter.
+4. Kata sandi di-hash menggunakan algoritma Bcrypt dengan cost standar tinggi sebelum disimpan ke database.
+5. Tidak ada kredensial yang dicetak ke output terminal, riwayat shell (`~/.bash_history`), maupun log sistem.
+
 
 

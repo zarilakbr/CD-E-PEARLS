@@ -181,10 +181,10 @@ export const authApi = {
     return res.data;
   },
 
-  async resendVerification(turnstile_token?: string) {
+  async resendVerification(turnstile_token?: string, email?: string) {
     const res = await apiClient.post<{ success: boolean; message: string; verification_link_dev?: string }>(
       '/auth/resend-verification',
-      { turnstile_token }
+      { turnstile_token, email }
     );
     return res.data;
   },

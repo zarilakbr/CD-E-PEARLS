@@ -81,11 +81,11 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
 
   // 2. Baris Ikon Kategori (5 Kategori, Foto Bulat 56px, Label 1 Kata)
   const categoryIcons = [
-    { slug: 'kalung', name: 'Kalung', image: '/images/cat_ring_silk.jpg' },
+    { slug: 'kalung', name: 'Kalung', image: '/images/hero_pearl_shell.jpg' },
     { slug: 'cincin', name: 'Cincin', image: '/images/cat_ring_silk.jpg' },
     { slug: 'anting', name: 'Anting', image: '/images/terroir_pearl_plate_left.jpg' },
-    { slug: 'gelang', name: 'Gelang', image: '/images/featured_pearl_dark_luxury.jpg' },
-    { slug: 'bros', name: 'Bros', image: '/images/hero_pearl_dark_luxury.jpg' },
+    { slug: 'gelang', name: 'Gelang', image: '/images/placeholder_jewelry.svg' },
+    { slug: 'bros', name: 'Bros', image: '/images/placeholder_jewelry.svg' },
   ];
 
   // 4. Produk Terbaru (6 Produk)
@@ -102,7 +102,7 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
           1. BANNER FOTO LEBAR PENUH (Carousel shadcn, max 3 slide)
          ======================================================== */}
       <div
-        className="relative w-full rounded-2xl overflow-hidden shadow-xs bg-[#12263A]"
+        className="relative w-full rounded-2xl overflow-hidden shadow-xs bg-[#12263A] animate-banner-load"
         onTouchStart={() => setIsPaused(true)}
         onTouchEnd={() => setIsPaused(false)}
       >

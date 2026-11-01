@@ -29,6 +29,18 @@ export const GuestAccountHub: React.FC = () => {
   const { i18n } = useTranslation();
 
   const currentLang = i18n.language.startsWith('en') ? 'en' : 'id';
+  const [versionInfo, setVersionInfo] = React.useState<string>('v1.0.0-tahap-q3 (54b3095)');
+
+  React.useEffect(() => {
+    fetch('/version.json')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.commit) {
+          setVersionInfo(`v${data.version || '1.0.0'} (${data.commit})`);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const menuRows = [
     { label: 'Studio 3D', icon: Sparkles, path: '/studio' },
@@ -195,6 +207,13 @@ export const GuestAccountHub: React.FC = () => {
           </div>
         </div>
       </Card>
+
+      {/* 4. Penanda Versi Aplikasi */}
+      <div className="text-center pt-2 pb-2">
+        <p className="text-[11px] text-[var(--text-2)] font-mono opacity-60" data-testid="app-version">
+          {versionInfo}
+        </p>
+      </div>
     </div>
   );
 };

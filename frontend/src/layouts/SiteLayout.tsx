@@ -58,24 +58,52 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
   const [headerSearch, setHeaderSearch] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOverDark, setIsOverDark] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : false
+  );
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia('(min-width: 1024px)');
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    setIsDesktop(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 8);
-      const darkSections = document.querySelectorAll('[data-dark-section="true"]');
-      let overDark = false;
-      const headerThreshold = 64;
-      darkSections.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        if (rect.top <= headerThreshold && rect.bottom >= 0) {
-          overDark = true;
-        }
-      });
-      setIsOverDark(overDark);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrolled = window.scrollY > 8;
+          setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    // IntersectionObserver completely eliminates forced reflows / getBoundingClientRect in scroll
+    const darkSections = document.querySelectorAll('[data-dark-section="true"]');
+    let observer: IntersectionObserver | null = null;
+    if (darkSections.length > 0 && typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(
+        (entries) => {
+          const isIntersecting = entries.some((e) => e.isIntersecting);
+          setIsOverDark(isIntersecting);
+        },
+        { rootMargin: '-64px 0px 0px 0px' }
+      );
+      darkSections.forEach((el) => observer?.observe(el));
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      observer?.disconnect();
+    };
   }, []);
 
   const navLinks = [
@@ -123,31 +151,37 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] font-sans">
       {/* ========================================================
-          1. BAR PENGUMUMAN NAVY
+          1. BAR PENGUMUMAN NAVY (Khusus Desktop >= lg, TIDAK DIRENDER di mobile < lg)
          ======================================================== */}
-      <div className="bg-[#12263A] text-[#D9B877] text-[12px] py-2 px-4 border-b border-[#D9B877]/20 select-none">
-        <div className="max-w-[1200px] mx-auto flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-center tracking-wide">
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>{t('site.announcement.shipping', 'Pengiriman Gratis & Berasuransi Penuh ke Seluruh Indonesia')}</span>
-          </div>
-          <span className="hidden sm:inline opacity-40">•</span>
-          <div className="flex items-center gap-1.5">
-            <Award className="w-3.5 h-3.5" />
-            <span>{t('site.announcement.consultation', 'Konsultasi Private via WhatsApp')}</span>
-          </div>
-          <span className="hidden sm:inline opacity-40">•</span>
-          <div className="flex items-center gap-1.5">
-            <span>{t('site.announcement.certificate', 'Sertifikat Gemologi Keaslian 100% Mutiara Lombok')}</span>
+      {isDesktop && (
+        <div
+          data-slot="announcement-bar"
+          className="hidden lg:block bg-[#12263A] text-[#D9B877] text-[12px] py-2 px-4 border-b border-[#D9B877]/20 select-none"
+        >
+          <div className="max-w-[1200px] mx-auto flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-center tracking-wide">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>{t('site.announcement.shipping', 'Pengiriman Gratis & Berasuransi Penuh ke Seluruh Indonesia')}</span>
+            </div>
+            <span className="hidden sm:inline opacity-40">•</span>
+            <div className="flex items-center gap-1.5">
+              <Award className="w-3.5 h-3.5" />
+              <span>{t('site.announcement.consultation', 'Konsultasi Private via WhatsApp')}</span>
+            </div>
+            <span className="hidden sm:inline opacity-40">•</span>
+            <div className="flex items-center gap-1.5">
+              <span>{t('site.announcement.certificate', 'Sertifikat Gemologi Keaslian 100% Mutiara Lombok')}</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ========================================================
-          2. NAVBAR (Instagram-style Transparent Header, Sticky, Blur > 8px)
+          2. NAVBAR (Mobile < lg: Logo + Pill Search; Desktop >= lg: Full Navbar)
          ======================================================== */}
       <header
-        className={`sticky top-0 z-30 transition-all duration-200 px-4 sm:px-6 py-3 border-none shadow-none ${headerThemeClasses}`}
+        data-slot="mobile-header"
+        className={`sticky top-0 z-30 transition-all duration-200 px-4 sm:px-6 py-2.5 sm:py-3 border-none shadow-none pt-[max(0.625rem,env(safe-area-inset-top))] ${headerThemeClasses}`}
       >
         <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Authentic Brand Logo CD'E Pearls */}
@@ -172,6 +206,7 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
           <button
             type="button"
             onClick={() => setIsSearchOverlayOpen(true)}
+            data-slot="search-pill"
             className="lg:hidden flex-1 max-w-[240px] flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--surface-2)]/90 border border-[var(--border)] text-xs text-[var(--text-2)] hover:text-[var(--text)] transition-colors touch-feedback cursor-pointer shadow-2xs"
             aria-label="Buka pencarian mutiara"
           >

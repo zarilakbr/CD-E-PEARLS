@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/generate-version.js && tsc -b && vite build",
     "test": "vitest run",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -60,6 +60,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~7.0.2",
     "vite": "^8.3.5",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "wrangler": "4.156.0"
   }
 }

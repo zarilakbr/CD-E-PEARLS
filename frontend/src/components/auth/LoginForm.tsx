@@ -127,14 +127,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, nextPath }) => 
         if (onSuccess) {
           onSuccess();
         } else {
-          // Redirect based on role and safeNext
-          const currentUser = await authApi.getMe().catch(() => null);
-          const role = currentUser?.role || 'user';
+          // Resolve role strictly from server via authApi.getMe() or authenticated response
+          const currentUser = await authApi.getMe().catch(() => res.user || null);
+          const role = currentUser?.role || res.user?.role || 'user';
           if (role === 'spi') {
-            navigate('/spi', { replace: true });
+            navigate(safeNext && safeNext.startsWith('/spi') ? safeNext : '/spi', { replace: true });
           } else if (role === 'admin') {
-            navigate('/admin', { replace: true });
-          } else if (safeNext) {
+            navigate(safeNext && safeNext.startsWith('/admin') ? safeNext : '/admin', { replace: true });
+          } else if (safeNext && !safeNext.startsWith('/admin') && !safeNext.startsWith('/spi') && !safeNext.startsWith('/masuk') && !safeNext.startsWith('/daftar')) {
             navigate(safeNext, { replace: true });
           } else {
             navigate('/akun', { replace: true });
@@ -143,8 +143,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, nextPath }) => 
       } else {
         if (res.error === 'ACCOUNT_UNVERIFIED') {
           setCanResendVerify(true);
+          setServerError(res.message || 'Akun Anda belum diverifikasi. Silakan periksa email Anda atau kirim ulang tautan verifikasi.');
+        } else if (res.error === 'TOO_MANY_REQUESTS') {
+          const retry = res.retryAfter || 60;
+          setRetryCountdown(retry);
+          setServerError(`Terlalu banyak percobaan. Harap tunggu ${retry} detik sebelum mencoba kembali.`);
+        } else if (res.error === 'ACCOUNT_FROZEN') {
+          setServerError(res.message || 'Akun Anda sedang dibekukan oleh Satuan Pengawas Internal (SPI). Hubungi pengawasan butik.');
+        } else {
+          setServerError(res.message || 'Email atau kata sandi tidak valid');
         }
-        setServerError(res.message || 'Login gagal.');
       }
     } catch (err: any) {
       const responseData = err.response?.data;
@@ -152,8 +160,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, nextPath }) => 
         const retry = responseData?.retry_after || 60;
         setRetryCountdown(retry);
         setServerError(`Terlalu banyak percobaan. Harap tunggu ${retry} detik sebelum mencoba kembali.`);
+      } else if (responseData?.error === 'ACCOUNT_FROZEN') {
+        setServerError(responseData.message || 'Akun Anda sedang dibekukan oleh Satuan Pengawas Internal (SPI). Hubungi pengawasan butik.');
+      } else if (responseData?.error === 'ACCOUNT_UNVERIFIED') {
+        setCanResendVerify(true);
+        setServerError(responseData.message || 'Akun Anda belum diverifikasi. Silakan periksa kotak masuk email Anda.');
       } else {
-        setServerError(responseData?.message || 'Email atau kata sandi tidak cocok.');
+        setServerError(responseData?.message || 'Email atau kata sandi tidak valid');
       }
     } finally {
       setIsLoading(false);
@@ -164,7 +177,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, nextPath }) => 
     setIsLoading(true);
     setServerError(null);
     try {
-      const res = await authApi.resendVerification(turnstileToken || undefined);
+      const email = emailInputRef.current?.value;
+      const res = await authApi.resendVerification(turnstileToken || undefined, email);
       setServerError(null);
       alert(res.message || 'Tautan verifikasi email berhasil dikirim ulang.');
     } catch (err: any) {

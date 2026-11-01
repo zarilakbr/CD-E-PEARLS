@@ -225,7 +225,7 @@ export const mockCategories: MockCategory[] = [
     productsCount: 8,
     order: 2,
     status: 'Aktif',
-    image: '/images/featured_pearl_dark_luxury.jpg',
+    image: '/images/placeholder_jewelry.svg',
   },
   {
     id: 3,
@@ -298,7 +298,7 @@ export const mockProducts: MockProduct[] = [
     description: 'Mutiara laut warna emas keemasan alami tanpa pewarna kimia, dipadukan rantai emas kuning 18K bermotif elegan.',
     certificateNo: 'GIA-LMB-8922',
     isBestseller: true,
-    image: '/images/featured_pearl_dark_luxury.jpg',
+    image: '/images/placeholder_jewelry.svg',
   },
   {
     id: 3,

@@ -13,7 +13,7 @@ interface AuthContextType {
   authModalTab: 'login' | 'register' | 'forgot';
   openAuthModal: (tab?: 'login' | 'register' | 'forgot') => void;
   closeAuthModal: () => void;
-  login: (credentials: { email: string; password: string; remember?: boolean; turnstile_token?: string }) => Promise<{ success: boolean; message?: string; error?: string }>;
+  login: (credentials: { email: string; password: string; remember?: boolean; turnstile_token?: string }) => Promise<{ success: boolean; message?: string; error?: string; user?: UserResponse; retryAfter?: number }>;
   register: (data: {
     name: string;
     email: string;

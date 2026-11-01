@@ -16,6 +16,8 @@ backend/node_modules/
 # Build artifacts & caches
 dist/
 frontend/dist/
+frontend/public/version.json
+version.json
 backend/public/build/
 backend/public/storage/
 backend/storage/*.key

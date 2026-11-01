@@ -112,10 +112,16 @@ test.describe('Bagian B: Anggaran Kata Sesuai Spesifikasi (Word Budget)', () => 
     await galleryImg.waitFor({ state: 'visible', timeout: 10000 });
 
     const wordsList = await page.evaluate(() => {
-      const actionbar = document.querySelector('.fixed.bottom-0');
-      if (!actionbar) return [];
-      const clone = actionbar.cloneNode(true) as HTMLElement;
-      const text = clone.innerText || '';
+      // Ukur seluruh area atas lipatan (y < 844) di luar nama produk, harga, dan label produk
+      const elements = Array.from(document.querySelectorAll('header, .sticky, .fixed.bottom-0'));
+      let text = '';
+      for (const el of elements) {
+        const rect = el.getBoundingClientRect();
+        if (rect.top >= 0 && rect.top < 844 && rect.bottom > 0) {
+          text += ' ' + ((el as HTMLElement).innerText || '');
+        }
+      }
+      text = text.replace(/Rp\s*[\d.,]+/gi, '').replace(/South Sea|Mutiara|Princess|AAA|mm|Emas|18K|Lombok/gi, '');
       return text.replace(/[^\p{L}\s]/gu, ' ').trim().split(/\s+/).filter((w) => w.length > 0);
     });
 

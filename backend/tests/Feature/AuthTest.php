@@ -53,6 +53,7 @@ test('login succeeds with correct credentials and returns token', function () {
         'password' => Hash::make('Mutiara2026Valid!'),
         'role' => 'user',
         'status' => 'active',
+        'email_verified_at' => now(),
     ]);
 
     $response = $this->postJson('/api/v1/auth/login', [
@@ -75,6 +76,7 @@ test('login fails with invalid credentials returning 401', function () {
         'password' => Hash::make('Mutiara2026Valid!'),
         'role' => 'user',
         'status' => 'active',
+        'email_verified_at' => now(),
     ]);
 
     $response = $this->postJson('/api/v1/auth/login', [
@@ -118,6 +120,7 @@ test('repeated failed logins do not trigger global account lockout dos', functio
         'password' => Hash::make('ValidPassword2026!'),
         'role' => 'user',
         'status' => 'active',
+        'email_verified_at' => now(),
     ]);
 
     // Perform 10 failed attempts from attacker IP

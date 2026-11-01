@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" fill="#12263A" />
+  <circle cx="200" cy="200" r="140" fill="none" stroke="#D9B877" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.4" />
+  <circle cx="200" cy="200" r="100" fill="none" stroke="#D9B877" stroke-width="1" opacity="0.6" />
+  <circle cx="200" cy="180" r="45" fill="url(#pearlShine)" filter="drop-shadow(0 8px 16px rgba(0,0,0,0.4))" />
+  <defs>
+    <radialGradient id="pearlShine" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="40%" stop-color="#FBF8F3" />
+      <stop offset="80%" stop-color="#D9B877" />
+      <stop offset="100%" stop-color="#8A6A2F" />
+    </radialGradient>
+  </defs>
+  <text x="200" y="270" text-anchor="middle" fill="#D9B877" font-family="serif" font-size="16" letter-spacing="2">CD'E PEARLS</text>
+  <text x="200" y="292" text-anchor="middle" fill="#FFFFFF" opacity="0.6" font-family="sans-serif" font-size="11" letter-spacing="1">ATELIER LOMBOK</text>
+</svg>
+
