@@ -1,32 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  CheckCircle2,
-  XCircle,
-  ArrowRight,
-  Plus,
-  Trash2,
-  Check,
-  X,
   Search,
   Download,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
+  Plus,
+  Minus,
+  Eye,
   Lock,
   Unlock,
-  Key,
-  UserPlus,
 } from 'lucide-react';
 import { SpiDashboardLayout } from '../../layouts/SpiDashboardLayout';
 import { PageHeader } from '../../components/common/PageHeader';
 import { StatCard } from '../../components/common/StatCard';
 import { DataTable } from '../../components/common/DataTable';
-import {
-  type MockSpiAuditLog,
-  type MockSpiFinding,
-  type MockStaffAccount,
-  type MockApprovalItem,
-  type MockProduct,
-  type MockOrder,
-  type MockStockItem,
-} from '../../data/mock';
 import { spiApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -34,40 +23,28 @@ interface SpiPortalProps {
   onNavigateHome: () => void;
   onOpenAdmin?: () => void;
   onLogout: () => void;
-  approvals: MockApprovalItem[];
-  onApprove: (id: string, notes?: string) => void;
-  onReject: (id: string, reason: string) => void;
-  auditLogs: MockSpiAuditLog[];
-  staffAccounts: MockStaffAccount[];
-  onToggleStaffStatus: (id: number) => void;
-  onAddStaffAccount?: (staff: Omit<MockStaffAccount, 'id' | 'status' | 'lastActive'>) => void;
-  onResetPassword?: (id: number, email: string) => void;
-  findings: MockSpiFinding[];
-  onAddFinding: (finding: Omit<MockSpiFinding, 'id' | 'date'>) => void;
-  onToggleFindingStatus: (id: number) => void;
-  onDeleteFinding: (id: number) => void;
-  products?: MockProduct[];
-  orders?: MockOrder[];
-  stockItems?: MockStockItem[];
   initialMenu?: string;
+  approvals?: any[];
+  onApprove?: (id: string, notes?: string) => void;
+  onReject?: (id: string, reason: string) => void;
+  auditLogs?: any[];
+  staffAccounts?: any[];
+  onToggleStaffStatus?: (id: number) => void;
+  onAddStaffAccount?: (staff: any) => void;
+  onResetPassword?: (id: number, email: string) => void;
+  findings?: any[];
+  onAddFinding?: (finding: any) => void;
+  onToggleFindingStatus?: (id: number) => void;
+  onDeleteFinding?: (id: number) => void;
+  products?: any[];
+  orders?: any[];
+  stockItems?: any[];
 }
 
 export const SpiPortal: React.FC<SpiPortalProps> = ({
   onNavigateHome,
   onOpenAdmin,
   onLogout,
-  approvals,
-  onApprove,
-  onReject,
-  auditLogs,
-  staffAccounts,
-  onToggleStaffStatus,
-  onAddStaffAccount,
-  onResetPassword,
-  findings,
-  onAddFinding,
-  onToggleFindingStatus,
-  onDeleteFinding,
   initialMenu,
 }) => {
   const { user } = useAuth();
@@ -75,34 +52,30 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
     if (initialMenu) return initialMenu;
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
-      if (path === '/spi/log-aktivitas') return 'log-aktivitas';
-      if (path === '/spi/persetujuan') return 'persetujuan';
-      if (path === '/spi/akun-role') return 'akun-role';
-      if (path === '/spi/laporan-audit') return 'laporan-audit';
+      if (path === '/spi/pesanan') return 'pesanan';
+      if (path === '/spi/produk-stok') return 'produk-stok';
+      if (path === '/spi/pengguna' || path === '/spi/akun-role') return 'pengguna';
+      if (path === '/spi/audit-log' || path === '/spi/log-aktivitas') return 'audit-log';
+      if (path === '/spi/pengaturan-toko') return 'pengaturan-toko';
 
       const params = new URLSearchParams(window.location.search);
       const m = params.get('menu');
-      if (m && ['ringkasan', 'log-aktivitas', 'persetujuan', 'akun-role', 'laporan-audit'].includes(m)) {
+      if (m && ['ringkasan', 'pesanan', 'produk-stok', 'pengguna', 'audit-log', 'pengaturan-toko'].includes(m)) {
         return m;
       }
     }
     return 'ringkasan';
   });
 
-  React.useEffect(() => {
-    if (initialMenu) {
-      setActiveMenu(initialMenu);
-    }
-  }, [initialMenu]);
-
-  const handleSelectSpiMenu = (menuId: string) => {
+  const handleSelectMenu = (menuId: string) => {
     setActiveMenu(menuId);
     const pathMap: Record<string, string> = {
       ringkasan: '/spi',
-      'log-aktivitas': '/spi/log-aktivitas',
-      persetujuan: '/spi/persetujuan',
-      'akun-role': '/spi/akun-role',
-      'laporan-audit': '/spi/laporan-audit',
+      pesanan: '/spi/pesanan',
+      'produk-stok': '/spi/produk-stok',
+      pengguna: '/spi/pengguna',
+      'audit-log': '/spi/audit-log',
+      'pengaturan-toko': '/spi/pengaturan-toko',
     };
     const targetPath = pathMap[menuId] || '/spi';
     if (typeof window !== 'undefined' && window.location.pathname !== targetPath) {
@@ -110,321 +83,829 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
     }
   };
 
-  // Persetujuan Tab Filter ('Semua' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak')
-  const [approvalTab, setApprovalTab] = useState<'Semua' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak'>('Menunggu Persetujuan');
-  const [selectedApproval, setSelectedApproval] = useState<MockApprovalItem | null>(null);
-  const [rejectReason, setRejectReason] = useState<string>('');
-  const [isRejectModalOpen, setIsRejectModalOpen] = useState<boolean>(false);
-  const [isApproveModalOpen, setIsApproveModalOpen] = useState<boolean>(false);
-  const [approvalNote, setApprovalNote] = useState<string>('');
+  // Toast & Feedback
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const showFeedback = (type: 'success' | 'error', message: string) => {
+    setFeedback({ type, message });
+    setTimeout(() => setFeedback(null), 5000);
+  };
 
-  // Log Aktivitas Filters
-  const [logSearch, setLogSearch] = useState<string>('');
-  const [logRoleFilter, setLogRoleFilter] = useState<string>('Semua');
+  // =========================================================================
+  // 1. DATA: RINGKASAN
+  // =========================================================================
+  const [summaryData, setSummaryData] = useState<{
+    revenue: { today: number; days_7: number; days_30: number };
+    orders_by_status: Record<string, number>;
+    top_products: Array<{ product_name: string; product_id: number; total_sold: number; total_revenue: number }>;
+    low_stock_products: Array<{ id: number; code: string; name: string; stock: number; price: number; category_slug: string }>;
+    new_customers_count: number;
+    recent_customers: Array<{ id: number; name: string; email: string; phone?: string; status: string; created_at: string }>;
+  } | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
 
-  // Laporan Audit Filters & Modals
-  const [findingSeverityFilter, setFindingSeverityFilter] = useState<string>('Semua');
-  const [isAddFindingModalOpen, setIsAddFindingModalOpen] = useState<boolean>(false);
-  const [newFindingCode, setNewFindingCode] = useState<string>('');
-  const [newFindingTitle, setNewFindingTitle] = useState<string>('');
-  const [newFindingCategory, setNewFindingCategory] = useState<MockSpiFinding['category']>('Inventaris');
-  const [newFindingSeverity, setNewFindingSeverity] = useState<MockSpiFinding['severity']>('Tinggi');
-  const [newFindingStaff, setNewFindingStaff] = useState<string>('Hendra Saputra (Staff Gudang)');
-  const [newFindingRec, setNewFindingRec] = useState<string>('');
+  const fetchSummary = async () => {
+    setLoadingSummary(true);
+    try {
+      const res = await spiApi.getSummary();
+      if (res.success) {
+        setSummaryData(res);
+      }
+    } catch (err: any) {
+      console.error('Failed to load SPI summary', err);
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
 
-  // Akun & Role SPI States
-  const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
-  const [newStaffName, setNewStaffName] = useState('');
-  const [newStaffEmail, setNewStaffEmail] = useState('');
-  const [newStaffRole, setNewStaffRole] = useState<MockStaffAccount['role']>('Admin Operasional');
-  const [newStaffPerms, setNewStaffPerms] = useState('Katalog, Pesanan, Stok');
+  useEffect(() => {
+    if (activeMenu === 'ringkasan') {
+      fetchSummary();
+    }
+  }, [activeMenu]);
 
-  const handleSaveStaff = (e: React.FormEvent) => {
+  // =========================================================================
+  // 2. DATA: PESANAN
+  // =========================================================================
+  const [orders, setOrders] = useState<any[]>([]);
+  const [orderStatusFilter, setOrderStatusFilter] = useState('all');
+  const [orderSearch, setOrderSearch] = useState('');
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  void loadingOrders;
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [updatingOrderStatus, setUpdatingOrderStatus] = useState(false);
+  const [newOrderStatus, setNewOrderStatus] = useState('');
+  const [orderStatusNotes, setOrderStatusNotes] = useState('');
+
+  const fetchOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const res = await spiApi.getOrders({
+        status: orderStatusFilter !== 'all' ? orderStatusFilter : undefined,
+        search: orderSearch.trim() || undefined,
+        per_page: 30,
+      });
+      if (res.success && res.data) {
+        setOrders(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to load orders', err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeMenu === 'pesanan') {
+      fetchOrders();
+    }
+  }, [activeMenu, orderStatusFilter]);
+
+  const handleUpdateOrderStatus = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newStaffName.trim() || !newStaffEmail.trim()) return;
-    const perms = newStaffPerms.split(',').map((p) => p.trim()).filter(Boolean);
-    onAddStaffAccount?.({
-      name: newStaffName.trim(),
-      email: newStaffEmail.trim(),
-      role: newStaffRole,
-      permissions: perms.length > 0 ? perms : ['Katalog', 'Pesanan', 'Stok'],
-    });
-    setNewStaffName('');
-    setNewStaffEmail('');
-    setIsAddStaffModalOpen(false);
+    if (!selectedOrder || !newOrderStatus) return;
+    setUpdatingOrderStatus(true);
+    try {
+      const res = await spiApi.updateOrderStatus(selectedOrder.id, {
+        order_status: newOrderStatus,
+        notes: orderStatusNotes.trim() || undefined,
+      });
+      if (res.success) {
+        showFeedback('success', res.message || 'Status pesanan berhasil diperbarui.');
+        setSelectedOrder(null);
+        setNewOrderStatus('');
+        setOrderStatusNotes('');
+        fetchOrders();
+      }
+    } catch (err: any) {
+      showFeedback('error', err?.response?.data?.message || 'Gagal memperbarui status pesanan.');
+    } finally {
+      setUpdatingOrderStatus(false);
+    }
   };
 
-  // Counts
-  const pendingApprovals = approvals.filter((a) => a.status === 'Menunggu Persetujuan');
-  const activeFindings = findings.filter((f) => f.status === 'Dalam Investigasi');
+  // =========================================================================
+  // 3. DATA: PRODUK & STOK
+  // =========================================================================
+  const [stockList, setStockList] = useState<any[]>([]);
+  const [stockSearch, setStockSearch] = useState('');
+  const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [loadingStock, setLoadingStock] = useState(false);
+  void loadingStock;
+  const [stockModalProduct, setStockModalProduct] = useState<any | null>(null);
+  const [stockDelta, setStockDelta] = useState<number>(0);
+  const [stockReason, setStockReason] = useState<string>('');
+  const [savingStock, setSavingStock] = useState(false);
 
-  // Handle Approve Action
-  const handleConfirmApprove = () => {
-    if (!selectedApproval) return;
-    onApprove(selectedApproval.id, approvalNote.trim() || undefined);
-    setIsApproveModalOpen(false);
-    setSelectedApproval(null);
-    setApprovalNote('');
+  const fetchStock = async () => {
+    setLoadingStock(true);
+    try {
+      const res = await spiApi.getStock({
+        search: stockSearch.trim() || undefined,
+        low_stock_only: lowStockOnly,
+        per_page: 50,
+      });
+      if (res.success && res.data) {
+        setStockList(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to load stock list', err);
+    } finally {
+      setLoadingStock(false);
+    }
   };
 
-  // Handle Reject Action
-  const handleConfirmReject = () => {
-    if (!selectedApproval || !rejectReason.trim()) return;
-    onReject(selectedApproval.id, rejectReason.trim());
-    setIsRejectModalOpen(false);
-    setSelectedApproval(null);
-    setRejectReason('');
-  };
+  useEffect(() => {
+    if (activeMenu === 'produk-stok') {
+      fetchStock();
+    }
+  }, [activeMenu, lowStockOnly]);
 
-  // Handle Add Finding
-  const handleSaveFinding = (e: React.FormEvent) => {
+  const handleAdjustStock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFindingTitle.trim()) return;
-    const generatedCode = newFindingCode.trim() || `SPI-FND-00${findings.length + 1}`;
-    onAddFinding({
-      code: generatedCode,
-      title: newFindingTitle.trim(),
-      category: newFindingCategory,
-      severity: newFindingSeverity,
-      staffName: newFindingStaff,
-      recommendation: newFindingRec.trim() || 'Lakukan audit dan sinkronisasi SOP berkala.',
-      status: 'Dalam Investigasi',
-    });
-    setNewFindingCode('');
-    setNewFindingTitle('');
-    setNewFindingRec('');
-    setIsAddFindingModalOpen(false);
+    if (!stockModalProduct || stockDelta === 0 || !stockReason.trim()) return;
+    setSavingStock(true);
+    try {
+      const res = await spiApi.adjustStock(stockModalProduct.id, {
+        delta: stockDelta,
+        reason: stockReason.trim(),
+      });
+      if (res.success) {
+        showFeedback('success', res.message || 'Stok berhasil dikoreksi.');
+        setStockModalProduct(null);
+        setStockDelta(0);
+        setStockReason('');
+        fetchStock();
+      }
+    } catch (err: any) {
+      showFeedback('error', err?.response?.data?.message || 'Gagal mengoreksi stok.');
+    } finally {
+      setSavingStock(false);
+    }
   };
 
-  const getTypeBadge = (type: MockApprovalItem['type']) => {
-    switch (type) {
-      case 'KONFIRMASI_PEMBAYARAN':
-        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#E1ECF7] text-[#1D4E7A]">Konfirmasi Pembayaran</span>;
-      case 'PERUBAHAN_HARGA':
-        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FBEFD5] text-[#7A5410]">Perubahan Harga (&gt;10%)</span>;
-      case 'HAPUS_PRODUK':
-        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-800">Hapus Produk</span>;
-      case 'PENYESUAIAN_STOK':
-        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 text-purple-800">Penyesuaian Stok</span>;
-      case 'PEMBATALAN_PESANAN':
-        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 text-orange-800">Pembatalan Pesanan</span>;
-      case 'DISKON_VIP':
-        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">Diskon VIP (&gt;15%)</span>;
-      default:
-        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-800">{type}</span>;
+  // =========================================================================
+  // 4. DATA: PENGGUNA & AKSES (SPI TIDAK BISA MENURUNKAN DIRINYA SENDIRI)
+  // =========================================================================
+  const [userList, setUserList] = useState<any[]>([]);
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
+  const [userSearch, setUserSearch] = useState('');
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  void loadingUsers;
+
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const res = await spiApi.getUsers({
+        role: userRoleFilter !== 'all' ? userRoleFilter : undefined,
+        search: userSearch.trim() || undefined,
+        per_page: 50,
+      });
+      if (res.success && res.data) {
+        setUserList(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to load users', err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeMenu === 'pengguna') {
+      fetchUsers();
+    }
+  }, [activeMenu, userRoleFilter]);
+
+  const handleUpdateRole = async (targetUser: any, newRole: string) => {
+    if (targetUser.role === newRole) return;
+    try {
+      const res = await spiApi.updateUserRole(targetUser.id, newRole);
+      if (res.success) {
+        showFeedback('success', res.message || 'Peran pengguna berhasil diubah.');
+        fetchUsers();
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Gagal mengubah peran pengguna.';
+      showFeedback('error', msg);
+    }
+  };
+
+  const handleToggleUserStatus = async (targetUser: any) => {
+    try {
+      const res = await spiApi.toggleUserStatus(targetUser.id);
+      if (res.success) {
+        showFeedback('success', res.message || 'Status pengguna berhasil diubah.');
+        fetchUsers();
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Gagal mengubah status pengguna.';
+      showFeedback('error', msg);
+    }
+  };
+
+  // =========================================================================
+  // 5. DATA: AUDIT LOG (APPEND-ONLY)
+  // =========================================================================
+  const [auditLogList, setAuditLogList] = useState<any[]>([]);
+  const [auditSearch, setAuditSearch] = useState('');
+  const [loadingAudit, setLoadingAudit] = useState(false);
+
+  const fetchAuditLogs = async () => {
+    setLoadingAudit(true);
+    try {
+      const res = await spiApi.getAuditLogs({
+        search: auditSearch.trim() || undefined,
+        per_page: 50,
+      });
+      if (res.success && res.data) {
+        setAuditLogList(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to load audit logs', err);
+    } finally {
+      setLoadingAudit(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeMenu === 'audit-log') {
+      fetchAuditLogs();
+    }
+  }, [activeMenu]);
+
+  // =========================================================================
+  // 6. DATA: PENGATURAN TOKO
+  // =========================================================================
+  const [settingsForm, setSettingsForm] = useState({
+    store_name: '',
+    contact_phone: '',
+    bank_accounts: '',
+    shipping_flat_cost: 0,
+    payment_timeout_hours: 24,
+  });
+  const [loadingSettings, setLoadingSettings] = useState(false);
+  void loadingSettings;
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  const fetchSettings = async () => {
+    setLoadingSettings(true);
+    try {
+      const res = await spiApi.getSettings();
+      if (res.success && res.data) {
+        setSettingsForm({
+          store_name: res.data.store_name || '',
+          contact_phone: res.data.contact_phone || '',
+          bank_accounts: res.data.bank_accounts || '',
+          shipping_flat_cost: Number(res.data.shipping_flat_cost) || 0,
+          payment_timeout_hours: Number(res.data.payment_timeout_hours) || 24,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load settings', err);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeMenu === 'pengaturan-toko') {
+      fetchSettings();
+    }
+  }, [activeMenu]);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const res = await spiApi.updateSettings(settingsForm);
+      if (res.success) {
+        showFeedback('success', res.message || 'Pengaturan toko berhasil diperbarui.');
+      }
+    } catch (err: any) {
+      showFeedback('error', err?.response?.data?.message || 'Gagal menyimpan pengaturan.');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  // =========================================================================
+  // S-3: MODAL EKSPOR EXCEL
+  // =========================================================================
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
+  const [exportStatus, setExportStatus] = useState('all');
+  const [exportCategory, setExportCategory] = useState('all');
+
+  const [downloadingReport, setDownloadingReport] = useState(false);
+
+  const handleTriggerExcelExport = async () => {
+    setDownloadingReport(true);
+    try {
+      await spiApi.downloadSalesReport({
+        start_date: exportStartDate || undefined,
+        end_date: exportEndDate || undefined,
+        status: exportStatus !== 'all' ? exportStatus : undefined,
+        category: exportCategory !== 'all' ? exportCategory : undefined,
+      });
+      setIsExportModalOpen(false);
+      showFeedback('success', 'File Excel laporan penjualan berhasil diunduh.');
+    } catch (err: any) {
+      showFeedback('error', 'Gagal mengunduh laporan: ' + (err?.message || 'Error'));
+    } finally {
+      setDownloadingReport(false);
     }
   };
 
   return (
     <SpiDashboardLayout
       activeMenuId={activeMenu}
-      onSelectMenu={handleSelectSpiMenu}
-      pendingApprovalsCount={pendingApprovals.length}
+      onSelectMenu={handleSelectMenu}
       userName={user?.name || 'Satuan Pengawas Internal'}
       userEmail={user?.email || 'owner.spi@cdepearls.com'}
       onNavigateHome={onNavigateHome}
       onOpenAdmin={onOpenAdmin}
       onLogout={onLogout}
     >
+      {/* Toast Feedback */}
+      {feedback && (
+        <div
+          className={`fixed top-4 right-4 z-50 p-4 rounded-2xl shadow-xl flex items-center gap-3 text-xs font-semibold animate-in fade-in slide-in-from-top-2 border ${
+            feedback.type === 'success'
+              ? 'bg-[#E2F1E0] text-[#2B6330] border-[#2B6330]/30'
+              : 'bg-red-100 text-red-800 border-red-300'
+          }`}
+        >
+          {feedback.type === 'success' ? (
+            <CheckCircle2 className="w-5 h-5 shrink-0" />
+          ) : (
+            <AlertTriangle className="w-5 h-5 shrink-0" />
+          )}
+          <span>{feedback.message}</span>
+        </div>
+      )}
+
       {/* =======================================================================
           1. MENU: RINGKASAN
          ======================================================================= */}
       {activeMenu === 'ringkasan' && (
         <div className="space-y-6">
-          <PageHeader
-            title="Ringkasan Pengawasan SPI"
-            description="Portal Satuan Pengawas Internal: Kendali integritas transaksi, persetujuan sensitif, dan log audit CD'E Pearls Lombok."
-          />
-
-          {/* Pending Alert Banner if any items waiting */}
-          {pendingApprovals.length > 0 && (
-            <div className="p-4 sm:p-5 rounded-2xl bg-[#12263A] text-white border border-[#D9B877]/60 shadow-md flex flex-wrap items-center justify-between gap-4 animate-in fade-in slide-in-from-top-1">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#D9B877] text-[#12263A] flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
-                  {pendingApprovals.length}
-                </div>
-                <div>
-                  <h3 className="font-serif text-lg font-semibold text-[#D9B877]">
-                    Terdapat {pendingApprovals.length} Aksi Sensitif Membutuhkan Persetujuan SPI
-                  </h3>
-                  <p className="text-xs text-white/80 mt-0.5">
-                    Permintaan dari Admin mencakup pembayaran transfer manual, revisi harga &gt;10%, dan perubahan stok.
-                  </p>
-                </div>
-              </div>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <PageHeader
+              title="Ringkasan Pusat Kendali SPI"
+              description="Data metrik integritas transaksi, omzet database riil, produk terlaris, dan stok menipis CD'E Pearls Lombok."
+            />
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setActiveMenu('persetujuan')}
-                className="min-h-[42px] px-5 rounded-full bg-[#D9B877] text-[#12263A] font-bold text-xs hover:bg-[#E5C98E] active:scale-95 transition-all inline-flex items-center gap-2 cursor-pointer shadow-sm"
+                onClick={fetchSummary}
+                className="min-h-[42px] px-4 rounded-full border border-[#E6DDD0] text-[#12263A] hover:bg-[#F4F1EB] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-all"
+                title="Muat ulang data ringkasan"
               >
-                <span>Tinjau Persetujuan Sekarang</span>
-                <ArrowRight className="w-4 h-4" />
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingSummary ? 'animate-spin' : ''}`} />
+                <span>Segarkan</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(true)}
+                className="min-h-[42px] px-5 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] inline-flex items-center gap-2 cursor-pointer shadow-md border border-[#D9B877]/40 transition-all"
+              >
+                <Download className="w-4 h-4" />
+                <span>Ekspor Excel</span>
               </button>
             </div>
-          )}
+          </div>
 
-          {/* Metric Cards (2 kolom di mobile, 4 kolom di desktop) */}
+          {/* Revenue & Key Metrics */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <StatCard
-              label="Menunggu Persetujuan"
-              value={`${pendingApprovals.length} Pengajuan`}
-              note={pendingApprovals.length > 0 ? 'Perlu Keputusan' : 'Semua Bersih'}
-              trend={pendingApprovals.length > 0 ? 'down' : 'up'}
+              label="Omzet Hari Ini"
+              value={`Rp ${(summaryData?.revenue.today || 0).toLocaleString('id-ID')}`}
+              note="Transaksi Sah Database"
+              trend="up"
             />
             <StatCard
-              label="Total Log Aktivitas"
-              value={`${auditLogs.length} Entri`}
-              note="Tercatat Realtime"
+              label="Omzet 7 Hari Terakhir"
+              value={`Rp ${(summaryData?.revenue.days_7 || 0).toLocaleString('id-ID')}`}
+              note="Akumulasi Mingguan"
               trend="neutral"
             />
             <StatCard
-              label="Temuan Audit Aktif"
-              value={`${activeFindings.length} Kasus`}
-              note={activeFindings.length > 0 ? 'Dalam Investigasi' : 'Nol Masalah'}
-              trend={activeFindings.length > 0 ? 'down' : 'up'}
+              label="Omzet 30 Hari Terakhir"
+              value={`Rp ${(summaryData?.revenue.days_30 || 0).toLocaleString('id-ID')}`}
+              note="Akumulasi Bulanan"
+              trend="up"
             />
             <StatCard
-              label="Kepatuhan SOP Internal"
-              value="98.8%"
-              note="Taraf Unggul & Teruji"
-              trend="up"
+              label="Pelanggan Baru (30 Hari)"
+              value={`${summaryData?.new_customers_count || 0} Akun`}
+              note="Terdaftar Aktif"
+              trend="neutral"
             />
           </div>
 
-          {/* 2-Columns: Persetujuan Mendesak + Aktivitas Terbaru */}
+          {/* 2-Columns: Pesanan per Status + Produk Terlaris */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Box 1: Persetujuan Menunggu */}
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between pb-4 border-b border-[#E6DDD0]">
-                  <h3 className="font-serif text-xl font-semibold text-[#12263A]">
-                    Persetujuan Mendesak (Pending SPI)
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setActiveMenu('persetujuan')}
-                    className="text-xs font-semibold text-[#8A6A2F] hover:underline cursor-pointer"
+            {/* Box 1: Status Pesanan */}
+            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 shadow-xs">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
+                <h3 className="font-serif text-lg font-semibold text-[#12263A]">
+                  Jumlah Pesanan Berdasarkan Status
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setActiveMenu('pesanan')}
+                  className="text-xs font-semibold text-[#8A6A2F] hover:underline cursor-pointer"
+                >
+                  Kelola Pesanan
+                </button>
+              </div>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {Object.entries(summaryData?.orders_by_status || {}).map(([status, count]) => (
+                  <div
+                    key={status}
+                    className="p-3.5 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0]/70 flex flex-col justify-between"
                   >
-                    Lihat Semua ({pendingApprovals.length})
-                  </button>
-                </div>
-
-                <div className="mt-4 space-y-3">
-                  {pendingApprovals.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-[#4A5666]">
-                      ✓ Tidak ada aksi sensitif yang tertunda saat ini.
-                    </div>
-                  ) : (
-                    pendingApprovals.slice(0, 3).map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3.5 rounded-xl bg-[#F4F1EB]/60 border border-[#E6DDD0] flex flex-col gap-2"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            {getTypeBadge(item.type)}
-                            <h4 className="font-semibold text-xs text-[#12263A] mt-1.5">{item.title}</h4>
-                            <p className="text-[11px] text-[#4A5666]">{item.target}</p>
-                          </div>
-                          <span className="text-[10px] text-[#4A5666] shrink-0">{item.requestDate}</span>
-                        </div>
-                        <div className="text-[11px] bg-white p-2.5 rounded-lg border border-[#E6DDD0]/60 italic text-[#4A5666]">
-                          "{item.notes}"
-                        </div>
-                        <div className="flex items-center justify-end gap-2 pt-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedApproval(item);
-                              setIsRejectModalOpen(true);
-                            }}
-                            className="min-h-[32px] px-3 rounded-full border border-red-300 text-red-700 hover:bg-red-50 text-[11px] font-semibold cursor-pointer"
-                          >
-                            Tolak
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedApproval(item);
-                              setIsApproveModalOpen(true);
-                            }}
-                            className="min-h-[32px] px-3.5 rounded-full bg-[#12263A] text-[#D9B877] hover:bg-[#1A3652] text-[11px] font-bold cursor-pointer"
-                          >
-                            Setujui
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                    <span className="text-[11px] font-medium text-[#4A5666] uppercase truncate">{status}</span>
+                    <span className="font-serif text-xl font-bold text-[#12263A] mt-1">{count}</span>
+                  </div>
+                ))}
+                {(!summaryData?.orders_by_status || Object.keys(summaryData.orders_by_status).length === 0) && (
+                  <div className="col-span-full py-6 text-center text-xs text-[#4A5666]">
+                    Belum ada riwayat pesanan dalam database.
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Box 2: Log Audit Terbaru */}
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between pb-4 border-b border-[#E6DDD0]">
-                  <h3 className="font-serif text-xl font-semibold text-[#12263A]">
-                    Log Audit Transaksi Terbaru
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setActiveMenu('log-aktivitas')}
-                    className="text-xs font-semibold text-[#8A6A2F] hover:underline cursor-pointer"
-                  >
-                    Buka Log Lengkap ({auditLogs.length})
-                  </button>
-                </div>
-
-                <div className="mt-4 space-y-3">
-                  {auditLogs.slice(0, 4).map((log) => (
-                    <div
-                      key={log.id}
-                      className="p-3 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0]/70 flex items-start justify-between gap-3 text-xs"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-[#12263A]">{log.action}</span>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              log.status === 'Disetujui'
-                                ? 'bg-[#E2F1E0] text-[#2B6330]'
-                                : log.status === 'Ditolak'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-[#FBEFD5] text-[#7A5410]'
-                            }`}
-                          >
-                            {log.status}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[#4A5666]">
-                          Pelaku: <strong className="text-[#12263A]">{log.user}</strong> • Objek: {log.target}
-                        </p>
-                        {log.oldValue && log.newValue && (
-                          <div className="text-[10px] text-[#4A5666] grid grid-cols-2 gap-2 pt-0.5 font-mono">
-                            <div><span className="text-red-700">Lama:</span> {log.oldValue}</div>
-                            <div><span className="text-emerald-700">Baru:</span> {log.newValue}</div>
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-[#4A5666] shrink-0 whitespace-nowrap">{log.timestamp}</span>
-                    </div>
-                  ))}
-                </div>
+            {/* Box 2: Produk Terlaris */}
+            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 shadow-xs">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
+                <h3 className="font-serif text-lg font-semibold text-[#12263A]">
+                  5 Produk Mutiara Terlaris
+                </h3>
+                <span className="text-xs text-[#4A5666]">Berdasarkan Kuantitas Terjual</span>
               </div>
+              <div className="mt-4 space-y-3">
+                {summaryData?.top_products?.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-xl bg-[#F4F1EB]/50 border border-[#E6DDD0]/70 flex items-center justify-between text-xs"
+                  >
+                    <div>
+                      <div className="font-semibold text-[#12263A]">{item.product_name}</div>
+                      <div className="text-[11px] text-[#4A5666] mt-0.5">
+                        Terjual: <strong className="text-[#12263A]">{item.total_sold} unit</strong>
+                      </div>
+                    </div>
+                    <div className="font-mono font-semibold text-[#8A6A2F]">
+                      Rp {Number(item.total_revenue).toLocaleString('id-ID')}
+                    </div>
+                  </div>
+                ))}
+                {(!summaryData?.top_products || summaryData.top_products.length === 0) && (
+                  <div className="py-6 text-center text-xs text-[#4A5666]">
+                    Belum ada data penjualan produk.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Stok Menipis (Alert Table) */}
+          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 shadow-xs">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                <h3 className="font-serif text-lg font-semibold text-[#12263A]">
+                  Peringatan Stok Menipis (Stok ≤ 3 Unit)
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveMenu('produk-stok')}
+                className="text-xs font-semibold text-[#8A6A2F] hover:underline cursor-pointer"
+              >
+                Koreksi Stok di Menu Produk
+              </button>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold bg-[#F4F1EB]/50">
+                    <th className="py-2.5 px-3">Kode</th>
+                    <th className="py-2.5 px-3">Nama Produk Mutiara</th>
+                    <th className="py-2.5 px-3">Kategori</th>
+                    <th className="py-2.5 px-3 text-right">Harga</th>
+                    <th className="py-2.5 px-3 text-center">Sisa Stok</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E6DDD0]/60">
+                  {summaryData?.low_stock_products?.map((prod) => (
+                    <tr key={prod.id} className="hover:bg-[#FBF8F3]">
+                      <td className="py-2.5 px-3 font-mono text-[#8A6A2F] font-bold">{prod.code}</td>
+                      <td className="py-2.5 px-3 font-medium text-[#12263A]">{prod.name}</td>
+                      <td className="py-2.5 px-3 text-[#4A5666] capitalize">{prod.category_slug}</td>
+                      <td className="py-2.5 px-3 text-right font-mono">
+                        Rp {Number(prod.price).toLocaleString('id-ID')}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800">
+                          {prod.stock} unit
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {(!summaryData?.low_stock_products || summaryData.low_stock_products.length === 0) && (
+                    <tr>
+                      <td colSpan={5} className="py-4 text-center text-xs text-[#4A5666]">
+                        ✓ Semua stok mutiara berada di batas aman (&gt; 3 unit).
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       )}
 
       {/* =======================================================================
-          2. MENU: LOG AKTIVITAS (Waktu, Pelaku, Aksi, Target, Nilai Lama, Nilai Baru, Status)
+          2. MENU: PESANAN (Daftar, Filter, Detail, Ubah Status State Machine)
          ======================================================================= */}
-      {activeMenu === 'log-aktivitas' && (
+      {activeMenu === 'pesanan' && (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <PageHeader
+              title="Pusat Kendali Pesanan Pelanggan"
+              description="Pengawasan status alur pesanan (state machine), verifikasi pembayaran mutiara, dan rincian transaksi butik."
+            />
+            <button
+              type="button"
+              onClick={() => setIsExportModalOpen(true)}
+              className="min-h-[42px] px-5 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] inline-flex items-center gap-2 cursor-pointer shadow-md border border-[#D9B877]/40 transition-all"
+            >
+              <Download className="w-4 h-4" />
+              <span>Ekspor Excel Pesanan</span>
+            </button>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="bg-white p-4 rounded-2xl border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-4">
+            <div className="relative flex-1 min-w-[240px] max-w-md">
+              <input
+                type="text"
+                placeholder="Cari nomor pesanan, nama pelanggan, telepon..."
+                value={orderSearch}
+                onChange={(e) => setOrderSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchOrders()}
+                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
+              />
+              <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-[#4A5666]">Status:</span>
+              {[
+                { id: 'all', label: 'Semua' },
+                { id: 'PENDING_PAYMENT', label: 'Menunggu Bayar' },
+                { id: 'PROCESSING', label: 'Diproses' },
+                { id: 'SHIPPED', label: 'Dikirim' },
+                { id: 'COMPLETED', label: 'Selesai' },
+                { id: 'CANCELLED', label: 'Dibatalkan' },
+              ].map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setOrderStatusFilter(s.id)}
+                  className={`min-h-[36px] px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                    orderStatusFilter === s.id
+                      ? 'bg-[#12263A] text-white'
+                      : 'bg-[#F4F1EB] text-[#4A5666] hover:bg-[#EDE6DA]'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Orders Table */}
+          <DataTable>
+            <thead>
+              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+                <th className="py-3.5 px-4 text-left">No. Pesanan</th>
+                <th className="py-3.5 px-4 text-left">Waktu</th>
+                <th className="py-3.5 px-4 text-left">Pelanggan</th>
+                <th className="py-3.5 px-4 text-right">Total Transaksi</th>
+                <th className="py-3.5 px-4 text-center">Status Pesanan</th>
+                <th className="py-3.5 px-4 text-center">Status Bayar</th>
+                <th className="py-3.5 px-4 text-right">Tindakan SPI</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E6DDD0]/60 text-xs">
+              {orders.map((ord) => (
+                <tr key={ord.id} className="hover:bg-[#FBF8F3] transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-bold text-[#8A6A2F]">
+                    {ord.order_number}
+                  </td>
+                  <td className="py-3.5 px-4 text-[#4A5666] whitespace-nowrap">
+                    {new Date(ord.created_at).toLocaleDateString('id-ID', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <div className="font-semibold text-[#12263A]">{ord.customer_name}</div>
+                    <div className="text-[11px] text-[#4A5666]">{ord.customer_phone || '-'}</div>
+                  </td>
+                  <td className="py-3.5 px-4 text-right font-mono font-bold text-[#12263A]">
+                    Rp {Number(ord.total).toLocaleString('id-ID')}
+                  </td>
+                  <td className="py-3.5 px-4 text-center">
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        ord.order_status === 'COMPLETED'
+                          ? 'bg-[#E2F1E0] text-[#2B6330]'
+                          : ord.order_status === 'CANCELLED'
+                          ? 'bg-red-100 text-red-800'
+                          : ord.order_status === 'SHIPPED'
+                          ? 'bg-blue-100 text-blue-800'
+                          : ord.order_status === 'PROCESSING'
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {ord.order_status}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-center">
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        ord.payment_status === 'PAID'
+                          ? 'bg-[#E2F1E0] text-[#2B6330]'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {ord.payment_status}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedOrder(ord);
+                        setNewOrderStatus(ord.order_status);
+                        setOrderStatusNotes('');
+                      }}
+                      className="min-h-[34px] px-3.5 rounded-full bg-[#12263A] text-[#D9B877] hover:bg-[#1A3652] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Rincian &amp; Status</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {orders.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-xs text-[#4A5666]">
+                    Tidak ditemukan data pesanan yang cocok.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </DataTable>
+
+          {/* Modal Detail & Update Status */}
+          {selectedOrder && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#12263A]/60 backdrop-blur-xs animate-in fade-in">
+              <div className="relative w-full max-w-2xl bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-2xl text-[#12263A] space-y-5 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
+                  <div>
+                    <h3 className="font-serif text-xl font-bold text-[#12263A]">
+                      Rincian Pesanan #{selectedOrder.order_number}
+                    </h3>
+                    <p className="text-xs text-[#4A5666] mt-0.5">
+                      Pelanggan: <strong className="text-[#12263A]">{selectedOrder.customer_name}</strong> ({selectedOrder.customer_phone})
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrder(null)}
+                    className="p-2 rounded-full hover:bg-[#F4F1EB] text-[#4A5666]"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Items List */}
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-xs text-[#12263A] uppercase tracking-wider">
+                    Daftar Barang Dipesan:
+                  </h4>
+                  <div className="divide-y divide-[#E6DDD0] border border-[#E6DDD0] rounded-xl overflow-hidden text-xs">
+                    {selectedOrder.items?.map((item: any) => (
+                      <div key={item.id} className="p-3 bg-[#FBF8F3] flex items-center justify-between">
+                        <div>
+                          <div className="font-bold text-[#12263A]">{item.product_name}</div>
+                          <div className="text-[11px] text-[#4A5666]">
+                            {item.quantity} x Rp {Number(item.price).toLocaleString('id-ID')}
+                          </div>
+                        </div>
+                        <div className="font-mono font-bold text-[#8A6A2F]">
+                          Rp {Number(item.subtotal).toLocaleString('id-ID')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Summary Financials */}
+                <div className="p-3.5 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs space-y-1 font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-[#4A5666]">Subtotal:</span>
+                    <span>Rp {Number(selectedOrder.subtotal || 0).toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#4A5666]">Ongkos Kirim:</span>
+                    <span>Rp {Number(selectedOrder.shipping_cost || 0).toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#4A5666]">Diskon:</span>
+                    <span>- Rp {Number(selectedOrder.discount_amount || 0).toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-[#E6DDD0] pt-1.5 font-bold text-sm text-[#12263A]">
+                    <span>Total Pembayaran:</span>
+                    <span className="text-[#8A6A2F]">Rp {Number(selectedOrder.total).toLocaleString('id-ID')}</span>
+                  </div>
+                </div>
+
+                {/* State Machine Update Form */}
+                <form onSubmit={handleUpdateOrderStatus} className="space-y-3 pt-2 border-t border-[#E6DDD0] text-xs">
+                  <h4 className="font-bold text-[#12263A] uppercase tracking-wider">
+                    Ubah Status Pesanan (State Machine SPI)
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[#4A5666] mb-1 font-semibold">Pilih Status Baru:</label>
+                      <select
+                        value={newOrderStatus}
+                        onChange={(e) => setNewOrderStatus(e.target.value)}
+                        className="w-full min-h-[42px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-semibold text-[#12263A]"
+                      >
+                        <option value="PENDING_PAYMENT">PENDING_PAYMENT (Menunggu Bayar)</option>
+                        <option value="PROCESSING">PROCESSING (Sedang Diproses/Dikemas)</option>
+                        <option value="SHIPPED">SHIPPED (Dalam Pengiriman)</option>
+                        <option value="COMPLETED">COMPLETED (Pesanan Selesai)</option>
+                        <option value="CANCELLED">CANCELLED (Dibatalkan)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[#4A5666] mb-1 font-semibold">Catatan Otorisasi SPI:</label>
+                      <input
+                        type="text"
+                        value={orderStatusNotes}
+                        onChange={(e) => setOrderStatusNotes(e.target.value)}
+                        placeholder="Contoh: Resi JNE telah diverifikasi valid"
+                        className="w-full min-h-[42px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrder(null)}
+                      className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold cursor-pointer"
+                    >
+                      Tutup
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={updatingOrderStatus}
+                      className="min-h-[42px] px-6 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] cursor-pointer shadow-md border border-[#D9B877]/40"
+                    >
+                      {updatingOrderStatus ? 'Menyimpan...' : 'Terapkan Status Baru'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* =======================================================================
+          3. MENU: PRODUK DAN STOK (Lihat & Koreksi Stok Berlog)
+         ======================================================================= */}
+      {activeMenu === 'produk-stok' && (
         <div className="space-y-6">
           <PageHeader
-            title="Log Aktivitas &amp; Audit Forensik"
-            description="Perekaman kronologis mutlak setiap aksi di seluruh toko: perubahan harga, transaksi, penghapusan, dan penerbitan sertifikat."
+            title="Pengawasan Fisik Produk &amp; Koreksi Stok"
+            description="Koreksi stok mutiara secara presisi oleh SPI dengan pencatatan otomatis ke tabel stock_movements dan log audit."
           />
 
           {/* Filter Bar */}
@@ -432,34 +913,374 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
             <div className="relative flex-1 min-w-[240px] max-w-md">
               <input
                 type="text"
-                placeholder="Cari pelaku, objek, atau nomor pesanan..."
-                value={logSearch}
-                onChange={(e) => setLogSearch(e.target.value)}
+                placeholder="Cari nama perhiasan atau kode SKU..."
+                value={stockSearch}
+                onChange={(e) => setStockSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchStock()}
+                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
+              />
+              <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-xs font-semibold text-[#12263A] cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={lowStockOnly}
+                  onChange={(e) => setLowStockOnly(e.target.checked)}
+                  className="rounded text-[#12263A] focus:ring-[#D9B877]"
+                />
+                <span>Hanya Tampilkan Stok Menipis (≤ 3 Unit)</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Stock Table */}
+          <DataTable>
+            <thead>
+              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+                <th className="py-3.5 px-4 text-left">Kode SKU</th>
+                <th className="py-3.5 px-4 text-left">Nama Produk Mutiara</th>
+                <th className="py-3.5 px-4 text-left">Kategori &amp; Varietas</th>
+                <th className="py-3.5 px-4 text-right">Harga Resmi</th>
+                <th className="py-3.5 px-4 text-center">Stok On-Hand</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-right">Tindakan SPI</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E6DDD0]/60 text-xs">
+              {stockList.map((prod) => (
+                <tr key={prod.id} className="hover:bg-[#FBF8F3] transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-bold text-[#8A6A2F]">
+                    {prod.code}
+                  </td>
+                  <td className="py-3.5 px-4 font-medium text-[#12263A]">
+                    {prod.name}
+                  </td>
+                  <td className="py-3.5 px-4 text-[#4A5666]">
+                    <span className="capitalize">{prod.category_slug}</span> • {prod.pearl_variety || 'South Sea'}
+                  </td>
+                  <td className="py-3.5 px-4 text-right font-mono font-semibold">
+                    Rp {Number(prod.price).toLocaleString('id-ID')}
+                  </td>
+                  <td className="py-3.5 px-4 text-center">
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full font-mono text-xs font-bold ${
+                        prod.stock <= 0
+                          ? 'bg-red-100 text-red-800'
+                          : prod.stock <= 3
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-[#E2F1E0] text-[#2B6330]'
+                      }`}
+                    >
+                      {prod.stock} unit
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-center">
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        prod.status === 'published'
+                          ? 'bg-[#E2F1E0] text-[#2B6330]'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {prod.status}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStockModalProduct(prod);
+                        setStockDelta(0);
+                        setStockReason('');
+                      }}
+                      className="min-h-[34px] px-3.5 rounded-full bg-[#12263A] text-[#D9B877] hover:bg-[#1A3652] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Koreksi Stok</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {stockList.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-xs text-[#4A5666]">
+                    Tidak ditemukan data produk.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </DataTable>
+
+          {/* Modal Koreksi Stok */}
+          {stockModalProduct && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#12263A]/60 backdrop-blur-xs animate-in fade-in">
+              <div className="relative w-full max-w-md bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-2xl text-[#12263A] space-y-4 animate-in zoom-in-95">
+                <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
+                  <h3 className="font-serif text-xl font-bold text-[#12263A]">
+                    Koreksi Stok Fisik Mutiara
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setStockModalProduct(null)}
+                    className="p-1 rounded-full text-[#4A5666] hover:bg-[#F4F1EB]"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0] text-xs space-y-1">
+                  <div className="font-bold text-[#12263A]">{stockModalProduct.name}</div>
+                  <div className="text-[#4A5666]">Kode SKU: <strong className="font-mono text-[#8A6A2F]">{stockModalProduct.code}</strong></div>
+                  <div className="text-[#4A5666]">Stok Saat Ini: <strong className="text-[#12263A]">{stockModalProduct.stock} unit</strong></div>
+                </div>
+
+                <form onSubmit={handleAdjustStock} className="space-y-4 text-xs">
+                  <div>
+                    <label className="block font-semibold text-[#12263A] mb-1">
+                      Nilai Penyesuaian (Delta):
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setStockDelta((prev) => prev - 1)}
+                        className="w-10 h-10 rounded-xl bg-[#F4F1EB] hover:bg-[#EDE6DA] text-[#12263A] flex items-center justify-center font-bold"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <input
+                        type="number"
+                        required
+                        value={stockDelta}
+                        onChange={(e) => setStockDelta(parseInt(e.target.value) || 0)}
+                        className="flex-1 min-h-[40px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-center font-mono font-bold text-sm text-[#12263A]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setStockDelta((prev) => prev + 1)}
+                        className="w-10 h-10 rounded-xl bg-[#F4F1EB] hover:bg-[#EDE6DA] text-[#12263A] flex items-center justify-center font-bold"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-[#4A5666] mt-1">
+                      Stok akhir setelah penyesuaian:{' '}
+                      <strong className="text-[#8A6A2F]">
+                        {Math.max(0, stockModalProduct.stock + stockDelta)} unit
+                      </strong>
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-[#12263A] mb-1">
+                      Alasan Koreksi (Wajib untuk Audit): <span className="text-red-600">*</span>
+                    </label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={stockReason}
+                      onChange={(e) => setStockReason(e.target.value)}
+                      placeholder="Contoh: Hasil stock opname brankas mutiara fisik butik Mataram"
+                      className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setStockModalProduct(null)}
+                      className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] font-semibold"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={savingStock || stockDelta === 0 || !stockReason.trim()}
+                      className="min-h-[42px] px-6 rounded-full bg-[#12263A] text-[#D9B877] font-bold hover:bg-[#1A3652] cursor-pointer shadow-md disabled:opacity-50"
+                    >
+                      {savingStock ? 'Menyimpan...' : 'Simpan Koreksi Stok'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* =======================================================================
+          4. MENU: PENGGUNA (Daftar, Ubah Peran, Bekukan; SPI Tidak Bisa Turunkan Dirinya Sendiri)
+         ======================================================================= */}
+      {activeMenu === 'pengguna' && (
+        <div className="space-y-6">
+          <PageHeader
+            title="Pengawasan Akun Pengguna &amp; Hak Akses"
+            description="Pengawasan RBAC, promosi peran admin/pelanggan, dan suspensi akun berisiko. Sesuai aturan tata kelola, SPI dilarang menurunkan dirinya sendiri."
+          />
+
+          {/* Filter Bar */}
+          <div className="bg-white p-4 rounded-2xl border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-4">
+            <div className="relative flex-1 min-w-[240px] max-w-md">
+              <input
+                type="text"
+                placeholder="Cari nama pengguna, email, nomor HP..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
                 className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
               />
               <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-[#4A5666]">Filter Peran:</span>
-              {(['Semua', 'admin', 'spi', 'user'] as const).map((role) => (
+              <span className="text-xs font-semibold text-[#4A5666]">Peran:</span>
+              {(['all', 'admin', 'spi', 'user'] as const).map((r) => (
                 <button
-                  key={role}
+                  key={r}
                   type="button"
-                  onClick={() => setLogRoleFilter(role)}
-                  className={`min-h-[36px] px-3.5 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${
-                    logRoleFilter === role
+                  onClick={() => setUserRoleFilter(r)}
+                  className={`min-h-[36px] px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                    userRoleFilter === r
                       ? 'bg-[#12263A] text-white'
                       : 'bg-[#F4F1EB] text-[#4A5666] hover:bg-[#EDE6DA]'
                   }`}
                 >
-                  {role === 'Semua' ? 'Semua Peran' : role === 'spi' ? 'SPI' : role === 'admin' ? 'Admin' : 'User'}
+                  {r === 'all' ? 'Semua' : r.toUpperCase()}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Audit Log Table */}
+          {/* Users Table */}
+          <DataTable>
+            <thead>
+              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+                <th className="py-3.5 px-4 text-left">Nama &amp; Kontak</th>
+                <th className="py-3.5 px-4 text-left">Email</th>
+                <th className="py-3.5 px-4 text-left">Peran Saat Ini</th>
+                <th className="py-3.5 px-4 text-center">Status Akun</th>
+                <th className="py-3.5 px-4 text-right">Ubah Peran</th>
+                <th className="py-3.5 px-4 text-right">Tindakan Suspensi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E6DDD0]/60 text-xs">
+              {userList.map((u) => {
+                const isCurrentUser = user?.id && Number(user.id) === Number(u.id);
+                const isActive = u.status === 'active';
+                return (
+                  <tr key={u.id} className="hover:bg-[#FBF8F3] transition-colors">
+                    <td className="py-3.5 px-4">
+                      <div className="font-semibold text-[#12263A] flex items-center gap-1.5">
+                        <span>{u.name}</span>
+                        {isCurrentUser && (
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#D9B877] text-[#12263A]">
+                            Anda (SPI)
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-[#4A5666]">{u.phone || '-'}</div>
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-[#4A5666]">{u.email}</td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                          u.role === 'spi'
+                            ? 'bg-[#12263A] text-[#D9B877]'
+                            : u.role === 'admin'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          isActive ? 'bg-[#E2F1E0] text-[#2B6330]' : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {isActive ? 'Aktif' : 'Dibekukan'}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <select
+                        value={u.role}
+                        onChange={(e) => handleUpdateRole(u, e.target.value)}
+                        className="px-2.5 py-1 rounded-lg bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-semibold text-[#12263A] cursor-pointer"
+                        title={isCurrentUser ? 'SPI dilarang menurunkan dirinya sendiri' : 'Ubah peran'}
+                      >
+                        <option value="user">Pelanggan (user)</option>
+                        <option value="admin">Admin Operasional</option>
+                        <option value="spi">SPI (Pengawas)</option>
+                      </select>
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleUserStatus(u)}
+                        className={`min-h-[32px] px-3 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                          isActive
+                            ? 'border border-red-300 text-red-700 hover:bg-red-50'
+                            : 'bg-[#12263A] text-[#D9B877] hover:bg-[#1A3652]'
+                        }`}
+                        title={isCurrentUser ? 'SPI tidak bisa membekukan dirinya sendiri' : 'Toggle status akun'}
+                      >
+                        {isActive ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                        <span>{isActive ? 'Bekukan' : 'Aktifkan'}</span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {userList.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-xs text-[#4A5666]">
+                    Tidak ada pengguna yang cocok.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </DataTable>
+        </div>
+      )}
+
+      {/* =======================================================================
+          5. MENU: AUDIT LOG (Siapa, Aksi, Kapan, IP; Append-Only)
+         ======================================================================= */}
+      {activeMenu === 'audit-log' && (
+        <div className="space-y-6">
+          <PageHeader
+            title="Log Audit Forensik &amp; Jejak Rekam Sistem"
+            description="Perekaman kronologis mutlak (append-only) seluruh aksi sistem: siapa, aksi, kapan, IP, nilai sebelum dan sesudah."
+          />
+
+          {/* Filter Bar */}
+          <div className="bg-white p-4 rounded-2xl border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-4">
+            <div className="relative flex-1 min-w-[240px] max-w-md">
+              <input
+                type="text"
+                placeholder="Cari pelaku, jenis aksi, IP address..."
+                value={auditSearch}
+                onChange={(e) => setAuditSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchAuditLogs()}
+                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
+              />
+              <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            <button
+              type="button"
+              onClick={fetchAuditLogs}
+              className="min-h-[40px] px-4 rounded-full border border-[#E6DDD0] text-[#12263A] hover:bg-[#F4F1EB] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingAudit ? 'animate-spin' : ''}`} />
+              <span>Segarkan Log</span>
+            </button>
+          </div>
+
+          {/* Audit Logs Table */}
           <DataTable>
             <thead>
               <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
@@ -469,839 +1290,256 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                 <th className="py-3.5 px-4 text-left">Target Objek</th>
                 <th className="py-3.5 px-4 text-left">Nilai Lama</th>
                 <th className="py-3.5 px-4 text-left">Nilai Baru</th>
-                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-left">Alamat IP</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E6DDD0]/60 text-xs">
-              {auditLogs
-                .filter((l) => (logRoleFilter === 'Semua' ? true : l.role === logRoleFilter))
-                .filter((l) =>
-                  logSearch
-                    ? l.user.toLowerCase().includes(logSearch.toLowerCase()) ||
-                      l.action.toLowerCase().includes(logSearch.toLowerCase()) ||
-                      l.target.toLowerCase().includes(logSearch.toLowerCase())
-                    : true
-                )
-                .map((log) => (
-                  <tr key={log.id} className="hover:bg-[#FBF8F3] transition-colors">
-                    <td className="py-3.5 px-4 font-mono text-[11px] text-[#4A5666] whitespace-nowrap">
-                      {log.timestamp}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="font-semibold text-[#12263A]">{log.user}</div>
-                      <span className="text-[10px] text-[#4A5666] uppercase">{log.role}</span>
-                    </td>
-                    <td className="py-3.5 px-4 font-medium text-[#12263A]">{log.action}</td>
-                    <td className="py-3.5 px-4 text-[#4A5666] font-mono text-[11px]">{log.target}</td>
-                    <td className="py-3.5 px-4 text-red-700 font-mono text-[11px] max-w-[160px] truncate" title={log.oldValue || '-'}>
-                      {log.oldValue || '-'}
-                    </td>
-                    <td className="py-3.5 px-4 text-emerald-700 font-mono text-[11px] max-w-[160px] truncate" title={log.newValue || '-'}>
-                      {log.newValue || '-'}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          log.status === 'Disetujui'
-                            ? 'bg-[#E2F1E0] text-[#2B6330]'
-                            : log.status === 'Ditolak'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-[#FBEFD5] text-[#7A5410]'
-                        }`}
-                      >
-                        {log.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+              {auditLogList.map((log) => (
+                <tr key={log.id} className="hover:bg-[#FBF8F3] transition-colors">
+                  <td className="py-3.5 px-4 font-mono text-[11px] text-[#4A5666] whitespace-nowrap">
+                    {new Date(log.created_at).toLocaleDateString('id-ID', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                    })}
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <div className="font-semibold text-[#12263A]">{log.actor_name}</div>
+                    <span className="text-[10px] text-[#4A5666] uppercase">{log.actor_role}</span>
+                  </td>
+                  <td className="py-3.5 px-4 font-medium text-[#12263A]">{log.action}</td>
+                  <td className="py-3.5 px-4 text-[#4A5666] font-mono text-[11px]">
+                    {log.target_type}:{log.target_id}
+                  </td>
+                  <td className="py-3.5 px-4 text-red-700 font-mono text-[11px] max-w-[140px] truncate" title={JSON.stringify(log.old_value)}>
+                    {log.old_value ? JSON.stringify(log.old_value) : '-'}
+                  </td>
+                  <td className="py-3.5 px-4 text-emerald-700 font-mono text-[11px] max-w-[140px] truncate" title={JSON.stringify(log.new_value)}>
+                    {log.new_value ? JSON.stringify(log.new_value) : '-'}
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-[#4A5666] text-[11px]">
+                    {log.ip_address || '127.0.0.1'}
+                  </td>
+                </tr>
+              ))}
+              {auditLogList.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-xs text-[#4A5666]">
+                    Belum ada rekaman audit log.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </DataTable>
         </div>
       )}
 
       {/* =======================================================================
-          3. MENU: PERSETUJUAN (Semua aksi sensitif: Pembayaran, Ubah Harga >10%, Hapus Produk, Stok, Batal, Diskon >15%)
+          6. MENU: PENGATURAN TOKO (Nama, Kontak, Rekening, Biaya Kirim, Batas Bayar)
          ======================================================================= */}
-      {activeMenu === 'persetujuan' && (
+      {activeMenu === 'pengaturan-toko' && (
         <div className="space-y-6">
           <PageHeader
-            title="Persetujuan Aksi Sensitif (Otorisasi SPI)"
-            description="Alur persetujuan eksklusif: Setiap pengajuan dari Admin wajib dilengkapi catatan dan diputuskan oleh SPI sebelum dieksekusi ke data aktif."
+            title="Pengaturan Parameter Toko &amp; Kebijakan Finansial"
+            description="Konfigurasi parameter dasar operasional butik CD'E Pearls Lombok yang diawasi langsung oleh Satuan Pengawas Internal."
           />
 
-          {/* Status Tabs */}
-          <div className="flex flex-wrap items-center gap-2 border-b border-[#E6DDD0] pb-3">
-            {(['Semua', 'Menunggu Persetujuan', 'Disetujui', 'Ditolak'] as const).map((tab) => {
-              const count =
-                tab === 'Semua'
-                  ? approvals.length
-                  : approvals.filter((a) => a.status === tab).length;
-              return (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setApprovalTab(tab)}
-                  className={`min-h-[40px] px-4 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
-                    approvalTab === tab
-                      ? 'bg-[#12263A] text-white shadow-xs'
-                      : 'bg-white border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB]'
-                  }`}
-                >
-                  <span>{tab}</span>
-                  <span
-                    className={`px-2 py-0.2 rounded-full text-[10px] ${
-                      approvalTab === tab
-                        ? 'bg-[#D9B877] text-[#12263A] font-bold'
-                        : 'bg-[#F4F1EB] text-[#4A5666]'
-                    }`}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* List of Approval Cards */}
-          <div className="space-y-4">
-            {approvals
-              .filter((item) => (approvalTab === 'Semua' ? true : item.status === approvalTab))
-              .map((item) => {
-                const isPending = item.status === 'Menunggu Persetujuan';
-                return (
-                  <div
-                    key={item.id}
-                    className="bg-white border border-[#E6DDD0] rounded-2xl p-6 shadow-xs hover:shadow-md transition-all space-y-4"
-                  >
-                    {/* Header Card */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#E6DDD0]">
-                      <div className="flex items-center gap-2.5">
-                        <span className="font-mono text-xs font-bold text-[#8A6A2F] bg-[#FBF8F3] px-2.5 py-1 rounded-md border border-[#E6DDD0]">
-                          {item.id}
-                        </span>
-                        {getTypeBadge(item.type)}
-                        <h3 className="font-serif text-lg font-semibold text-[#12263A]">{item.title}</h3>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-[#4A5666]">Diajukan: {item.requestDate}</span>
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                            item.status === 'Disetujui'
-                              ? 'bg-[#E2F1E0] text-[#2B6330]'
-                              : item.status === 'Ditolak'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-[#FBEFD5] text-[#7A5410]'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Metadata Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                      <div>
-                        <span className="text-[#4A5666] block mb-0.5">Pengaju (Admin):</span>
-                        <span className="font-semibold text-[#12263A]">{item.requestedBy}</span>
-                      </div>
-                      <div>
-                        <span className="text-[#4A5666] block mb-0.5">Target Objek:</span>
-                        <span className="font-mono font-semibold text-[#12263A]">{item.target}</span>
-                      </div>
-                      <div>
-                        <span className="text-[#4A5666] block mb-0.5">Jenis Operasi:</span>
-                        <span className="font-medium text-[#12263A]">{item.type.replace(/_/g, ' ')}</span>
-                      </div>
-                    </div>
-
-                    {/* Catatan Wajib Admin (Highlight) */}
-                    <div className="p-3.5 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0] text-xs">
-                      <span className="font-semibold text-[#8A6A2F] block mb-1">
-                        Catatan Pengajuan dari Admin:
-                      </span>
-                      <p className="text-[#12263A] leading-relaxed italic">
-                        "{item.notes}"
-                      </p>
-                    </div>
-
-                    {/* Perbandingan Nilai Lama vs Nilai Baru */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-                      <div className="p-3 rounded-xl bg-red-50/70 border border-red-200">
-                        <span className="text-red-800 font-bold block mb-1">Nilai / Kondisi Lama:</span>
-                        <p className="text-red-950 font-medium">{item.oldValue}</p>
-                      </div>
-                      <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200">
-                        <span className="text-emerald-800 font-bold block mb-1">Nilai / Kondisi Baru yang Diajukan:</span>
-                        <p className="text-emerald-950 font-medium">{item.newValue}</p>
-                      </div>
-                    </div>
-
-                    {/* Review Info if already decided */}
-                    {item.reviewedBy && (
-                      <div className="p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <span className="font-semibold text-[#12263A]">Keputusan oleh: </span>
-                          <span className="text-[#4A5666]">{item.reviewedBy} ({item.reviewedDate})</span>
-                        </div>
-                        {item.reviewNotes && (
-                          <div className="text-[#4A5666] italic">
-                            Catatan SPI: "{item.reviewNotes}"
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Action Buttons for Pending Items */}
-                    {isPending && (
-                      <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#E6DDD0]">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedApproval(item);
-                            setIsRejectModalOpen(true);
-                          }}
-                          className="min-h-[42px] px-5 rounded-full border border-red-300 text-red-700 hover:bg-red-50 active:scale-95 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-all"
-                        >
-                          <XCircle className="w-4 h-4" />
-                          <span>Tolak Pengajuan</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedApproval(item);
-                            setIsApproveModalOpen(true);
-                          }}
-                          className="min-h-[42px] px-6 rounded-full bg-[#12263A] text-[#D9B877] hover:bg-[#1A3652] active:scale-95 text-xs font-bold inline-flex items-center gap-2 cursor-pointer shadow-md transition-all border border-[#D9B877]/40"
-                        >
-                          <CheckCircle2 className="w-4 h-4 text-[#D9B877]" />
-                          <span>Setujui &amp; Terapkan Sistem</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-      )}
-
-      {/* =======================================================================
-          4. MENU: AKUN & ROLE (Pengawasan RBAC & Akun Staf)
-         ======================================================================= */}
-      {activeMenu === 'akun-role' && (
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <PageHeader
-              title="Pengawasan Akun &amp; Hak Akses (RBAC)"
-              description="Satuan Pengawas Internal memiliki hak veto untuk memverifikasi hak akses staf, menambah akun operasional, dan membekukan akun bila terindikasi anomali."
-            />
-            <button
-              type="button"
-              onClick={() => setIsAddStaffModalOpen(true)}
-              className="min-h-[44px] px-5 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] inline-flex items-center gap-2 cursor-pointer shadow-md border border-[#D9B877]/40"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Tambah Akun Admin Baru</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatCard
-              label="Total Akun Karyawan"
-              value={`${staffAccounts.length} Akun`}
-              note="Terdaftar Aktif"
-              trend="neutral"
-            />
-            <StatCard
-              label="Akun Berstatus Aktif"
-              value={`${staffAccounts.filter((s) => s.status === 'Aktif').length} Staf`}
-              note="Hak Akses Terverifikasi"
-              trend="up"
-            />
-            <StatCard
-              label="Akun Dibekukan"
-              value={`${staffAccounts.filter((s) => s.status !== 'Aktif').length} Akun`}
-              note={staffAccounts.some((s) => s.status !== 'Aktif') ? 'Tersuspend Sementara' : 'Nol Suspensi'}
-              trend={staffAccounts.some((s) => s.status !== 'Aktif') ? 'down' : 'neutral'}
-            />
-          </div>
-
-          <DataTable>
-            <thead>
-              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
-                <th className="py-3.5 px-4 text-left">Nama &amp; Email</th>
-                <th className="py-3.5 px-4 text-left">Peran / Jabatan</th>
-                <th className="py-3.5 px-4 text-left">Hak Akses Sistem</th>
-                <th className="py-3.5 px-4 text-left">Aktivitas Terakhir</th>
-                <th className="py-3.5 px-4 text-center">Status</th>
-                <th className="py-3.5 px-4 text-right">Tindakan SPI</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E6DDD0]/60 text-xs">
-              {staffAccounts.map((account) => {
-                const isAktif = account.status === 'Aktif';
-                return (
-                  <tr key={account.id} className="hover:bg-[#FBF8F3] transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="font-semibold text-[#12263A]">{account.name}</div>
-                      <span className="text-[11px] text-[#4A5666]">{account.email}</span>
-                    </td>
-                    <td className="py-3.5 px-4 font-medium text-[#12263A]">
-                      {account.role}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex flex-wrap gap-1 max-w-xs">
-                        {account.permissions.map((perm, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 rounded-full text-[10px] bg-[#F4F1EB] text-[#12263A] border border-[#E6DDD0]"
-                          >
-                            {perm}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 text-[#4A5666] text-[11px]">{account.lastActive}</td>
-                    <td className="py-3.5 px-4 text-center">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          isAktif ? 'bg-[#E2F1E0] text-[#2B6330]' : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {account.status}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (confirm(`Reset kata sandi akun ${account.name} (${account.email}) ke password default "password123"?`)) {
-                              onResetPassword?.(account.id, account.email);
-                            }
-                          }}
-                          className="min-h-[34px] px-3 rounded-full text-xs font-semibold inline-flex items-center gap-1 border border-[#E6DDD0] text-[#4A5666] hover:text-[#12263A] hover:bg-[#F4F1EB] transition-all cursor-pointer"
-                          title="Reset kata sandi akun ini"
-                        >
-                          <Key className="w-3.5 h-3.5 text-[#8A6A2F]" />
-                          <span className="hidden sm:inline">Reset Sandi</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => onToggleStaffStatus(account.id)}
-                          className={`min-h-[34px] px-3.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                            isAktif
-                              ? 'border border-red-300 text-red-700 hover:bg-red-50'
-                              : 'bg-[#12263A] text-[#D9B877] hover:bg-[#1A3652]'
-                          }`}
-                          title={isAktif ? 'Bekukan akun staf ini untuk sementara' : 'Aktifkan kembali akun staf ini'}
-                        >
-                          {isAktif ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                          <span>{isAktif ? 'Bekukan' : 'Aktifkan'}</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </DataTable>
-        </div>
-      )}
-
-      {/* =======================================================================
-          5. MENU: LAPORAN AUDIT (Temuan SPI, Rekomendasi, Tambah Temuan, Export)
-         ======================================================================= */}
-      {activeMenu === 'laporan-audit' && (
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <PageHeader
-              title="Laporan Temuan Audit SPI"
-              description="Dokumentasi temuan ketidaksesuaian operasional butik, stok mutiara, selisih kasir, dan kepatuhan sertifikat."
-            />
-            <button
-              type="button"
-              onClick={() => setIsAddFindingModalOpen(true)}
-              className="min-h-[44px] px-5 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] inline-flex items-center gap-2 cursor-pointer shadow-md border border-[#D9B877]/40"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Catat Temuan Audit Baru</span>
-            </button>
-          </div>
-
-          {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-4 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-[#12263A]">Filter Keparahan:</span>
-              {(['Semua', 'Tinggi', 'Sedang', 'Rendah'] as const).map((sev) => (
-                <button
-                  key={sev}
-                  type="button"
-                  onClick={() => setFindingSeverityFilter(sev)}
-                  className={`min-h-[36px] px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                    findingSeverityFilter === sev
-                      ? 'bg-[#12263A] text-white'
-                      : 'bg-[#F4F1EB] text-[#4A5666] hover:bg-[#EDE6DA]'
-                  }`}
-                >
-                  {sev}
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => window.open(spiApi.getAuditFindingsReportUrl(), '_blank')}
-              className="min-h-[36px] px-4 rounded-full border border-[#E6DDD0] text-[#12263A] hover:bg-[#F4F1EB] font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 text-[#8A6A2F]" />
-              <span>Unduh Laporan Audit (PDF)</span>
-            </button>
-          </div>
-
-          {/* Findings List */}
-          <div className="space-y-4">
-            {findings
-              .filter((f) => (findingSeverityFilter === 'Semua' ? true : f.severity === findingSeverityFilter))
-              .map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white border border-[#E6DDD0] rounded-2xl p-6 shadow-xs hover:shadow-md transition-all space-y-3"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#E6DDD0]">
-                    <div className="flex items-center gap-2.5">
-                      <span className="font-mono text-xs font-bold text-[#8A6A2F] bg-[#FBF8F3] px-2.5 py-1 rounded-md border border-[#E6DDD0]">
-                        {item.code}
-                      </span>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          item.severity === 'Tinggi'
-                            ? 'bg-red-100 text-red-800'
-                            : item.severity === 'Sedang'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}
-                      >
-                        Keparahan: {item.severity}
-                      </span>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#F4F1EB] text-[#12263A]">
-                        {item.category}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-[#4A5666]">{item.date}</span>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                          item.status === 'Selesai'
-                            ? 'bg-[#E2F1E0] text-[#2B6330]'
-                            : 'bg-[#FBEFD5] text-[#7A5410]'
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  <h3 className="font-serif text-lg font-semibold text-[#12263A]">{item.title}</h3>
-
-                  <div className="p-3.5 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs">
-                    <span className="font-semibold text-[#8A6A2F] block mb-1">Rekomendasi Tindakan Korektif SPI:</span>
-                    <p className="text-[#12263A] leading-relaxed">{item.recommendation}</p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs">
-                    <span className="text-[#4A5666]">
-                      Personel Terkait: <strong className="text-[#12263A]">{item.staffName}</strong>
-                    </span>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onToggleFindingStatus(item.id)}
-                        className={`min-h-[34px] px-3.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                          item.status === 'Selesai'
-                            ? 'bg-[#F4F1EB] text-[#4A5666] hover:bg-[#EDE6DA]'
-                            : 'bg-[#E2F1E0] text-[#2B6330] hover:bg-[#D4E8D2]'
-                        }`}
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                        <span>{item.status === 'Selesai' ? 'Buka Kembali Investigasi' : 'Tandai Selesai'}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onDeleteFinding(item.id)}
-                        className="p-2 rounded-full text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                        title="Hapus Temuan"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
-      {/* =======================================================================
-          MODAL: SETUJUI AKSI SENSITIF
-         ======================================================================= */}
-      {isApproveModalOpen && selectedApproval && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#12263A]/60 backdrop-blur-xs animate-in fade-in">
-          <div className="relative w-full max-w-md bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-2xl text-[#12263A] space-y-5 animate-in zoom-in-95">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-[#E2F1E0] text-[#2B6330] flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
+          <div className="bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-xs max-w-3xl">
+            <form onSubmit={handleSaveSettings} className="space-y-5 text-xs">
               <div>
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">
-                  Setujui Pengajuan #{selectedApproval.id}
-                </h3>
-                <p className="text-xs text-[#4A5666]">
-                  Keputusan ini akan segera memperbarui data aktif toko dan tercatat di Log Aktivitas.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-[#4A5666]">Target:</span>
-                <span className="font-semibold text-[#12263A]">{selectedApproval.target}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#4A5666]">Pengaju:</span>
-                <span className="font-semibold text-[#12263A]">{selectedApproval.requestedBy}</span>
-              </div>
-              <div className="border-t border-[#E6DDD0] pt-1.5 mt-1.5">
-                <span className="text-[#4A5666] block mb-0.5">Nilai Baru:</span>
-                <span className="font-mono text-emerald-800 font-semibold">{selectedApproval.newValue}</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
-                Catatan Persetujuan SPI (Opsional)
-              </label>
-              <textarea
-                rows={2}
-                value={approvalNote}
-                onChange={(e) => setApprovalNote(e.target.value)}
-                placeholder="Contoh: Bukti mutasi telah diverifikasi cocok dengan rekening koran butik."
-                className="w-full p-3 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsApproveModalOpen(false);
-                  setSelectedApproval(null);
-                }}
-                className="min-h-[44px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmApprove}
-                className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] cursor-pointer shadow-md inline-flex items-center gap-2 border border-[#D9B877]/40"
-              >
-                <Check className="w-4 h-4 text-[#D9B877]" />
-                <span>Konfirmasi Setujui</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =======================================================================
-          MODAL: TOLAK AKSI SENSITIF
-         ======================================================================= */}
-      {isRejectModalOpen && selectedApproval && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#12263A]/60 backdrop-blur-xs animate-in fade-in">
-          <div className="relative w-full max-w-md bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-2xl text-[#12263A] space-y-5 animate-in zoom-in-95">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-red-100 text-red-700 flex items-center justify-center shrink-0">
-                <XCircle className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">
-                  Tolak Pengajuan #{selectedApproval.id}
-                </h3>
-                <p className="text-xs text-[#4A5666]">
-                  Aksi sensitif tidak akan diterapkan dan alasan penolakan wajib dicatat.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-[#4A5666]">Target:</span>
-                <span className="font-semibold text-[#12263A]">{selectedApproval.target}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#4A5666]">Diajukan oleh:</span>
-                <span className="font-semibold text-[#12263A]">{selectedApproval.requestedBy}</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
-                Alasan Penolakan SPI <span className="text-red-600">*</span>
-              </label>
-              <textarea
-                required
-                rows={3}
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Contoh: Bukti mutasi belum tertera di internet banking butik atau diskon melampaui margin modal."
-                className="w-full p-3 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsRejectModalOpen(false);
-                  setSelectedApproval(null);
-                }}
-                className="min-h-[44px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                disabled={!rejectReason.trim()}
-                onClick={handleConfirmReject}
-                className="min-h-[44px] px-6 rounded-full bg-red-700 text-white font-bold text-xs hover:bg-red-800 disabled:opacity-50 cursor-pointer shadow-md inline-flex items-center gap-2"
-              >
-                <X className="w-4 h-4" />
-                <span>Konfirmasi Tolak</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =======================================================================
-          MODAL: TAMBAH TEMUAN AUDIT BARU
-         ======================================================================= */}
-      {isAddFindingModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#12263A]/60 backdrop-blur-xs animate-in fade-in">
-          <div className="relative w-full max-w-lg bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-2xl text-[#12263A] space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
-              <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
-                Catat Temuan Audit SPI Baru
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsAddFindingModalOpen(false)}
-                className="p-2 rounded-full text-[#4A5666] hover:bg-[#F4F1EB]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveFinding} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                  Judul Temuan <span className="text-red-600">*</span>
+                <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                  Nama Resmi Toko / Butik <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  value={newFindingTitle}
-                  onChange={(e) => setNewFindingTitle(e.target.value)}
-                  placeholder="Contoh: Selisih Fisik Mutiara South Sea 12mm di Brankas Utama"
-                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  value={settingsForm.store_name}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, store_name: e.target.value })}
+                  placeholder="CD'E Pearls Lombok"
+                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                    Kategori Temuan
-                  </label>
-                  <select
-                    value={newFindingCategory}
-                    onChange={(e) => setNewFindingCategory(e.target.value as any)}
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
-                  >
-                    <option value="Inventaris">Inventaris &amp; Stok</option>
-                    <option value="Finansial">Finansial &amp; Transaksi</option>
-                    <option value="Kepatuhan Gemologi">Kepatuhan Gemologi</option>
-                    <option value="Operasional">Operasional Butik</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                    Tingkat Keparahan
-                  </label>
-                  <select
-                    value={newFindingSeverity}
-                    onChange={(e) => setNewFindingSeverity(e.target.value as any)}
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
-                  >
-                    <option value="Tinggi">Tinggi (Kritis)</option>
-                    <option value="Sedang">Sedang</option>
-                    <option value="Rendah">Rendah</option>
-                  </select>
-                </div>
-              </div>
-
               <div>
-                <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                  Personel / Staf Terkait
+                <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                  Nomor Kontak / WhatsApp Resmi <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
-                  value={newFindingStaff}
-                  onChange={(e) => setNewFindingStaff(e.target.value)}
-                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  required
+                  value={settingsForm.contact_phone}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, contact_phone: e.target.value })}
+                  placeholder="081239887733"
+                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                  Rekomendasi Tindakan Korektif SPI
+                <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                  Daftar Rekening Bank untuk Transfer Manual <span className="text-red-600">*</span>
                 </label>
                 <textarea
+                  required
                   rows={3}
-                  value={newFindingRec}
-                  onChange={(e) => setNewFindingRec(e.target.value)}
-                  placeholder="Langkah-langkah yang harus dipenuhi oleh staf operasional..."
-                  className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  value={settingsForm.bank_accounts}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, bank_accounts: e.target.value })}
+                  placeholder="BCA 056-8899-221 a.n CD'E Pearls Lombok; Mandiri 161-00-8877-112 a.n CD'E Pearls"
+                  className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
                 />
+                <p className="text-[11px] text-[#4A5666] mt-1">
+                  Pisahkan rekening dengan tanda titik koma (;). Rekening ini muncul pada faktur pembayaran manual.
+                </p>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E6DDD0]">
-                <button
-                  type="button"
-                  onClick={() => setIsAddFindingModalOpen(false)}
-                  className="min-h-[44px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] font-semibold cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-[#D9B877] font-bold hover:bg-[#1A3652] cursor-pointer shadow-md border border-[#D9B877]/40"
-                >
-                  Simpan Temuan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* =======================================================================
-          MODAL: TAMBAH AKUN STAF ADMIN BARU (SPI EXCLUSIVE)
-         ======================================================================= */}
-      {isAddStaffModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#12263A]/60 backdrop-blur-xs animate-in fade-in">
-          <div className="relative w-full max-w-lg bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-2xl text-[#12263A] space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
-              <div className="flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-[#8A6A2F]" />
-                <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
-                  Tambah Akun Staf Admin Baru
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsAddStaffModalOpen(false)}
-                className="p-2 rounded-full text-[#4A5666] hover:bg-[#F4F1EB]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveStaff} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                  Nama Lengkap Staf <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newStaffName}
-                  onChange={(e) => setNewStaffName(e.target.value)}
-                  placeholder="Contoh: Rian Anggara"
-                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                  Email Akun CD'E Pearls <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={newStaffEmail}
-                  onChange={(e) => setNewStaffEmail(e.target.value)}
-                  placeholder="nama.staf@cdepearls.com"
-                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                    Jabatan / Peran
+                  <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                    Tarif Ongkir Standar Flat (Rp) <span className="text-red-600">*</span>
                   </label>
-                  <select
-                    value={newStaffRole}
-                    onChange={(e) => setNewStaffRole(e.target.value as MockStaffAccount['role'])}
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
-                  >
-                    <option value="Admin Operasional">Admin Operasional</option>
-                    <option value="Kasir Butik">Kasir Butik</option>
-                    <option value="Staf Gudang">Staf Gudang</option>
-                    <option value="Gemologis">Gemologis</option>
-                  </select>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    value={settingsForm.shipping_flat_cost}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, shipping_flat_cost: parseFloat(e.target.value) || 0 })}
+                    className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-mono text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                  />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                    Cakupan Izin Akses
+                  <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                    Batas Waktu Bayar Pesanan (Jam) <span className="text-red-600">*</span>
                   </label>
                   <input
-                    type="text"
-                    value={newStaffPerms}
-                    onChange={(e) => setNewStaffPerms(e.target.value)}
-                    placeholder="Katalog, Pesanan, Stok"
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    type="number"
+                    required
+                    min={1}
+                    max={168}
+                    value={settingsForm.payment_timeout_hours}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, payment_timeout_hours: parseInt(e.target.value) || 24 })}
+                    className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-mono text-[#12263A] focus:outline-none focus:border-[#12263A]"
                   />
                 </div>
               </div>
 
-              <p className="text-[11px] text-[#4A5666] italic bg-[#FBF8F3] p-3 rounded-xl border border-[#E6DDD0]">
-                Kata sandi awal akun baru ini akan diset ke <strong>password123</strong>. Penambahan akun akan dicatat permanen dalam Log Aktivitas SPI.
-              </p>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E6DDD0]">
-                <button
-                  type="button"
-                  onClick={() => setIsAddStaffModalOpen(false)}
-                  className="min-h-[44px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] font-semibold cursor-pointer"
-                >
-                  Batal
-                </button>
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E6DDD0]">
                 <button
                   type="submit"
-                  className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-[#D9B877] font-bold hover:bg-[#1A3652] cursor-pointer shadow-md border border-[#D9B877]/40"
+                  disabled={savingSettings}
+                  className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] cursor-pointer shadow-md border border-[#D9B877]/40 inline-flex items-center gap-2"
                 >
-                  Tambahkan Akun
+                  <CheckCircle2 className="w-4 h-4 text-[#D9B877]" />
+                  <span>{savingSettings ? 'Menyimpan Pengaturan...' : 'Simpan Pengaturan Toko'}</span>
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =======================================================================
+          MODAL EKSPOR EXCEL (S-3)
+         ======================================================================= */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#12263A]/60 backdrop-blur-xs animate-in fade-in">
+          <div className="relative w-full max-w-md bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-2xl text-[#12263A] space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
+              <div className="flex items-center gap-2">
+                <Download className="w-5 h-5 text-[#8A6A2F]" />
+                <h3 className="font-serif text-xl font-bold text-[#12263A]">
+                  Ekspor Laporan Penjualan Excel (.xlsx)
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                className="p-1 rounded-full text-[#4A5666] hover:bg-[#F4F1EB]"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#4A5666]">
+              Laporan terstruktur dengan 3 Sheet resmi (Ringkasan, Rincian Pesanan, Rincian Barang) yang dihasilkan secara streaming di server.
+            </p>
+
+            <div className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#4A5666] font-semibold mb-1">Mulai Tanggal:</label>
+                  <input
+                    type="date"
+                    value={exportStartDate}
+                    onChange={(e) => setExportStartDate(e.target.value)}
+                    className="w-full min-h-[40px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#4A5666] font-semibold mb-1">Sampai Tanggal:</label>
+                  <input
+                    type="date"
+                    value={exportEndDate}
+                    onChange={(e) => setExportEndDate(e.target.value)}
+                    className="w-full min-h-[40px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[#4A5666] font-semibold mb-1">Filter Status Pesanan:</label>
+                <select
+                  value={exportStatus}
+                  onChange={(e) => setExportStatus(e.target.value)}
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                >
+                  <option value="all">Semua Status</option>
+                  <option value="COMPLETED">COMPLETED (Selesai)</option>
+                  <option value="PROCESSING">PROCESSING (Diproses)</option>
+                  <option value="SHIPPED">SHIPPED (Dikirim)</option>
+                  <option value="PENDING_PAYMENT">PENDING_PAYMENT (Menunggu Bayar)</option>
+                  <option value="CANCELLED">CANCELLED (Dibatalkan)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[#4A5666] font-semibold mb-1">Filter Kategori Produk:</label>
+                <select
+                  value={exportCategory}
+                  onChange={(e) => setExportCategory(e.target.value)}
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                >
+                  <option value="all">Semua Kategori</option>
+                  <option value="kalung">Kalung</option>
+                  <option value="gelang">Gelang</option>
+                  <option value="cincin">Cincin</option>
+                  <option value="anting">Anting</option>
+                  <option value="liontin">Liontin</option>
+                  <option value="bros">Bros</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E6DDD0]">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleTriggerExcelExport}
+                disabled={downloadingReport}
+                className="min-h-[42px] px-6 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] cursor-pointer shadow-md border border-[#D9B877]/40 inline-flex items-center gap-2"
+              >
+                <Download className="w-4 h-4 text-[#D9B877]" />
+                <span>{downloadingReport ? "Mengunduh File..." : "Unduh File Excel (.xlsx)"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

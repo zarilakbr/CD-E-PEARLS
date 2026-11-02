@@ -15,8 +15,8 @@ export interface MockProduct {
   name: string;
   category: string;
   categorySlug: string;
-  variety: 'South Sea Pearl' | 'Golden South Sea' | 'Tahitian Black Pearl';
-  grade: 'AAA' | 'AA+';
+  variety: string;
+  grade: string;
   pearlSize: string; // e.g. "11-12 mm"
   metal: 'Emas 18K' | 'Perak 925';
   goldKarat?: string;
@@ -27,6 +27,10 @@ export interface MockProduct {
   status: 'Aktif' | 'Nonaktif';
   description: string;
   certificateNo?: string;
+  bentuk?: string;
+  colorGroup?: string;
+  colorVariant?: string;
+  images?: Array<{ url: string; order: number; is_primary: boolean; alt?: string }>;
   isBestseller?: boolean;
   image?: string;
 }

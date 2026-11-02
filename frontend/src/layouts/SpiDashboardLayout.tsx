@@ -7,12 +7,13 @@ import {
   ShieldCheck,
   LayoutDashboard,
   FileText,
-  CheckCircle2,
   Users,
-  Award,
   ChevronRight,
   ChevronLeft,
   Calendar,
+  ShoppingBag,
+  Package,
+  Settings,
 } from 'lucide-react';
 import { DASHBOARD_BANNERS } from '../data/dashboardBanners';
 import { useTranslation } from 'react-i18next';
@@ -71,6 +72,7 @@ export const SpiDashboardLayout: React.FC<SpiDashboardLayoutProps> = ({
 
   const sidebarRef = useRef<HTMLElement>(null);
   const banner = DASHBOARD_BANNERS.spi;
+  void pendingApprovalsCount;
 
   // Toggle collapse
   const toggleCollapse = () => {
@@ -137,25 +139,29 @@ export const SpiDashboardLayout: React.FC<SpiDashboardLayoutProps> = ({
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
-      id: 'log-aktivitas',
-      label: t('spi.menu.activityLogs', 'Log Aktivitas'),
-      icon: <FileText className="w-4 h-4" />,
+      id: 'pesanan',
+      label: 'Pesanan',
+      icon: <ShoppingBag className="w-4 h-4" />,
     },
     {
-      id: 'persetujuan',
-      label: t('spi.menu.approvals', 'Persetujuan'),
-      icon: <CheckCircle2 className="w-4 h-4" />,
-      badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
+      id: 'produk-stok',
+      label: 'Produk & Stok',
+      icon: <Package className="w-4 h-4" />,
     },
     {
-      id: 'akun-role',
-      label: t('spi.menu.accountsRoles', 'Akun & Role'),
+      id: 'pengguna',
+      label: 'Pengguna',
       icon: <Users className="w-4 h-4" />,
     },
     {
-      id: 'laporan-audit',
-      label: t('spi.menu.auditReports', 'Laporan Audit'),
-      icon: <Award className="w-4 h-4" />,
+      id: 'audit-log',
+      label: 'Audit Log',
+      icon: <FileText className="w-4 h-4" />,
+    },
+    {
+      id: 'pengaturan-toko',
+      label: 'Pengaturan Toko',
+      icon: <Settings className="w-4 h-4" />,
     },
   ];
 

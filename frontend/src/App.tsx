@@ -468,6 +468,7 @@ const AppContent: React.FC = () => {
             path="/katalog"
             element={
               <CatalogPage
+                products={products}
                 onAddToCart={handleAddToCart}
                 onSelectProduct={handleSelectProduct}
               />
