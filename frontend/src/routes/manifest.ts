@@ -71,7 +71,7 @@ export const routesManifest: RouteManifestItem[] = [
   { path: '/auth/google/callback', component: GoogleCallbackPage, allowedRoles: ['public'], titleKey: 'Autentikasi Google' },
 
   // 3. Rute Pelanggan (/akun publik untuk GuestAccountHub, sub-rute terproteksi untuk user)
-  { path: '/checkout', component: CheckoutPage, allowedRoles: ['user', 'admin', 'spi'], titleKey: 'Checkout Pesanan' },
+  { path: '/checkout', component: CheckoutPage, allowedRoles: ['public', 'user', 'admin', 'spi'], titleKey: 'Checkout Pesanan' },
   { path: '/akun', component: CustomerPortal, allowedRoles: ['public', 'user'], titleKey: 'Dashboard Pelanggan', initialMenu: 'summary' },
   { path: '/akun/pesanan', component: CustomerPortal, allowedRoles: ['user'], titleKey: 'Pesanan Saya', initialMenu: 'orders' },
   { path: '/akun/status-pengiriman', component: CustomerPortal, allowedRoles: ['user'], titleKey: 'Status Pengiriman', initialMenu: 'tracking' },

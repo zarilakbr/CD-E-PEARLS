@@ -45,7 +45,7 @@ class ApprovalController extends Controller
             });
         }
 
-        $perPage = (int) $request->input('per_page', 10);
+        $perPage = min(max((int) $request->input('per_page', 10), 1), 100);
         $approvals = $query->paginate($perPage);
 
         return response()->json([
@@ -147,12 +147,45 @@ class ApprovalController extends Controller
                     }
                     break;
 
+                case 'new_product_price_audit':
+                    if ($product = Product::find($approval->target_id)) {
+                        $product->update(['status' => 'published']);
+                    }
+                    break;
+
                 case 'cancel_order':
-                    $order = Order::where('id', $approval->target_id)
+                    $order = Order::with('items')->where('id', $approval->target_id)
                         ->orWhere('order_number', $approval->target_id)
+                        ->lockForUpdate()
                         ->first();
-                    if ($order) {
-                        $order->update(['order_status' => 'CANCELLED']);
+                    if ($order && $order->order_status !== 'CANCELLED') {
+                        foreach ($order->items as $item) {
+                            if ($item->product_id) {
+                                $product = Product::where('id', $item->product_id)->lockForUpdate()->first();
+                                if ($product) {
+                                    $stockBefore = $product->stock;
+                                    $stockAfter = $stockBefore + $item->quantity;
+                                    $product->update([
+                                        'stock' => $stockAfter,
+                                        'stock_reserved' => max(0, ($product->stock_reserved ?? 0) - $item->quantity),
+                                    ]);
+
+                                    StockMovement::create([
+                                        'product_id' => $product->id,
+                                        'type' => 'in',
+                                        'quantity' => $item->quantity,
+                                        'stock_before' => $stockBefore,
+                                        'stock_after' => $stockAfter,
+                                        'reference_type' => 'spi_cancel_approved',
+                                        'reference_id' => $order->order_number,
+                                        'notes' => 'Pengembalian stok pembatalan pesanan disetujui SPI',
+                                        'created_by' => $spi->name,
+                                    ]);
+                                }
+                            }
+                        }
+
+                        $order->update(['order_status' => 'CANCELLED', 'payment_status' => 'FAILED']);
                         OrderStatusHistory::create([
                             'order_id' => $order->id,
                             'status' => 'CANCELLED',

@@ -7,7 +7,7 @@ export const authChannel = typeof window !== 'undefined' && 'BroadcastChannel' i
   : null;
 
 // In browser development, requests to /api or /sanctum proxy to Laravel backend
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -25,6 +25,9 @@ apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('cde_auth_token');
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (config.data instanceof FormData && config.headers) {
+    delete config.headers['Content-Type'];
   }
   return config;
 });
@@ -283,17 +286,23 @@ export const customerApi = {
 export const orderApi = {
   async createOrder(data: any) {
     const res = await apiClient.post('/orders', data);
+    return {
+      order: res.data.data,
+      tracking_token: res.data.tracking_token || res.data.data?.tracking_token,
+      message: res.data.message,
+    };
+  },
+
+  async track(query: string, trackingToken?: string, phoneLast4?: string) {
+    const params: Record<string, string> = {};
+    if (trackingToken) params.tracking_token = trackingToken;
+    if (phoneLast4) params.phone_last4 = phoneLast4;
+    const res = await apiClient.get(`/orders/lookup/${query}`, { params });
     return res.data.data;
   },
 
-  async track(query: string) {
-    const res = await apiClient.get(`/orders/lookup/${query}`);
-    return res.data.data;
-  },
-
-  async lookup(code: string) {
-    const res = await apiClient.get(`/orders/lookup/${code}`);
-    return res.data.data;
+  async lookup(code: string, trackingToken?: string, phoneLast4?: string) {
+    return this.track(code, trackingToken, phoneLast4);
   },
 
   async getOrder(id: string | number) {
@@ -610,6 +619,7 @@ export const spiApi = {
     date_from?: string;
     date_to?: string;
     page?: number;
+    per_page?: number;
   }) {
     const res = await apiClient.get('/spi/audit-logs', { params });
     return res.data;
@@ -670,5 +680,91 @@ export const spiApi = {
 
   getAuditFindingsReportUrl(): string {
     return '/api/v1/spi/audit-findings/export-report';
+  },
+
+  // S-2 SPI Pusat Kendali Endpoints
+  async getOrders(params?: { status?: string; payment_status?: string; search?: string; start_date?: string; end_date?: string; page?: number; per_page?: number }) {
+    const res = await apiClient.get('/spi/orders', { params });
+    return res.data;
+  },
+
+  async getOrderDetail(id: number | string) {
+    const res = await apiClient.get(`/spi/orders/${id}`);
+    return res.data;
+  },
+
+  async updateOrderStatus(id: number | string, data: { order_status: string; notes?: string }) {
+    const res = await apiClient.post(`/spi/orders/${id}/status`, data);
+    return res.data;
+  },
+
+  async getStock(params?: { search?: string; low_stock_only?: boolean; page?: number; per_page?: number }) {
+    const res = await apiClient.get('/spi/stock', { params });
+    return res.data;
+  },
+
+  async adjustStock(id: number | string, data: { delta: number; reason: string }) {
+    const res = await apiClient.post(`/spi/stock/${id}/adjust`, data);
+    return res.data;
+  },
+
+  async getUsers(params?: { role?: string; status?: string; search?: string; page?: number; per_page?: number }) {
+    const res = await apiClient.get('/spi/users', { params });
+    return res.data;
+  },
+
+  async updateUserRole(id: number | string, role: string) {
+    const res = await apiClient.put(`/spi/users/${id}/role`, { role });
+    return res.data;
+  },
+
+  async toggleUserStatus(id: number | string) {
+    const res = await apiClient.post(`/spi/users/${id}/toggle-status`);
+    return res.data;
+  },
+
+  async getSettings() {
+    const res = await apiClient.get('/spi/settings');
+    return res.data;
+  },
+
+  async updateSettings(data: {
+    store_name: string;
+    contact_phone: string;
+    bank_accounts: string;
+    shipping_flat_cost: number;
+    payment_timeout_hours: number;
+  }) {
+    const res = await apiClient.post('/spi/settings', data);
+    return res.data;
+  },
+
+  async downloadSalesReport(params?: { start_date?: string; end_date?: string; status?: string; category?: string }): Promise<void> {
+    const res = await apiClient.get('/spi/reports/sales/export', {
+      params,
+      responseType: 'blob',
+    });
+    let filename = 'Laporan_Penjualan_CDE_Pearls.xlsx';
+    const disposition = res.headers['content-disposition'] || res.headers['Content-Disposition'];
+    if (disposition && disposition.includes('filename=')) {
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      if (match && match[1]) filename = match[1];
+    }
+    const blob = new Blob([res.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+  },
+
+  getSalesReportExportUrl(params?: { start_date?: string; end_date?: string; status?: string; category?: string }): string {
+    const query = new URLSearchParams(params as Record<string, string>).toString();
+    return `/api/v1/spi/reports/sales/export${query ? '?' + query : ''}`;
   },
 };

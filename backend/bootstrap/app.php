@@ -13,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        $middleware->trustProxies(at: (require __DIR__.'/../config/trustedproxy.php')['proxies']);
         $middleware->prepend(\App\Http\Middleware\TrustCloudflareProxies::class);
         $middleware->statefulApi();
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'not_frozen' => \App\Http\Middleware\EnsureAccountNotFrozen::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

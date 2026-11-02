@@ -89,7 +89,7 @@ class AdminController extends Controller
             });
         }
 
-        $perPage = (int) $request->input('per_page', 20);
+        $perPage = min(max((int) $request->input('per_page', 20), 1), 100);
         $customers = $query->paginate($perPage);
 
         return response()->json([

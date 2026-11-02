@@ -468,6 +468,7 @@ const AppContent: React.FC = () => {
             path="/katalog"
             element={
               <CatalogPage
+                products={products}
                 onAddToCart={handleAddToCart}
                 onSelectProduct={handleSelectProduct}
               />
@@ -553,7 +554,7 @@ const AppContent: React.FC = () => {
         <Route
           path="/checkout"
           element={
-            <RouteGuard allowedRoles={['user', 'admin', 'spi']}>
+            <RouteGuard allowedRoles={['public', 'user', 'admin', 'spi']}>
               <CheckoutPage />
             </RouteGuard>
           }

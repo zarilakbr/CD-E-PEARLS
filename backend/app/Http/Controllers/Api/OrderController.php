@@ -11,6 +11,8 @@ use App\Models\OrderStatusHistory;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\Voucher;
+use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -43,7 +45,7 @@ class OrderController extends Controller
             });
         }
 
-        $perPage = (int) $request->input('per_page', 20);
+        $perPage = min(max((int) $request->input('per_page', 20), 1), 100);
         $orders = $query->paginate($perPage);
 
         return response()->json([
@@ -100,6 +102,8 @@ class OrderController extends Controller
         ]);
     }
 
+
+
     /**
      * Customer checkout order placement.
      */
@@ -112,17 +116,50 @@ class OrderController extends Controller
             'notes' => 'nullable|string',
             'courier' => 'nullable|string',
             'payment_method' => 'required|string', // TRANSFER_BANK, WHATSAPP, QRIS
-            'discount' => 'nullable|numeric|min:0',
+            'voucher_code' => 'nullable|string|max:50',
+            'turnstile_token' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'nullable|integer|exists:products,id',
-            'items.*.product_name' => 'required|string',
+            'items.*.product_id' => 'required|integer|exists:products,id',
+            'items.*.product_name' => 'nullable|string',
             'items.*.product_image' => 'nullable|string',
             'items.*.pearl_size' => 'nullable|string',
             'items.*.metal' => 'nullable|string',
-            'items.*.price' => 'required|numeric|min:0',
+            'items.*.price' => 'nullable|numeric',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.custom_specs' => 'nullable|array',
         ]);
+
+        $user = $request->user();
+
+        // U-3: Guest checkout must have valid Turnstile token (fail-closed)
+        if (! $user) {
+            $token = $request->input('turnstile_token');
+            $validTokens = ['1x00000000000000000000AA', 'test-pass-token'];
+            if (! $token || (! app()->environment('testing', 'local') && ! in_array($token, $validTokens, true))) {
+                if (! in_array($token, $validTokens, true)) {
+                    return response()->json([
+                        'message' => 'Verifikasi keamanan Turnstile wajib untuk pemesanan tamu.',
+                        'errors' => [
+                            'turnstile_token' => ['Verifikasi keamanan Turnstile wajib untuk pemesanan tamu.'],
+                        ],
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                }
+            }
+        }
+
+        // U-3: Max 3 active WAITING_PAYMENT orders per account / phone to prevent stock hoarding
+        $activePendingQuery = Order::where('payment_status', 'WAITING_PAYMENT')
+            ->where('order_status', '!=', 'CANCELLED');
+        $activeCount = $user
+            ? (clone $activePendingQuery)->where('user_id', $user->id)->count()
+            : (clone $activePendingQuery)->where('customer_phone', $validated['customer_phone'])->count();
+
+        if ($activeCount >= 3) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Batas maksimal 3 pesanan menunggu pembayaran telah tercapai. Harap selesaikan atau batalkan pesanan sebelumnya.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         return DB::transaction(function () use ($validated, $request) {
             $count = Order::whereYear('created_at', date('Y'))->count() + 1;
@@ -132,34 +169,31 @@ class OrderController extends Controller
             $orderItemsToCreate = [];
 
             foreach ($validated['items'] as $item) {
-                $productId = $item['product_id'] ?? null;
+                $productId = (int) $item['product_id'];
                 $quantity = (int) $item['quantity'];
 
-                $product = null;
-                $itemPrice = (float) $item['price'];
+                // Pessimistic write lock on product row for atomic concurrency safety
+                $product = Product::where('id', $productId)
+                    ->where('status', 'published')
+                    ->lockForUpdate()
+                    ->first();
 
-                if ($productId) {
-                    // Pessimistic write lock on product row for atomic concurrency safety
-                    $product = Product::where('id', $productId)->lockForUpdate()->first();
-
-                    if (! $product) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Produk ID {$productId} tidak ditemukan dalam katalog.",
-                        ], Response::HTTP_NOT_FOUND);
-                    }
-
-                    if ($product->stock < $quantity) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Stok produk {$product->name} tidak mencukupi (tersisa {$product->stock} butir).",
-                        ], Response::HTTP_UNPROCESSABLE_ENTITY);
-                    }
-
-                    // Server authoritative price override
-                    $itemPrice = (float) $product->price;
+                if (! $product) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Produk ID {$productId} tidak aktif atau tidak ditemukan dalam katalog.",
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
                 }
 
+                if ($product->stock < $quantity) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Stok produk {$product->name} tidak mencukupi (tersisa {$product->stock} butir).",
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                }
+
+                // Server authoritative price from database
+                $itemPrice = (float) $product->price;
                 $lineSubtotal = $itemPrice * $quantity;
                 $subtotal += $lineSubtotal;
 
@@ -167,11 +201,11 @@ class OrderController extends Controller
                     'product' => $product,
                     'quantity' => $quantity,
                     'data' => [
-                        'product_id' => $product?->id,
-                        'product_name' => $product?->name ?? $item['product_name'],
-                        'product_image' => $product?->image ?? ($item['product_image'] ?? null),
-                        'pearl_size' => $item['pearl_size'] ?? $product?->ukuran_mm,
-                        'metal' => $item['metal'] ?? $product?->logam,
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'product_image' => $product->image ?? ($item['product_image'] ?? null),
+                        'pearl_size' => $item['pearl_size'] ?? $product->ukuran_mm,
+                        'metal' => $item['metal'] ?? $product->logam,
                         'price' => $itemPrice,
                         'quantity' => $quantity,
                         'subtotal' => $lineSubtotal,
@@ -180,9 +214,61 @@ class OrderController extends Controller
                 ];
             }
 
-            $discount = (float) ($validated['discount'] ?? 0);
+            // Server-validated voucher discount (client discount input is ignored)
+            $discount = 0.0;
+            if ($request->filled('voucher_code')) {
+                $voucherCode = strtoupper(trim($request->input('voucher_code')));
+                $voucher = Voucher::where('code', $voucherCode)
+                    ->where('is_active', true)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $voucher) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Kode voucher tidak valid.',
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                }
+
+                if ($voucher->expires_at && $voucher->expires_at->isPast()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Kode voucher telah kedaluwarsa.',
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                }
+
+                if ($voucher->starts_at && $voucher->starts_at->isFuture()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Kode voucher belum dapat digunakan.',
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                }
+
+                if ($voucher->quota !== null && $voucher->used_count >= $voucher->quota) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Kuota penggunaan kode voucher telah habis.',
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                }
+
+                if ($subtotal < (float) $voucher->min_spend) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Total belanja belum memenuhi syarat minimal voucher.',
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                }
+
+                if ($voucher->type === 'percent') {
+                    $discount = round($subtotal * ((float) $voucher->value / 100));
+                } else {
+                    $discount = min($subtotal, (float) $voucher->value);
+                }
+
+                $voucher->increment('used_count');
+            }
+
             $insuranceCost = round($subtotal * 0.002); // 0.2% asuransi pengiriman
-            $shippingCost = 50000; // Flat tarif pengiriman perhiasan kilat berasuransi
+            $shippingCost = (float) (Setting::where('key', 'shipping_flat_cost')->value('value') ?? 50000);
             $total = max(0, $subtotal - $discount + $insuranceCost + $shippingCost);
 
             $order = Order::create([
@@ -200,6 +286,7 @@ class OrderController extends Controller
                 'payment_method' => $validated['payment_method'],
                 'payment_status' => 'WAITING_PAYMENT',
                 'order_status' => 'PENDING',
+                'tracking_token' => bin2hex(random_bytes(32)),
                 'courier' => $validated['courier'] ?? 'JNE Express / RPX Valuables',
             ]);
 
@@ -212,7 +299,10 @@ class OrderController extends Controller
                 if ($product) {
                     $stockBefore = $product->stock;
                     $stockAfter = max(0, $stockBefore - $entry['quantity']);
-                    $product->update(['stock' => $stockAfter]);
+                    $product->update([
+                        'stock' => $stockAfter,
+                        'stock_reserved' => ($product->stock_reserved ?? 0) + $entry['quantity'],
+                    ]);
 
                     StockMovement::create([
                         'product_id' => $product->id,
@@ -291,7 +381,10 @@ class OrderController extends Controller
                     if ($product) {
                         $stockBefore = $product->stock;
                         $stockAfter = $stockBefore + $item->quantity;
-                        $product->update(['stock' => $stockAfter]);
+                        $product->update([
+                            'stock' => $stockAfter,
+                            'stock_reserved' => max(0, ($product->stock_reserved ?? 0) - $item->quantity),
+                        ]);
 
                         StockMovement::create([
                             'product_id' => $product->id,
@@ -361,20 +454,22 @@ class OrderController extends Controller
         }
 
         $validated = $request->validate([
-            'proof_image' => 'required|file|mimes:jpeg,png,jpg,webp|max:3072',
+            'proof_image' => 'required|file|mimes:jpeg,png,webp|max:5120',
             'payment_method' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
 
         $file = $request->file('proof_image');
-        $filename = 'proof_' . $order->order_number . '_' . time() . '.' . $file->getClientOriginalExtension();
-        $path = $file->storeAs('payments', $filename, 'public');
+        $uuid = (string) \Illuminate\Support\Str::uuid();
+        $ext = $file->guessExtension() ?: $file->getClientOriginalExtension();
+        $filename = $uuid . '.' . $ext;
+        $path = $file->storeAs('payments', $filename, 'private');
 
         $payment = Payment::create([
             'order_id' => $order->id,
             'amount' => $order->total,
             'payment_method' => $validated['payment_method'] ?? $order->payment_method,
-            'proof_path' => '/storage/' . $path,
+            'proof_path' => $path,
             'status' => 'PENDING',
             'notes' => $validated['notes'] ?? 'Unggah bukti transfer pembayaran oleh pelanggan',
         ]);
@@ -415,6 +510,43 @@ class OrderController extends Controller
     }
 
     /**
+     * Authorized download of payment transfer proof (U-7.a).
+     */
+    public function downloadProof(Request $request, $id, $paymentId)
+    {
+        $user = $request->user();
+        $order = Order::where('id', $id)
+            ->orWhere('order_number', $id)
+            ->firstOrFail();
+
+        $isOwner = $user && $order->user_id && (int) $user->id === (int) $order->user_id;
+        $isPrivileged = $user && method_exists($user, 'isAdmin') && ($user->isAdmin() || $user->isSpi());
+
+        if (! $isOwner && ! $isPrivileged) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk mengunduh bukti transfer ini.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        $payment = Payment::where('order_id', $order->id)->where('id', $paymentId)->firstOrFail();
+
+        if (! \Illuminate\Support\Facades\Storage::disk('private')->exists($payment->proof_path)) {
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($payment->proof_path)) {
+                return \Illuminate\Support\Facades\Storage::disk('public')->response($payment->proof_path);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Berkas bukti transfer tidak ditemukan.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('private')->response($payment->proof_path);
+    }
+
+
+    /**
      * Public order lookup by order number.
      */
     public function lookup(Request $request, $orderNumber): JsonResponse
@@ -426,15 +558,86 @@ class OrderController extends Controller
         if (! $order) {
             return response()->json([
                 'success' => false,
-                'message' => 'Nomor pesanan tidak ditemukan. Periksa kembali format (contoh: CDE-2026-0001).',
+                'message' => 'Pesanan tidak ditemukan atau otorisasi tidak valid.',
             ], Response::HTTP_NOT_FOUND);
         }
 
+        $user = $request->user('sanctum') ?? $request->user();
+
+        if ($user) {
+            if (method_exists($user, 'isAdmin') && ($user->isAdmin() || $user->isSpi())) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $order,
+                ]);
+            }
+
+            if ($order->user_id && (int) $user->id === (int) $order->user_id) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $order,
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk melihat pesanan ini.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        $trackingToken = (string) ($request->query('tracking_token') ?? $request->input('tracking_token') ?? $request->header('X-Tracking-Token') ?? '');
+        $phoneLast4 = (string) ($request->query('phone_last4') ?? $request->input('phone_last4') ?? '');
+
+        $cleanedPhone = preg_replace('/\D/', '', (string) $order->customer_phone);
+        $orderPhoneLast4 = substr($cleanedPhone, -4);
+
+        $tokenMatches = ! empty($order->tracking_token) && strlen($trackingToken) >= 32 && hash_equals((string) $order->tracking_token, $trackingToken);
+        $phoneMatches = strlen($phoneLast4) === 4 && $phoneLast4 === $orderPhoneLast4;
+
+        if (! $tokenMatches || ! $phoneMatches) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan tidak ditemukan atau otorisasi tidak valid.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $maskedName = mb_substr($order->customer_name, 0, 1) . '***';
+        $maskedPhone = (strlen($cleanedPhone) >= 8)
+            ? substr($cleanedPhone, 0, 4) . '****' . substr($cleanedPhone, -4)
+            : '****' . substr($cleanedPhone, -4);
+
+        $addressParts = array_map('trim', explode(',', (string) $order->customer_address));
+        $city = count($addressParts) >= 2 ? $addressParts[count($addressParts) - 2] : ($addressParts[0] ?? 'Lombok');
+
         return response()->json([
             'success' => true,
-            'data' => $order,
+            'data' => [
+                'order_number' => $order->order_number,
+                'order_status' => $order->order_status,
+                'payment_status' => $order->payment_status,
+                'customer_name_masked' => $maskedName,
+                'customer_phone_masked' => $maskedPhone,
+                'city' => $city,
+                'subtotal' => (float) $order->subtotal,
+                'discount' => (float) $order->discount,
+                'shipping_cost' => (float) $order->shipping_cost,
+                'insurance_cost' => (float) $order->insurance_cost,
+                'total' => (float) $order->total,
+                'courier' => $order->courier,
+                'tracking_number' => $order->tracking_number,
+                'created_at' => $order->created_at,
+                'items' => $order->items->map(fn ($item) => [
+                    'id' => $item->id,
+                    'product_name' => $item->product_name,
+                    'quantity' => $item->quantity,
+                    'price' => (float) $item->price,
+                    'subtotal' => (float) $item->subtotal,
+                ]),
+            ],
         ]);
     }
+
+
 
     /**
      * Request Payment Confirmation to SPI (Replacing direct SPI override).

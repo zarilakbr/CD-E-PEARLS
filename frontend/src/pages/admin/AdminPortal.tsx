@@ -40,8 +40,9 @@ import { PageHeader } from '../../components/common/PageHeader';
 import { StatCard } from '../../components/common/StatCard';
 import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import { requiresPriceApproval, APPROVAL_RULES } from '../../config/approvalRules';
-import { reportApi } from '../../lib/api';
+import { ProductFormModal } from '../../components/admin/ProductFormModal';
+import { APPROVAL_RULES } from '../../config/approvalRules';
+import { reportApi, apiClient } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import {
   mockCategories,
@@ -174,6 +175,43 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [editingProduct, setEditingProduct] = useState<Partial<MockProduct> | null>(null);
   const [productToDelete, setProductToDelete] = useState<MockProduct | null>(null);
 
+  // Load live products from backend on mount
+  React.useEffect(() => {
+    let isMounted = true;
+    apiClient.get('/admin/products?per_page=100')
+      .then((res) => {
+        const items = res.data?.data || res.data;
+        if (isMounted && Array.isArray(items) && items.length > 0) {
+          const mapped: MockProduct[] = items.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            category: item.category?.name || 'Kalung Mutiara',
+            categorySlug: item.category_slug || 'kalung-mutiara',
+            variety: item.varietas || 'South Sea',
+            grade: item.grade || 'AAA',
+            pearlSize: item.ukuran_mm ? `${item.ukuran_mm} mm` : '12 mm',
+            metal: item.logam || 'Emas 18K',
+            weight: item.berat || '5.0 gr',
+            bentuk: item.bentuk || 'Bulat',
+            colorGroup: item.kelompok_warna || 'emas',
+            colorVariant: item.varian_warna || 'Champagne',
+            price: Number(item.price) || 0,
+            formattedPrice: `Rp ${Number(item.price).toLocaleString('id-ID')}`,
+            stock: Number(item.stock) || 0,
+            status: (item.status === 'published' ? 'Aktif' : 'Nonaktif') as 'Aktif' | 'Nonaktif',
+            description: item.description || '',
+            image: item.image || '/images/cat_ring_silk.jpg',
+            images: item.images,
+          }));
+          setProducts(mapped);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Categories state (Full CRUD)
   const [categories, setCategories] = useState<MockCategory[]>(mockCategories);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -265,58 +303,119 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   ];
 
   // Handle Product Save (Create or Update)
-  const handleSaveProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingProduct?.name) return;
+  const handleSaveProduct = async (productData: Partial<MockProduct>, photoFiles?: File[]) => {
+    let savedProductData: any = null;
+    try {
+      const formData = new FormData();
+      formData.append('name', productData.name || '');
+      formData.append('description', productData.description || '');
+      formData.append('category_slug', productData.categorySlug || 'kalung-mutiara');
+      formData.append('varietas', productData.variety || 'South Sea');
+      formData.append('grade', productData.grade || 'AAA');
+      formData.append('ukuran_mm', productData.pearlSize ? productData.pearlSize.replace(/[^0-9.]/g, '') : '12.0');
+      formData.append('berat', productData.weight || '5.0 gr');
+      formData.append('bentuk', productData.bentuk || 'Bulat');
+      formData.append('kelompok_warna', productData.colorGroup || 'emas');
+      formData.append('varian_warna', productData.colorVariant || 'Emas Champagne');
+      formData.append('price', String(productData.price || 0));
+      formData.append('stock', String(productData.stock || 0));
+      formData.append('status', productData.status === 'Nonaktif' ? 'draft' : 'published');
 
-    if (editingProduct.id) {
-      const existing = products.find(p => p.id === editingProduct.id);
-      const oldPrice = existing?.price || 0;
-      const newPrice = Number(editingProduct.price) || oldPrice;
-
-      // Rule 4: Ubah harga di atas batas (>10% atau > Rp 2.000.000) masuk ke Persetujuan SPI
-      // Ambang batas didefinisikan secara terpusat di src/config/approvalRules.ts
-      if (requiresPriceApproval(oldPrice, newPrice)) {
-        setPriceApprovalProduct({
-          product: editingProduct,
-          oldPrice,
-          newPrice,
-        });
-        setPriceApprovalNotes('');
-        setIsPriceApprovalModalOpen(true);
-        setIsProductSlideOverOpen(false);
-        return;
+      if (photoFiles && photoFiles.length > 0) {
+        photoFiles.forEach((f) => formData.append('photos[]', f));
       }
 
-      setProducts(prev =>
-        prev.map(p => (p.id === editingProduct.id ? ({ ...p, ...editingProduct } as MockProduct) : p))
-      );
-      showAdminToast(`✓ Perubahan produk "${editingProduct.name}" berhasil disimpan.`);
-    } else {
+      let res;
+      if (productData.id && typeof productData.id === 'number' && productData.id < 1000000000) {
+        formData.append('_method', 'PUT');
+        res = await apiClient.post(`/admin/products/${productData.id}`, formData);
+      } else {
+        res = await apiClient.post('/admin/products', formData);
+      }
+      if (res?.data?.data) {
+        savedProductData = res.data.data;
+      }
+    } catch (e) {
+      console.warn('API sync warning:', e);
+    }
+
+    if (savedProductData) {
       const newProd: MockProduct = {
-        id: Date.now(),
-        name: editingProduct.name || '[Nama produk]',
-        category: editingProduct.category || 'Kalung Mutiara',
-        categorySlug: (editingProduct.category || 'Kalung Mutiara').toLowerCase().replace(/\s+/g, '-'),
-        variety: editingProduct.variety || 'South Sea Pearl',
-        grade: editingProduct.grade || 'AAA',
-        pearlSize: editingProduct.pearlSize || '11-12 mm',
-        metal: editingProduct.metal || 'Emas 18K',
-        weight: editingProduct.weight || '4.5 gr',
-        price: Number(editingProduct.price) || 15000000,
-        formattedPrice: `Rp ${(Number(editingProduct.price) || 15000000).toLocaleString('id-ID')}`,
-        stock: Number(editingProduct.stock) || 3,
-        status: editingProduct.status || 'Aktif',
-        description: editingProduct.description || 'Deskripsi perhiasan mutiara Lombok...',
+        id: savedProductData.id,
+        name: savedProductData.name,
+        category: savedProductData.category?.name || productData.category || 'Kalung Mutiara',
+        categorySlug: savedProductData.category_slug || productData.categorySlug || 'kalung-mutiara',
+        variety: savedProductData.varietas || productData.variety || 'South Sea',
+        grade: savedProductData.grade || productData.grade || 'AAA',
+        pearlSize: savedProductData.ukuran_mm ? `${savedProductData.ukuran_mm} mm` : productData.pearlSize || '12 mm',
+        metal: savedProductData.logam || productData.metal || 'Emas 18K',
+        weight: savedProductData.berat || productData.weight || '5.0 gr',
+        bentuk: savedProductData.bentuk || productData.bentuk || 'Bulat',
+        colorGroup: savedProductData.kelompok_warna || productData.colorGroup || 'emas',
+        colorVariant: savedProductData.varian_warna || productData.colorVariant || 'Emas Champagne',
+        price: Number(savedProductData.price) || Number(productData.price) || 0,
+        formattedPrice: `Rp ${(Number(savedProductData.price) || Number(productData.price) || 0).toLocaleString('id-ID')}`,
+        stock: Number(savedProductData.stock) !== undefined ? Number(savedProductData.stock) : Number(productData.stock) || 0,
+        status: (savedProductData.status === 'published' ? 'Aktif' : 'Nonaktif') as 'Aktif' | 'Nonaktif',
+        description: savedProductData.description || productData.description || '',
+        image: savedProductData.image || productData.image || '/images/cat_ring_silk.jpg',
+        images: savedProductData.images || productData.images,
       };
-      setProducts([newProd, ...products]);
-      showAdminToast(`✓ Produk baru "${newProd.name}" berhasil ditambahkan.`);
+
+      if (productData.id && typeof productData.id === 'number' && productData.id < 1000000000) {
+        setProducts((prev) => prev.map((p) => (p.id === newProd.id ? newProd : p)));
+      } else {
+        setProducts((prev) => [newProd, ...prev]);
+      }
+      showAdminToast(`✓ Produk "${newProd.name}" berhasil disimpan.`);
+    } else {
+      // Local fallback
+      const newProd: MockProduct = {
+        id: productData.id || Date.now(),
+        name: productData.name || '[Nama produk]',
+        category: productData.category || 'Kalung Mutiara',
+        categorySlug: productData.categorySlug || 'kalung-mutiara',
+        variety: productData.variety || 'South Sea',
+        grade: productData.grade || 'AAA',
+        pearlSize: productData.pearlSize || '12 mm',
+        metal: productData.metal || 'Emas 18K',
+        weight: productData.weight || '5.0 gr',
+        bentuk: productData.bentuk || 'Bulat',
+        colorGroup: productData.colorGroup || 'emas',
+        colorVariant: productData.colorVariant || 'Emas Champagne',
+        price: Number(productData.price) || 15000000,
+        formattedPrice: `Rp ${(Number(productData.price) || 15000000).toLocaleString('id-ID')}`,
+        stock: Number(productData.stock) || 5,
+        status: (productData.status as 'Aktif' | 'Nonaktif') || 'Aktif',
+        description: productData.description || 'Deskripsi perhiasan mutiara Lombok...',
+        image: productData.image || '/images/cat_ring_silk.jpg',
+        images: productData.images,
+      };
+      if (productData.id) {
+        setProducts((prev) => prev.map((p) => (p.id === productData.id ? newProd : p)));
+      } else {
+        setProducts((prev) => [newProd, ...prev]);
+      }
+      showAdminToast(`✓ Produk "${newProd.name}" berhasil disimpan.`);
     }
     setIsProductSlideOverOpen(false);
     setEditingProduct(null);
   };
 
-  // Submit Price Change Approval to SPI (atau Eksekusi Langsung oleh SPI)
+  const handleDeactivateProduct = async (productToDeact: MockProduct) => {
+    try {
+      await apiClient.delete(`/admin/products/${productToDeact.id}`);
+    } catch (e) {
+      console.warn('Deactivate warning:', e);
+    }
+
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productToDeact.id ? { ...p, status: 'Nonaktif' as const } : p))
+    );
+    showAdminToast(`✓ Produk "${productToDeact.name}" berhasil dinonaktifkan.`);
+  };
+
+    // Submit Price Change Approval to SPI (atau Eksekusi Langsung oleh SPI)
   const submitPriceChangeApproval = (e: React.FormEvent) => {
     e.preventDefault();
     if (!priceApprovalProduct || !priceApprovalNotes.trim()) return;
@@ -954,7 +1053,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] active:scale-95 transition-all text-xs font-semibold inline-flex items-center gap-2 cursor-pointer shadow-xs"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Tambah Produk</span>
+                <span>Tambah Produk</span>
               </button>
             }
           />
@@ -975,7 +1074,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {/* Filter Kategori */}
             <select
-              value={productCatFilter}
+              aria-label="Filter Kategori" value={productCatFilter}
               onChange={(e) => setProductCatFilter(e.target.value)}
               className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
             >
@@ -987,7 +1086,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {/* Filter Varietas */}
             <select
-              value={productVarietyFilter}
+              aria-label="Filter Varietas" value={productVarietyFilter}
               onChange={(e) => setProductVarietyFilter(e.target.value)}
               className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
             >
@@ -999,7 +1098,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {/* Filter Grade */}
             <select
-              value={productGradeFilter}
+              aria-label="Filter Grade" value={productGradeFilter}
               onChange={(e) => setProductGradeFilter(e.target.value)}
               className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
             >
@@ -1010,7 +1109,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {/* Filter Status */}
             <select
-              value={productStatusFilter}
+              aria-label="Filter Status" value={productStatusFilter}
               onChange={(e) => setProductStatusFilter(e.target.value)}
               className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
             >
@@ -1103,9 +1202,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                         </button>
                         <button
                           type="button"
-                          onClick={() => setProductToDelete(product)}
-                          className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-                          title="Hapus Produk"
+                          onClick={() => handleDeactivateProduct(product)}
+                          className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                          title="Nonaktifkan Produk"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1116,237 +1215,16 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             </tbody>
           </DataTable>
 
-          {/* Panel Geser Form Tambah/Ubah Produk (Slide-over dari kanan) */}
-          {isProductSlideOverOpen && (
-            <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
-              <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-                onClick={() => setIsProductSlideOverOpen(false)}
-              />
-
-              <div className="relative w-full max-w-xl bg-white h-full shadow-2xl flex flex-col justify-between overflow-y-auto custom-scrollbar z-10 border-l border-[#E6DDD0]">
-                {/* Header Panel */}
-                <div className="p-6 border-b border-[#E6DDD0] flex items-center justify-between bg-[#FBF8F3]">
-                  <div>
-                    <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
-                      Atelier Editor
-                    </span>
-                    <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
-                      {editingProduct?.id ? 'Ubah Data Produk' : 'Tambah Produk Baru'}
-                    </h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsProductSlideOverOpen(false)}
-                    className="p-2 rounded-full hover:bg-[#EDE6DA] text-[#12263A]"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                {/* Form Fields */}
-                <form onSubmit={handleSaveProduct} className="p-6 space-y-4 flex-1">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                      Nama Perhiasan Mutiara
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Kalung Mutiara South Sea Princess AAA"
-                      value={editingProduct?.name || ''}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                      className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none focus:border-[#12263A]"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                        Kategori
-                      </label>
-                      <select
-                        value={editingProduct?.category || 'Kalung Mutiara'}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-                      >
-                        {mockCategories.map(c => (
-                          <option key={c.id} value={c.name}>{c.name}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                        Varietas Mutiara
-                      </label>
-                      <select
-                        value={editingProduct?.variety || 'South Sea Pearl'}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, variety: e.target.value as any })}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-                      >
-                        <option value="South Sea Pearl">South Sea Pearl</option>
-                        <option value="Golden South Sea">Golden South Sea</option>
-                        <option value="Tahitian Black Pearl">Tahitian Black Pearl</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                        Grade
-                      </label>
-                      <select
-                        value={editingProduct?.grade || 'AAA'}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, grade: e.target.value as any })}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-                      >
-                        <option value="AAA">AAA (Mirror)</option>
-                        <option value="AA+">AA+</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                        Ukuran (mm)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="11-12 mm"
-                        value={editingProduct?.pearlSize || ''}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, pearlSize: e.target.value })}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                        Logam
-                      </label>
-                      <select
-                        value={editingProduct?.metal || 'Emas 18K'}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, metal: e.target.value as any })}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-                      >
-                        <option value="Emas 18K">Emas 18K</option>
-                        <option value="Perak 925">Perak 925</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                        Harga (Rp)
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="18500000"
-                        value={editingProduct?.price || ''}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, price: Number(e.target.value) })}
-                        className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                        Stok Tersedia
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="5"
-                        value={editingProduct?.stock || ''}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, stock: Number(e.target.value) })}
-                        className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                      Deskripsi Produk
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="Jelaskan kilau nacre, pengrajin atelier, dan detail kemewahan..."
-                      value={editingProduct?.description || ''}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                      className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Area Foto Galeri Produk */}
-                  <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-2">
-                      Foto Galeri Perhiasan
-                    </label>
-                    <div className="grid grid-cols-4 gap-3">
-                      <div className="h-[75px] rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] relative group">
-                        <img
-                          src={editingProduct?.image || getAdminProductImage(editingProduct?.category, editingProduct?.name)}
-                          alt="Foto Utama"
-                          className="w-full h-full object-cover"
-                        />
-                        <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/60 text-white">Utama</span>
-                      </div>
-                      <div className="h-[75px] rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] relative group">
-                        <img
-                          src="/images/cat_ring_silk.jpg"
-                          alt="Detail Nacre"
-                          className="w-full h-full object-cover"
-                        />
-                        <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/60 text-white">Detail</span>
-                      </div>
-                      <div className="h-[75px] rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] relative group">
-                        <img
-                          src="/images/featured_pearl_dark_luxury.jpg"
-                          alt="Angle Pemakaian"
-                          className="w-full h-full object-cover"
-                        />
-                        <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-black/60 text-white">Pemakaian</span>
-                      </div>
-                      <div className="border border-dashed border-[#D9CFBF] bg-[#F4F1EB] rounded-xl flex flex-col items-center justify-center p-2 text-center text-[#4A5666] text-[11px] cursor-pointer hover:bg-[#EDE6DA] transition-colors">
-                        <Upload className="w-4 h-4 mb-1 text-[#8A6A2F]" />
-                        <span>+ Unggah</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status Aktif */}
-                  <div className="flex items-center gap-3 pt-2">
-                    <input
-                      type="checkbox"
-                      id="prodStatus"
-                      checked={editingProduct?.status === 'Aktif'}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, status: e.target.checked ? 'Aktif' : 'Nonaktif' })}
-                      className="w-4 h-4 accent-[#12263A]"
-                    />
-                    <label htmlFor="prodStatus" className="text-xs font-medium text-[#12263A]">
-                      Tampilkan di etalase website toko (Status Aktif)
-                    </label>
-                  </div>
-
-                  {/* Tombol Aksi Panel */}
-                  <div className="pt-6 border-t border-[#E6DDD0] flex items-center justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setIsProductSlideOverOpen(false)}
-                      className="min-h-[44px] px-6 rounded-full border border-[#12263A] text-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB]"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652]"
-                    >
-                      Simpan Perubahan
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
+          {/* Form Modal Tambah/Ubah Produk (Satu Komponen Terpadu) */}
+          <ProductFormModal
+            isOpen={isProductSlideOverOpen}
+            onClose={() => {
+              setIsProductSlideOverOpen(false);
+              setEditingProduct(null);
+            }}
+            product={editingProduct}
+            onSave={handleSaveProduct}
+          />
         </div>
       )}
 

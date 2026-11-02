@@ -11,7 +11,18 @@ class SettingController extends Controller
 {
     public function index()
     {
-        $settings = Setting::all()->pluck('value', 'key');
+        $publicKeys = [
+            'store_name',
+            'contact_phone',
+            'contact_email',
+            'boutique_address',
+            'boutique_name',
+            'whatsapp_number',
+            'bank_accounts',
+            'shipping_flat_cost',
+        ];
+
+        $settings = Setting::whereIn('key', $publicKeys)->pluck('value', 'key');
 
         return response()->json([
             'success' => true,

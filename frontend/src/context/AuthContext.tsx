@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authApi, authChannel, type UserResponse } from '../lib/api';
+import { apiClient, authApi, authChannel, type UserResponse } from '../lib/api';
 import { queryClient } from '../lib/queryClient';
 
 export type UserRole = 'user' | 'admin' | 'spi';
@@ -61,10 +61,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 1. Check OAuth callback parameters in URL
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
+      const authCode = searchParams.get('code') || searchParams.get('auth_code');
       const authToken = searchParams.get('auth_token');
-      const authError = searchParams.get('auth_error');
+      const authError = searchParams.get('error') || searchParams.get('auth_error');
 
-      if (authToken) {
+      if (authCode) {
+        if (window.location.pathname.includes('/auth/google/callback')) {
+          setIsLoading(false);
+          return;
+        }
+        // U-5: Immediately scrub authorization code from URL with replaceState
+        window.history.replaceState({}, '', window.location.pathname);
+        apiClient.post('/auth/exchange', { code: authCode })
+          .then((res) => {
+            if (res.data?.token) {
+              localStorage.setItem('cde_auth_token', res.data.token);
+              authChannel?.postMessage({ type: 'LOGIN', timestamp: Date.now() });
+              fetchCurrentUser();
+            }
+          })
+          .catch(() => {
+            fetchCurrentUser();
+          });
+      } else if (authToken) {
         localStorage.setItem('cde_auth_token', authToken);
         window.history.replaceState({}, '', window.location.pathname);
         authChannel?.postMessage({ type: 'LOGIN', timestamp: Date.now() });
@@ -112,7 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else if (parsed.event === 'LOGIN') {
             fetchCurrentUser();
           }
-        } catch {}
+        } catch { }
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -132,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authChannel?.postMessage({ type: 'LOGIN', timestamp: Date.now() });
         try {
           localStorage.setItem('cde_auth_sync', JSON.stringify({ event: 'LOGIN', timestamp: Date.now() }));
-        } catch {}
+        } catch { }
         return { success: true, message: res.message };
       } catch (err: any) {
         const error = err.response?.data?.error || 'LOGIN_FAILED';
@@ -160,7 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authChannel?.postMessage({ type: 'LOGIN', timestamp: Date.now() });
         try {
           localStorage.setItem('cde_auth_sync', JSON.stringify({ event: 'LOGIN', timestamp: Date.now() }));
-        } catch {}
+        } catch { }
         return { success: true, message: res.message };
       } catch (err: any) {
         const error = err.response?.data?.error || 'REGISTER_FAILED';
@@ -195,7 +214,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       authChannel?.postMessage({ type: 'LOGOUT', timestamp: Date.now() });
       try {
         localStorage.setItem('cde_auth_sync', JSON.stringify({ event: 'LOGOUT', timestamp: Date.now() }));
-      } catch {}
+      } catch { }
 
       // Navigate back to root
       if (typeof window !== 'undefined') {

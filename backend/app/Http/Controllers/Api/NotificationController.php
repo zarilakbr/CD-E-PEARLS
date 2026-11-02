@@ -22,7 +22,7 @@ class NotificationController extends Controller
 
         $notifications = Notification::where('user_id', $user->id)
             ->latest()
-            ->paginate((int) $request->input('per_page', 20));
+            ->paginate(min(max((int) $request->input('per_page', 20), 1), 100));
 
         return response()->json([
             'success' => true,

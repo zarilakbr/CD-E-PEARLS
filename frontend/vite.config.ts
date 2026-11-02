@@ -4,10 +4,26 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+function htmlIndexingPlugin() {
+  return {
+    name: 'html-indexing-plugin',
+    transformIndexHtml(html: string) {
+      const allowIndexing = process.env.VITE_ALLOW_INDEXING === 'true';
+      if (allowIndexing) {
+        return html.replace(
+          '<meta name="robots" content="noindex, nofollow" />',
+          '<meta name="robots" content="index, follow" />'
+        );
+      }
+      return html;
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   base: '/',
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), htmlIndexingPlugin()],
   test: {
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
@@ -18,6 +34,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
     port: 5173,
     proxy: {
       '/api': {

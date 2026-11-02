@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AddressController;
+use App\Http\Controllers\Api\Admin\ProductAdminController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\Spi\ApprovalController;
 use App\Http\Controllers\Api\Spi\AuditFindingController;
 use App\Http\Controllers\Api\Spi\AuditLogController;
+use App\Http\Controllers\Api\Spi\SpiControlCenterController;
 use App\Http\Controllers\Api\Spi\SpiStaffController;
 use App\Http\Controllers\Api\Spi\SpiSummaryController;
 use App\Http\Controllers\Api\WishlistController;
@@ -35,9 +37,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/providers', [AuthController::class, 'providers']);
         Route::post('/register', [AuthController::class, 'register']);
         Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/exchange', [AuthController::class, 'exchangeAuthCode'])->middleware('throttle:10,1');
         Route::post('/logout', [AuthController::class, 'logout']); // Safe logout for all states
-        Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-        Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+        Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:6,1');
+        Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:6,1');
         Route::post('/resend-verification', [AuthController::class, 'resendVerification']);
         Route::get('/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
         Route::get('/google/redirect', [AuthController::class, 'googleRedirect']);
@@ -54,12 +57,12 @@ Route::prefix('v1')->group(function () {
     Route::get('/settings', [SettingController::class, 'index']);
 
     // 3. Public Order & Leads
-    Route::post('/orders', [OrderController::class, 'store']);
-    Route::get('/orders/lookup/{orderNumber}', [OrderController::class, 'lookup']);
+    Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:orders');
+    Route::get('/orders/lookup/{orderNumber}', [OrderController::class, 'lookup'])->middleware('throttle:10,1');
     Route::post('/leads', [LeadController::class, 'store']);
 
     // 4. Authenticated Routes (Sanctum SPA Session / Token)
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'not_frozen'])->group(function () {
         // Authenticated User Profile & Security
         Route::prefix('auth')->group(function () {
             Route::get('/me', [AuthController::class, 'me']);
@@ -98,6 +101,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
         Route::post('/orders/{id}/upload-proof', [OrderController::class, 'uploadProof']);
+        Route::get('/orders/{id}/payments/{paymentId}/proof', [OrderController::class, 'downloadProof']);
 
         // 5. Admin & SPI Management Routes (SPI inherits full access)
         Route::middleware('role:admin,spi')->group(function () {
@@ -110,6 +114,18 @@ Route::prefix('v1')->group(function () {
                 // Real CSV/File Exports
                 Route::get('/reports/sales/csv', [ReportController::class, 'exportSalesCsv']);
                 Route::get('/reports/inventory/csv', [ReportController::class, 'exportInventoryCsv']);
+
+                // S-1 Product Management (under /v1/admin/products)
+                Route::get('/products', [ProductAdminController::class, 'index']);
+                Route::post('/products', [ProductAdminController::class, 'store']);
+                Route::put('/products/{id}', [ProductAdminController::class, 'update']);
+                Route::delete('/products/{id}', [ProductAdminController::class, 'destroy']);
+
+                // Certificates under /admin
+                Route::get('/certificates', [CertificateController::class, 'index']);
+                Route::post('/certificates', [CertificateController::class, 'store']);
+                Route::put('/certificates/{id}', [CertificateController::class, 'update']);
+                Route::delete('/certificates/{id}', [CertificateController::class, 'destroy']);
             });
 
             // Category Management
@@ -145,8 +161,19 @@ Route::prefix('v1')->group(function () {
 
         // 6. SPI Exclusive Supervisory Routes (Role 'spi' ONLY)
         Route::middleware('role:spi')->prefix('spi')->group(function () {
-            // Summary Dashboard & Realtime KPIs
-            Route::get('/summary', [SpiSummaryController::class, 'summary']);
+            // S-2 SPI Pusat Kendali Core Routes
+            Route::get('/summary', [SpiControlCenterController::class, 'summary']);
+            Route::get('/orders', [SpiControlCenterController::class, 'orders']);
+            Route::get('/orders/{id}', [SpiControlCenterController::class, 'orderDetail']);
+            Route::match(['put', 'post'], '/orders/{id}/status', [SpiControlCenterController::class, 'updateOrderStatus']);
+            Route::get('/stock', [SpiControlCenterController::class, 'stock']);
+            Route::post('/stock/{id}/adjust', [SpiControlCenterController::class, 'adjustStock']);
+            Route::get('/users', [SpiControlCenterController::class, 'users']);
+            Route::put('/users/{id}/role', [SpiControlCenterController::class, 'updateUserRole']);
+            Route::match(['put', 'post'], '/users/{id}/toggle-status', [SpiControlCenterController::class, 'toggleUserStatus']);
+            Route::get('/settings', [SpiControlCenterController::class, 'getSettings']);
+            Route::post('/settings', [SpiControlCenterController::class, 'updateSettings']);
+            Route::get('/reports/sales/export', [SpiControlCenterController::class, 'exportSalesReport']);
 
             // Approvals Workflow Queue
             Route::get('/approvals', [ApprovalController::class, 'index']);
@@ -173,3 +200,30 @@ Route::prefix('v1')->group(function () {
         });
     });
 });
+
+// S-1 Direct Root Alias /api/admin/products for Admin & SPI
+Route::middleware(['auth:sanctum', 'role:admin,spi'])->prefix('admin')->group(function () {
+    Route::get('/products', [ProductAdminController::class, 'index']);
+    Route::post('/products', [ProductAdminController::class, 'store']);
+    Route::put('/products/{id}', [ProductAdminController::class, 'update']);
+    Route::delete('/products/{id}', [ProductAdminController::class, 'destroy']);
+});
+
+// S-2 Direct Root Alias /api/spi/* for SPI Exclusive
+Route::middleware(['auth:sanctum', 'role:spi'])->prefix('spi')->group(function () {
+    Route::get('/summary', [SpiControlCenterController::class, 'summary']);
+    Route::get('/orders', [SpiControlCenterController::class, 'orders']);
+    Route::get('/orders/{id}', [SpiControlCenterController::class, 'orderDetail']);
+    Route::match(['put', 'post'], '/orders/{id}/status', [SpiControlCenterController::class, 'updateOrderStatus']);
+    Route::get('/stock', [SpiControlCenterController::class, 'stock']);
+    Route::post('/stock/{id}/adjust', [SpiControlCenterController::class, 'adjustStock']);
+    Route::get('/users', [SpiControlCenterController::class, 'users']);
+    Route::put('/users/{id}/role', [SpiControlCenterController::class, 'updateUserRole']);
+    Route::match(['put', 'post'], '/users/{id}/toggle-status', [SpiControlCenterController::class, 'toggleUserStatus']);
+    Route::get('/audit-logs', [SpiControlCenterController::class, 'auditLogs']);
+    Route::get('/settings', [SpiControlCenterController::class, 'getSettings']);
+    Route::post('/settings', [SpiControlCenterController::class, 'updateSettings']);
+    Route::get('/reports/sales/export', [SpiControlCenterController::class, 'exportSalesReport']);
+});
+
+

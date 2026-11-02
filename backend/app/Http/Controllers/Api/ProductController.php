@@ -19,7 +19,7 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Product::with(['category', 'certificate'])
-            ->where('status', '!=', 'archived');
+            ->where('status', 'published');
 
         if ($request->filled('category') && $request->category !== 'all') {
             $query->where('category_slug', $request->category);
@@ -64,7 +64,7 @@ class ProductController extends Controller
                 break;
         }
 
-        $perPage = (int) $request->input('per_page', 24);
+        $perPage = min(max((int) $request->input('per_page', 24), 1), 100);
         $products = $query->paginate($perPage);
 
         return response()->json([
@@ -453,7 +453,7 @@ class ProductController extends Controller
             });
         }
 
-        $movements = $query->paginate((int) $request->input('per_page', 20));
+        $movements = $query->paginate(min(max((int) $request->input('per_page', 20), 1), 100));
 
         return response()->json([
             'success' => true,

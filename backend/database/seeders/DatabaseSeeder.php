@@ -115,6 +115,9 @@ class DatabaseSeeder extends Seeder
             'price_change_percent_threshold' => '10',
             'price_change_nominal_threshold' => '2000000',
             'discount_percent_threshold' => '15',
+            'min_product_price_threshold' => '100000',
+            'max_product_price_threshold' => '100000000',
+            'reservation_hours' => '24',
         ];
 
         foreach ($settings as $key => $val) {
@@ -375,7 +378,7 @@ class DatabaseSeeder extends Seeder
         $firstProduct = Product::where('code', 'PRD-LMB-001')->first();
         if ($firstProduct) {
             $order = Order::updateOrCreate(
-                ['order_number' => 'ORD-2026-081'],
+                ['order_number' => 'CDE-2026-0081'],
                 [
                     'user_id' => $user->id,
                     'customer_name' => 'Siti Rahma',
@@ -425,11 +428,11 @@ class DatabaseSeeder extends Seeder
         );
 
         Approval::updateOrCreate(
-            ['title' => 'Otorisasi Konfirmasi Pembayaran Manual ORD-2026-081'],
+            ['title' => 'Otorisasi Konfirmasi Pembayaran Manual CDE-2026-0081'],
             [
                 'type' => 'payment_override',
                 'target_type' => 'order',
-                'target_id' => 'ORD-2026-081',
+                'target_id' => 'CDE-2026-0081',
                 'old_value' => ['payment_status' => 'WAITING_PAYMENT'],
                 'new_value' => ['payment_status' => 'PAID', 'verified_by' => 'admin@cdepearls.com'],
                 'requester_id' => $admin->id,
@@ -463,7 +466,7 @@ class DatabaseSeeder extends Seeder
             'actor_role' => 'spi',
             'action' => 'APPROVE_PAYMENT_OVERRIDE',
             'target_type' => 'order',
-            'target_id' => 'ORD-2026-081',
+            'target_id' => 'CDE-2026-0081',
             'old_value' => ['payment_status' => 'WAITING_PAYMENT'],
             'new_value' => ['payment_status' => 'PAID'],
             'ip_address' => '127.0.0.1',
@@ -511,6 +514,20 @@ class DatabaseSeeder extends Seeder
                 'assignee_id' => $admin->id,
                 'status' => 'in_progress',
                 'due_date' => now()->addDays(14)->toDateString(),
+            ]
+        );
+        // 11. Active Voucher
+        \App\Models\Voucher::updateOrCreate(
+            ['code' => 'MUTIARABERCAHAYA'],
+            [
+                'type' => 'fixed',
+                'value' => 500000,
+                'min_spend' => 1000000,
+                'quota' => 100,
+                'used_count' => 0,
+                'is_active' => true,
+                'starts_at' => now()->subDay(),
+                'expires_at' => now()->addYear(),
             ]
         );
     }

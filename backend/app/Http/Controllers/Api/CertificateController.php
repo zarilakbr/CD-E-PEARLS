@@ -28,7 +28,7 @@ class CertificateController extends Controller
             });
         }
 
-        $perPage = (int) $request->input('per_page', 20);
+        $perPage = min(max((int) $request->input('per_page', 20), 1), 100);
         $certificates = $query->paginate($perPage);
 
         return response()->json([
@@ -77,7 +77,20 @@ class CertificateController extends Controller
             'ukuran' => 'required|string|max:50', // 11.8 mm
             'tanggal' => 'required|date',
             'pdf_file' => 'nullable|file|mimes:pdf|max:10240', // 10MB max
-            'pdf_path' => 'nullable|string',
+            'pdf_path' => [
+                'nullable',
+                'string',
+                'max:500',
+                function ($attribute, $value, $fail) {
+                    if (str_contains($value, '..') || str_contains($value, "\0") || str_contains($value, '\\')) {
+                        $fail('Jalur berkas tidak boleh mengandung path traversal (..).');
+                        return;
+                    }
+                    if (! str_starts_with($value, '/storage/certificates/') && ! str_starts_with($value, 'https://')) {
+                        $fail('Jalur PDF sertifikat harus berupa tautan aman https:// atau berkas resmi /storage/certificates/.');
+                    }
+                },
+            ],
         ]);
 
         $pdfPath = $validated['pdf_path'] ?? null;
@@ -132,7 +145,20 @@ class CertificateController extends Controller
             'ukuran' => 'sometimes|required|string|max:50',
             'tanggal' => 'sometimes|required|date',
             'pdf_file' => 'nullable|file|mimes:pdf|max:10240',
-            'pdf_path' => 'nullable|string',
+            'pdf_path' => [
+                'nullable',
+                'string',
+                'max:500',
+                function ($attribute, $value, $fail) {
+                    if (str_contains($value, '..') || str_contains($value, "\0") || str_contains($value, '\\')) {
+                        $fail('Jalur berkas tidak boleh mengandung path traversal (..).');
+                        return;
+                    }
+                    if (! str_starts_with($value, '/storage/certificates/') && ! str_starts_with($value, 'https://')) {
+                        $fail('Jalur PDF sertifikat harus berupa tautan aman https:// atau berkas resmi /storage/certificates/.');
+                    }
+                },
+            ],
         ]);
 
         if ($request->hasFile('pdf_file')) {

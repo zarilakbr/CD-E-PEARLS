@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { AuthLayout } from '../../components/auth/AuthLayout';
-import { authChannel } from '../../lib/api';
+import { authChannel, apiClient } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 
@@ -10,16 +10,52 @@ export const GoogleCallbackPage: React.FC = () => {
   const navigate = useNavigate();
   const { refetchUser } = useAuth();
 
+  const authCode = searchParams.get('code') || searchParams.get('auth_code');
   const authToken = searchParams.get('auth_token') || searchParams.get('token');
   const authError = searchParams.get('auth_error') || searchParams.get('error');
   const retryAfter = searchParams.get('retry_after');
   const nextParam = searchParams.get('next');
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const exchangedRef = useRef(false);
 
   useEffect(() => {
+    if (authCode) {
+      if (exchangedRef.current) return;
+      exchangedRef.current = true;
+
+      // U-5 & U-11: Immediately scrub authorization code from URL bar before token exchange
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      apiClient.post('/auth/exchange', { code: authCode })
+        .then((res) => {
+          if (res.data?.token) {
+            localStorage.setItem('cde_auth_token', res.data.token);
+            authChannel?.postMessage({ type: 'LOGIN', timestamp: Date.now() });
+            try {
+              localStorage.setItem('cde_auth_sync', JSON.stringify({ event: 'LOGIN', timestamp: Date.now() }));
+            } catch {}
+
+            refetchUser().then(() => {
+              const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')
+                ? nextParam
+                : '/akun';
+              navigate(safeNext, { replace: true });
+            });
+          } else {
+            setErrorMessage('Respon penukaran kode otorisasi tidak valid.');
+          }
+        })
+        .catch((err) => {
+          const msg = err.response?.data?.message || 'Kode otorisasi Google tidak valid atau telah kedaluwarsa.';
+          setErrorMessage(msg);
+        });
+      return;
+    }
+
     if (authToken) {
       localStorage.setItem('cde_auth_token', authToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
       authChannel?.postMessage({ type: 'LOGIN', timestamp: Date.now() });
       try {
         localStorage.setItem('cde_auth_sync', JSON.stringify({ event: 'LOGIN', timestamp: Date.now() }));
@@ -32,6 +68,7 @@ export const GoogleCallbackPage: React.FC = () => {
         navigate(safeNext, { replace: true });
       });
     } else if (authError) {
+      window.history.replaceState({}, document.title, window.location.pathname);
       switch (authError) {
         case 'ROLE_NOT_PERMITTED':
           setErrorMessage(
@@ -54,10 +91,10 @@ export const GoogleCallbackPage: React.FC = () => {
           break;
       }
     } else {
-      // If reached without token or error, redirect to /masuk
+      // If reached without code, token or error, redirect to /masuk
       navigate('/masuk', { replace: true });
     }
-  }, [authToken, authError, retryAfter, nextParam, navigate, refetchUser]);
+  }, [authCode, authToken, authError, retryAfter, nextParam, navigate, refetchUser]);
 
   return (
     <AuthLayout
