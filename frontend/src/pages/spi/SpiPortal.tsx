@@ -1475,13 +1475,13 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           <div className="bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-xs max-w-3xl">
             <form onSubmit={handleSaveSettings} className="space-y-5 text-xs">
               <div>
-                <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                <label htmlFor="store_name" className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
                   Nama Resmi Toko / Butik <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  value={settingsForm.store_name}
+                  id="store_name" value={settingsForm.store_name}
                   onChange={(e) => setSettingsForm({ ...settingsForm, store_name: e.target.value })}
                   placeholder="CD'E Pearls Lombok"
                   className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
@@ -1489,13 +1489,13 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               </div>
 
               <div>
-                <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                <label htmlFor="contact_phone" className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
                   Nomor Kontak / WhatsApp Resmi <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  value={settingsForm.contact_phone}
+                  id="contact_phone" value={settingsForm.contact_phone}
                   onChange={(e) => setSettingsForm({ ...settingsForm, contact_phone: e.target.value })}
                   placeholder="081239887733"
                   className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
@@ -1503,13 +1503,13 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               </div>
 
               <div>
-                <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                <label htmlFor="bank_accounts" className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
                   Daftar Rekening Bank untuk Transfer Manual <span className="text-red-600">*</span>
                 </label>
                 <textarea
                   required
                   rows={3}
-                  value={settingsForm.bank_accounts}
+                  id="bank_accounts" value={settingsForm.bank_accounts}
                   onChange={(e) => setSettingsForm({ ...settingsForm, bank_accounts: e.target.value })}
                   placeholder="BCA 056-8899-221 a.n CD'E Pearls Lombok; Mandiri 161-00-8877-112 a.n CD'E Pearls"
                   className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
@@ -1521,21 +1521,21 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                  <label htmlFor="shipping_flat_cost" className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
                     Tarif Ongkir Standar Flat (Rp) <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="number"
                     required
                     min={0}
-                    value={settingsForm.shipping_flat_cost}
+                    id="shipping_flat_cost" value={settingsForm.shipping_flat_cost}
                     onChange={(e) => setSettingsForm({ ...settingsForm, shipping_flat_cost: parseFloat(e.target.value) || 0 })}
                     className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-mono text-[#12263A] focus:outline-none focus:border-[#12263A]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                  <label htmlFor="payment_timeout_hours" className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
                     Batas Waktu Bayar Pesanan (Jam) <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -1543,7 +1543,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                     required
                     min={1}
                     max={168}
-                    value={settingsForm.payment_timeout_hours}
+                    id="payment_timeout_hours" value={settingsForm.payment_timeout_hours}
                     onChange={(e) => setSettingsForm({ ...settingsForm, payment_timeout_hours: parseInt(e.target.value) || 24 })}
                     className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-mono text-[#12263A] focus:outline-none focus:border-[#12263A]"
                   />

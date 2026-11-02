@@ -62,9 +62,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   const { user } = useAuth();
 
   const [activeMenu, setActiveMenu] = useState<string>(() => {
-    if (initialMenu) return initialMenu;
+    if (initialMenu) return initialMenu === 'orders' ? 'my_orders' : initialMenu;
     const path = typeof window !== 'undefined' ? window.location.pathname : '';
-    if (path === '/akun/pesanan') return 'orders';
+    if (path === '/akun/pesanan') return 'my_orders';
     if (path === '/akun/status-pengiriman') return 'tracking';
     if (path === '/akun/favorit') return 'wishlist';
     if (path === '/akun/alamat') return 'addresses';
@@ -74,7 +74,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
   useEffect(() => {
     if (initialMenu) {
-      setActiveMenu(initialMenu);
+      setActiveMenu(initialMenu === 'orders' ? 'my_orders' : initialMenu);
     }
   }, [initialMenu]);
 
@@ -600,7 +600,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       {/* ========================================================
           4.2 PESANAN SAYA
          ======================================================== */}
-      {activeMenu === 'my_orders' && (
+      {(activeMenu === 'my_orders' || activeMenu === 'orders') && (
         <div className="space-y-6 animate-in fade-in duration-300">
           <PageHeader
             title="Pesanan Saya"

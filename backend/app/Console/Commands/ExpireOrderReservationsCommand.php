@@ -43,7 +43,7 @@ class ExpireOrderReservationsCommand extends Command
         $count = 0;
 
         foreach ($expiredOrders as $order) {
-            DB::transaction(function () use ($order) {
+            DB::transaction(function () use ($order, $hours) {
                 // Kunci ulang order
                 $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
                 if (! $lockedOrder || $lockedOrder->order_status === 'CANCELLED') {

@@ -116,9 +116,9 @@ test('U-3: command orders:expire-reservations membatalkan pesanan kedaluwarsa da
         'order_status' => 'PENDING',
     ]);
 
-    // Set created_at to 3 hours ago bypassing automatic timestamp updates
+    // Set created_at to 25 hours ago bypassing automatic timestamp updates
     Order::where('id', $order->id)->update([
-        'created_at' => now()->subHours(3),
+        'created_at' => now()->subHours(25),
     ]);
 
     OrderItem::create([

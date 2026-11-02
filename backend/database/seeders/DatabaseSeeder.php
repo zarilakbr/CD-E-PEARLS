@@ -516,5 +516,19 @@ class DatabaseSeeder extends Seeder
                 'due_date' => now()->addDays(14)->toDateString(),
             ]
         );
+        // 11. Active Voucher
+        \App\Models\Voucher::updateOrCreate(
+            ['code' => 'MUTIARABERCAHAYA'],
+            [
+                'type' => 'fixed',
+                'value' => 500000,
+                'min_spend' => 1000000,
+                'quota' => 100,
+                'used_count' => 0,
+                'is_active' => true,
+                'starts_at' => now()->subDay(),
+                'expires_at' => now()->addYear(),
+            ]
+        );
     }
 }

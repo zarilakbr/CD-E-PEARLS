@@ -66,6 +66,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const authError = searchParams.get('error') || searchParams.get('auth_error');
 
       if (authCode) {
+        if (window.location.pathname.includes('/auth/google/callback')) {
+          setIsLoading(false);
+          return;
+        }
         // U-5: Immediately scrub authorization code from URL with replaceState
         window.history.replaceState({}, '', window.location.pathname);
         apiClient.post('/auth/exchange', { code: authCode })

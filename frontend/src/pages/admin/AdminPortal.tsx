@@ -1074,7 +1074,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {/* Filter Kategori */}
             <select
-              value={productCatFilter}
+              aria-label="Filter Kategori" value={productCatFilter}
               onChange={(e) => setProductCatFilter(e.target.value)}
               className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
             >
@@ -1086,7 +1086,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {/* Filter Varietas */}
             <select
-              value={productVarietyFilter}
+              aria-label="Filter Varietas" value={productVarietyFilter}
               onChange={(e) => setProductVarietyFilter(e.target.value)}
               className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
             >
@@ -1098,7 +1098,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {/* Filter Grade */}
             <select
-              value={productGradeFilter}
+              aria-label="Filter Grade" value={productGradeFilter}
               onChange={(e) => setProductGradeFilter(e.target.value)}
               className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
             >
@@ -1109,7 +1109,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {/* Filter Status */}
             <select
-              value={productStatusFilter}
+              aria-label="Filter Status" value={productStatusFilter}
               onChange={(e) => setProductStatusFilter(e.target.value)}
               className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
             >

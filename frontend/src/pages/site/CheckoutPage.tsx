@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { orderApi } from '../../lib/api';
+import { Turnstile } from '@marsidev/react-turnstile';
 import {
   CreditCard,
   Truck,
@@ -24,6 +25,7 @@ export const CheckoutPage: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [voucherCode, setVoucherCode] = useState('');
   const [voucherError, setVoucherError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [orderCreated, setOrderCreated] = useState<any | null>(null);
   const [trackingToken, setTrackingToken] = useState<string | null>(null);
@@ -58,7 +60,7 @@ export const CheckoutPage: React.FC = () => {
         notes: notes || undefined,
         payment_method: 'TRANSFER_BANK',
         voucher_code: voucherCode.trim() || undefined,
-        turnstile_token: user ? undefined : '1x00000000000000000000AA',
+        turnstile_token: user ? undefined : (turnstileToken || undefined),
         items: itemsPayload,
       };
 
@@ -83,8 +85,14 @@ export const CheckoutPage: React.FC = () => {
       const respData = err.response?.data;
       if (respData?.errors?.voucher_code) {
         setVoucherError(respData.errors.voucher_code[0]);
+      } else if (respData?.errors?.turnstile_token) {
+        setError(respData.errors.turnstile_token[0]);
       } else if (respData?.message) {
-        setError(respData.message);
+        if (respData.message.includes('voucher') || respData.message.includes('Voucher')) {
+          setVoucherError(respData.message);
+        } else {
+          setError(respData.message);
+        }
       } else {
         setError('Gagal membuat pesanan. Harap periksa kembali isian formulir.');
       }
@@ -202,8 +210,24 @@ export const CheckoutPage: React.FC = () => {
             )}
 
             {!user && (
-              <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed">
-                Pemesanan sebagai Tamu dilindungi Turnstile. Token pelacakan unik akan dibuat otomatis untuk melacak pesanan Anda tanpa login.
+              <div className="space-y-3 p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">Pemesanan sebagai Tamu</span>
+                  <Link to="/masuk?next=/checkout" className="text-[#8A6A2F] dark:text-[#D9B877] font-semibold underline">
+                    Sudah punya akun? Masuk
+                  </Link>
+                </div>
+                <p>
+                  Pemesanan tamu dilindungi Cloudflare Turnstile. Selesaikan verifikasi di bawah ini untuk melanjutkan, atau masuk untuk proses lebih cepat.
+                </p>
+                <div className="pt-1 flex justify-center">
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                    onSuccess={(tok) => setTurnstileToken(tok)}
+                    onError={() => setTurnstileToken(null)}
+                    onExpire={() => setTurnstileToken(null)}
+                  />
+                </div>
               </div>
             )}
 

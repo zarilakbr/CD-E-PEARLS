@@ -18,6 +18,7 @@ Dokumen ini memuat catatan progres teknis pelaksanaan **TAHAP U: GABUNGAN S-5 + 
 | **U-8** | SalesReport Auth Bearer, Formula Injection Sanitasi, Multipart Only, Ambang Harga SPI | Ada | Tersimpan | Ada (worktree 6d0d995) | Ada (8 assertions) | **LULUS** |
 | **U-9** | Konsolidasi Rute Duplikat, Clamping per_page Controller, APP_DEBUG False, Penyelarasan API URL | Ada | Tersimpan | Ada (worktree 6d0d995) | Ada (12 assertions) | **LULUS** |
 | **U-10** | Masking Excel SPI, 5 Menu Terpadu (Audit Log Sub-tab), E2E Form & Aksesibilitas WCAG | Ada | Tersimpan | Ada (worktree 6d0d995) | Ada (Playwright + Axe) | **LULUS** |
+| **U-11** | E2E Frontend Playwright Lengkap, Axe WCAG Target 0 Pelanggaran, dan Matriks Tangkapan Layar 360px/1280px | Ada | Tersimpan | Ada (worktree 6d0d995) | Ada (8 suite Playwright + Axe) | **LULUS** |
 
 ---
 
@@ -110,3 +111,30 @@ Dokumen ini memuat catatan progres teknis pelaksanaan **TAHAP U: GABUNGAN S-5 + 
   3. Pusat Kendali SPI (`SpiPortal.tsx` & `SpiDashboardLayout.tsx`) terstandarisasi dengan 5 menu navigasi utama (Ringkasan, Pesanan, Produk & Stok, Pengguna, Pengaturan Toko), di mana Log Audit Forensik diintegrasikan sebagai sub-tab di dalam menu Ringkasan.
   4. Seluruh unduhan Excel menggunakan `apiClient` Axios ber-header otentikasi Bearer dan responseType blob.
 - **Bukti Tes**: Playwright E2E (`spi-control-center`, `spi-excel-export`, `admin-product-crud`, `auth-roles-form-login`, `accessibility-theme-audit`).
+
+### U-11: Penutupan Sisa U (E2E Frontend Playwright, Audit Aksesibilitas Axe WCAG, & Matriks Tangkapan Layar)
+- **Cakupan Pengujian**:
+  1. **E2E 1.a & 1.e**: Alur Checkout Pelanggan lewat form nyata, validasi kode voucher salah (pesan kesalahan jelas) dan voucher valid, assertion payload jaringan tanpa field `price` atau `discount`, verifikasi total layar identik dengan total database server (diuji pada viewport 320px dan 1280px).
+  2. **E2E 1.b**: Pelanggan melihat pesanan sendiri pada `/akun/pesanan`; tamu melacak pesanan menggunakan nomor pesanan + tracking token 64 karakter + 4 digit akhir nomor telepon (verifikasi proteksi PII: nama disensor `B***`, nomor telepon disensor `0812****7890`, alamat lengkap jalan tidak bocor dan hanya menampilkan kota); verifikasi token/digit salah menampilkan respons seragam (diuji pada 320px dan 1280px).
+  3. **E2E 1.c**: Tamu checkout tanpa verifikasi Cloudflare Turnstile ditolak dengan pesan kesalahan yang jelas dan fail-closed.
+  4. **E2E 1.d**: Google OAuth callback menerima `?code=`, menukar kode via `POST /api/v1/auth/exchange`, URL segera dibersihkan dengan `window.history.replaceState` (tanpa query parameter `code`), dan penukaran kode salah menampilkan pesan error yang aman tanpa menyimpan token palsu.
+  5. **Aksesibilitas Axe WCAG 2.1 AA**: Audit otomatis menggunakan `@axe-core/playwright` pada seluruh halaman kritis:
+     - `/lacak-pesanan`: 0 critical, 0 serious.
+     - `/checkout`: 0 critical, 0 serious.
+     - `/akun`: 0 critical, 0 serious.
+     - `/admin/produk`: 0 critical, 0 serious.
+     - `/spi [Ringkasan]`: 0 critical, 0 serious.
+     - `/spi [Pesanan]`: 0 critical, 0 serious.
+     - `/spi [Produk & Stok]`: 0 critical, 0 serious.
+     - `/spi [Pengguna]`: 0 critical, 0 serious.
+     - `/spi [Pengaturan Toko]`: 0 critical, 0 serious.
+     - `/spi [Log Audit Forensik]`: 0 critical, 0 serious.
+     **Hasil**: Seluruh halaman mencapai target 0 pelanggaran critical maupun serious.
+  6. **Matriks Tangkapan Layar Lengkap**: Tangkapan layar PNG asli beresolusi 360px (mobile) dan 1280px (desktop), mode terang dan gelap, serta bahasa Indonesia (ID) dan Inggris (EN) tersimpan pada direktori artifact:
+     - Formulir Tambah/Ubah Produk (Modal Admin)
+     - Dashboard SPI (Ringkasan Metrik)
+     - Tab Log Audit Forensik SPI
+     - Modal Ekspor Laporan Penjualan Excel (.xlsx)
+     - Formulir Penyelesaian Pesanan (Checkout)
+     - Pelacakan Status Pesanan Tamu
+- **Status Pengujian**: **LULUS** (8 passed dari 8 suite Playwright; 113 passed backend; 7 passed vitest).
