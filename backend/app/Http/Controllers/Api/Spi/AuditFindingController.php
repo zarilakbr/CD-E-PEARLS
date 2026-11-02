@@ -43,7 +43,7 @@ class AuditFindingController extends Controller
             });
         }
 
-        $perPage = (int) $request->input('per_page', 10);
+        $perPage = min(max((int) $request->input('per_page', 10), 1), 100);
         $findings = $query->paginate($perPage);
 
         return response()->json([

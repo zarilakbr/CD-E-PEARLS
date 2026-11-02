@@ -286,3 +286,30 @@ Mekanisme keamanan:
 
 
 
+
+---
+
+## 9. Konfigurasi Trusted Reverse Proxy Cloudflare (U-4)
+
+Untuk memastikan bahwa client IP (`$request->ip()`) yang dideteksi oleh rate limiter dan audit log adalah IP asli pengunjung dan tidak dapat dipalsukan (anti-IP spoofing), backend mengonfigurasi whitelist resmi subnet Cloudflare:
+
+- **Sumber Resmi**:
+  - IPv4: `https://www.cloudflare.com/ips-v4`
+  - IPv6: `https://www.cloudflare.com/ips-v6`
+- **Tanggal Pengambilan Data**: November 2026
+- **Berkas Konfigurasi**: `backend/config/trustedproxy.php`
+- **Integrasi Framework**: Terdaftar di `backend/bootstrap/app.php` melalui `$middleware->trustProxies(at: (require __DIR__.'/../config/trustedproxy.php')['proxies'])`.
+
+### Prosedur Pembaruan Berkala IP Cloudflare
+Jika Cloudflare merilis rentang IP baru:
+1. Unduh daftar IP terbaru:
+   ```bash
+   curl -s https://www.cloudflare.com/ips-v4
+   curl -s https://www.cloudflare.com/ips-v6
+   ```
+2. Perbarui array `'proxies'` di `backend/config/trustedproxy.php`.
+3. Jalankan tes verifikasi:
+   ```bash
+   php artisan test tests/Feature/TrustCloudflareProxiesTest.php
+   ```
+4. **Penting**: Jangan pernah menyetel `'proxies' => '*'` di lingkungan produksi untuk mencegah serangan header injection (`X-Forwarded-For`).

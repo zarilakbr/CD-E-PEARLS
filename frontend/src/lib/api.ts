@@ -286,17 +286,23 @@ export const customerApi = {
 export const orderApi = {
   async createOrder(data: any) {
     const res = await apiClient.post('/orders', data);
+    return {
+      order: res.data.data,
+      tracking_token: res.data.tracking_token || res.data.data?.tracking_token,
+      message: res.data.message,
+    };
+  },
+
+  async track(query: string, trackingToken?: string, phoneLast4?: string) {
+    const params: Record<string, string> = {};
+    if (trackingToken) params.tracking_token = trackingToken;
+    if (phoneLast4) params.phone_last4 = phoneLast4;
+    const res = await apiClient.get(`/orders/lookup/${query}`, { params });
     return res.data.data;
   },
 
-  async track(query: string) {
-    const res = await apiClient.get(`/orders/lookup/${query}`);
-    return res.data.data;
-  },
-
-  async lookup(code: string) {
-    const res = await apiClient.get(`/orders/lookup/${code}`);
-    return res.data.data;
+  async lookup(code: string, trackingToken?: string, phoneLast4?: string) {
+    return this.track(code, trackingToken, phoneLast4);
   },
 
   async getOrder(id: string | number) {

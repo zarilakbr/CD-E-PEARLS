@@ -154,11 +154,6 @@ export const SpiDashboardLayout: React.FC<SpiDashboardLayoutProps> = ({
       icon: <Users className="w-4 h-4" />,
     },
     {
-      id: 'audit-log',
-      label: 'Audit Log',
-      icon: <FileText className="w-4 h-4" />,
-    },
-    {
       id: 'pengaturan-toko',
       label: 'Pengaturan Toko',
       icon: <Settings className="w-4 h-4" />,

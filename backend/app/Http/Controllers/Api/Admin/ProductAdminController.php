@@ -119,7 +119,7 @@ class ProductAdminController extends Controller
 
         // 4. Default status & Price sanity gate (U-8.d)
         $price = (float) $validated['price'];
-        $minPrice = 100000; // Minimal Rp 100.000 untuk perhiasan mutiara
+        $minPrice = (float) (\App\Models\Setting::where('key', 'min_product_price_threshold')->value('value') ?? 100000);
         $maxPrice = (float) (\App\Models\Setting::where('key', 'max_product_price_threshold')->value('value') ?? 100000000);
 
         $requiresApproval = ($price < $minPrice || $price > $maxPrice);

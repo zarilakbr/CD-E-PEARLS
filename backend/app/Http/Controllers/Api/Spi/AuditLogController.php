@@ -44,7 +44,7 @@ class AuditLogController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $perPage = (int) $request->input('per_page', 15);
+        $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
         $logs = $query->paginate($perPage);
 
         return response()->json([

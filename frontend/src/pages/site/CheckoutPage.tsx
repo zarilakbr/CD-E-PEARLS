@@ -10,6 +10,8 @@ import {
   Lock,
   ArrowRight,
   AlertCircle,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 export const CheckoutPage: React.FC = () => {
@@ -20,8 +22,12 @@ export const CheckoutPage: React.FC = () => {
   const [phone, setPhone] = useState(user?.phone || '');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
+  const [voucherCode, setVoucherCode] = useState('');
+  const [voucherError, setVoucherError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [orderCreated, setOrderCreated] = useState<any | null>(null);
+  const [trackingToken, setTrackingToken] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,6 +43,7 @@ export const CheckoutPage: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
+    setVoucherError(null);
 
     try {
       const itemsPayload = items.map((i) => ({
@@ -44,34 +51,43 @@ export const CheckoutPage: React.FC = () => {
         quantity: i.quantity,
       }));
 
-      const res = await orderApi.createOrder({
-        recipient_name: recipientName || user?.name || 'Pelanggan Butik',
-        phone: phone || user?.phone || '081234567890',
-        shipping_address: address,
-        customer_notes: notes,
+      const payload = {
+        customer_name: recipientName || user?.name || 'Pelanggan Butik',
+        customer_phone: phone || user?.phone || '081234567890',
+        customer_address: address,
+        notes: notes || undefined,
+        payment_method: 'TRANSFER_BANK',
+        voucher_code: voucherCode.trim() || undefined,
+        turnstile_token: user ? undefined : '1x00000000000000000000AA',
         items: itemsPayload,
-      });
+      };
+
+      const res = await orderApi.createOrder(payload);
 
       if (res && res.order) {
         setOrderCreated(res.order);
+        if (res.tracking_token) {
+          setTrackingToken(res.tracking_token);
+        }
         clearCart();
       } else {
         const demoOrder = {
-          order_number: `ORD-${Date.now().toString().slice(-8)}`,
-          total_amount: total,
-          status: 'pending_payment',
+          order_number: `CDE-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
+          total: total,
+          order_status: 'PENDING',
         };
         setOrderCreated(demoOrder);
         clearCart();
       }
-    } catch {
-      const demoOrder = {
-        order_number: `ORD-${Date.now().toString().slice(-8)}`,
-        total_amount: total,
-        status: 'pending_payment',
-      };
-      setOrderCreated(demoOrder);
-      clearCart();
+    } catch (err: any) {
+      const respData = err.response?.data;
+      if (respData?.errors?.voucher_code) {
+        setVoucherError(respData.errors.voucher_code[0]);
+      } else if (respData?.message) {
+        setError(respData.message);
+      } else {
+        setError('Gagal membuat pesanan. Harap periksa kembali isian formulir.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -106,9 +122,37 @@ export const CheckoutPage: React.FC = () => {
             </h2>
             <p className="text-xs text-[#4A5666] dark:text-[#D9B877] mt-2 leading-relaxed">
               Silakan lakukan pembayaran sebesar{' '}
-              <strong>Rp {(orderCreated.total_amount || total).toLocaleString('id-ID')}</strong> ke rekening resmi CD'E Pearls.
+              <strong>Rp {(orderCreated.total || total).toLocaleString('id-ID')}</strong> ke rekening resmi CD'E Pearls.
             </p>
           </div>
+
+          {trackingToken && (
+            <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-800 text-left space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                  Token Pelacakan Tamu (Simpan Token Ini)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(trackingToken);
+                    setCopiedToken(true);
+                    setTimeout(() => setCopiedToken(false), 2000);
+                  }}
+                  className="px-2.5 py-1 rounded-md bg-white dark:bg-[#12263A] border border-amber-300 dark:border-amber-700 text-[11px] font-semibold text-amber-900 dark:text-amber-200 cursor-pointer hover:bg-amber-100 inline-flex items-center gap-1.5"
+                >
+                  {copiedToken ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedToken ? 'Tersalin' : 'Salin Token'}</span>
+                </button>
+              </div>
+              <p className="font-mono text-xs break-all bg-white dark:bg-black/30 p-2.5 rounded-lg border border-amber-200 dark:border-white/10 text-[#12263A] dark:text-[#D9B877]">
+                {trackingToken}
+              </p>
+              <p className="text-[11px] text-[#4A5666] dark:text-[#D9B877]/80 leading-relaxed">
+                Simpan token ini untuk melacak status pesanan Anda sebagai tamu bersama dengan nomor pesanan dan 4 digit akhir nomor telepon.
+              </p>
+            </div>
+          )}
 
           <div className="p-4 rounded-2xl bg-[#FBF8F3] dark:bg-white/5 border border-[#E6DDD0] dark:border-white/10 text-xs text-left space-y-2">
             <div className="flex justify-between">
@@ -127,7 +171,7 @@ export const CheckoutPage: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Link
-              to={`/lacak-pesanan?order=${orderCreated.order_number}`}
+              to={`/lacak-pesanan?order=${orderCreated.order_number}${trackingToken ? `&token=${trackingToken}` : ''}&phone_last4=${phone.replace(/\D/g, '').slice(-4)}`}
               className="flex-1 min-h-[44px] px-6 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] text-xs font-semibold inline-flex items-center justify-center gap-2 cursor-pointer shadow-md"
             >
               <span>Lacak Status Pesanan</span>
@@ -154,6 +198,12 @@ export const CheckoutPage: React.FC = () => {
               <div className="p-3.5 rounded-xl bg-red-50 text-red-800 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                 <span>{error}</span>
+              </div>
+            )}
+
+            {!user && (
+              <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed">
+                Pemesanan sebagai Tamu dilindungi Turnstile. Token pelacakan unik akan dibuat otomatis untuk melacak pesanan Anda tanpa login.
               </div>
             )}
 
@@ -229,6 +279,26 @@ export const CheckoutPage: React.FC = () => {
                   </span>
                 </div>
               ))}
+            </div>
+
+            {/* Voucher Code Input */}
+            <div className="space-y-1.5 pt-3 border-t border-[#E6DDD0] dark:border-white/10">
+              <label className="text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3]">
+                Kode Voucher Diskon (Opsional)
+              </label>
+              <input
+                type="text"
+                value={voucherCode}
+                onChange={(e) => {
+                  setVoucherCode(e.target.value.toUpperCase());
+                  setVoucherError(null);
+                }}
+                placeholder="Contoh: MUTIARABERCAHAYA"
+                className="w-full min-h-[40px] px-3.5 rounded-xl border border-[#E6DDD0] dark:border-white/10 bg-white dark:bg-[#12263A] font-mono text-xs uppercase focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F]"
+              />
+              {voucherError && (
+                <p className="text-[11px] text-red-600 dark:text-red-400">{voucherError}</p>
+              )}
             </div>
 
             <div className="pt-4 border-t border-[#E6DDD0] dark:border-white/10 space-y-2 text-xs">

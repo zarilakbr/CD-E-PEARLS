@@ -1,5 +1,20 @@
 <?php
 
+/**
+ * Cloudflare Reverse Proxy IP Ranges Configuration
+ *
+ * Source:
+ *   - IPv4: https://www.cloudflare.com/ips-v4
+ *   - IPv6: https://www.cloudflare.com/ips-v6
+ * Retrieval Date: November 2026
+ *
+ * Update Instructions:
+ *   To update these ranges periodically or upon Cloudflare announcements, run:
+ *     curl -s https://www.cloudflare.com/ips-v4
+ *     curl -s https://www.cloudflare.com/ips-v6
+ *   and update the array below. Do NOT trust wildcard '*' in production to prevent IP spoofing.
+ */
+
 return [
     'proxies' => [
         // Cloudflare IPv4

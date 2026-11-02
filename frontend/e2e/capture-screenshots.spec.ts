@@ -129,5 +129,43 @@ test.describe('Capture S-4 Screenshots', () => {
     await page.setViewportSize({ width: 360, height: 740 });
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(screenshotDir, 'spi-pengaturan-toko-360px.png') });
+
+    // 6. Sub-tab Audit Log Forensik di Ringkasan (U-10)
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.locator('aside nav button:has-text("Ringkasan")').click();
+    await page.waitForTimeout(600);
+    await page.locator('button:has-text("Log Audit Forensik")').click();
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: path.join(screenshotDir, 'spi-audit-log-subtab-1280px.png') });
+
+    // Copy to artifact directory
+    const artifactDir = 'C:/Users/LENOVO/.gemini/antigravity/brain/cc51c93f-9886-47b8-b703-14752b07899c/screenshots';
+    if (!fs.existsSync(artifactDir)) {
+      fs.mkdirSync(artifactDir, { recursive: true });
+    }
+    const files = fs.readdirSync(screenshotDir);
+    for (const file of files) {
+      if (file.endsWith('.png')) {
+        fs.copyFileSync(path.join(screenshotDir, file), path.join(artifactDir, file));
+      }
+    }
+  });
+
+  test('Capture Order Tracking Page Guest Inputs (1280px & 360px)', async ({ page }) => {
+    const artifactDir = 'C:/Users/LENOVO/.gemini/antigravity/brain/cc51c93f-9886-47b8-b703-14752b07899c/screenshots';
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/lacak-pesanan');
+    await page.waitForSelector('text=Lacak Pesanan Mutiara', { timeout: 10000 });
+    await page.screenshot({ path: path.join(screenshotDir, 'order-tracking-guest-1280px.png') });
+    if (fs.existsSync(artifactDir)) {
+      fs.copyFileSync(path.join(screenshotDir, 'order-tracking-guest-1280px.png'), path.join(artifactDir, 'order-tracking-guest-1280px.png'));
+    }
+
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(screenshotDir, 'order-tracking-guest-360px.png') });
+    if (fs.existsSync(artifactDir)) {
+      fs.copyFileSync(path.join(screenshotDir, 'order-tracking-guest-360px.png'), path.join(artifactDir, 'order-tracking-guest-360px.png'));
+    }
   });
 });

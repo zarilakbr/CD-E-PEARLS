@@ -229,3 +229,64 @@ test('admin dapat menonaktifkan produk (soft delete)', function () {
     $items = collect($catalogResponse->json('data'));
     expect($items->pluck('id'))->not->toContain($product->id);
 });
+
+test('admin berhasil menambah produk kategori Liontin dan Bros dengan berbagai varietas dan grade', function () {
+    Category::firstOrCreate(
+        ['slug' => 'liontin-mutiara'],
+        ['name' => 'Liontin Mutiara', 'description' => 'Kategori Liontin', 'icon' => 'gem', 'is_active' => true]
+    );
+    Category::firstOrCreate(
+        ['slug' => 'bros-mutiara'],
+        ['name' => 'Bros Mutiara', 'description' => 'Kategori Bros', 'icon' => 'sparkles', 'is_active' => true]
+    );
+
+    $photo1 = UploadedFile::fake()->image('liontin_front.jpg', 600, 600);
+    $photo2 = UploadedFile::fake()->image('liontin_side.jpg', 600, 600);
+
+    // 1. Tambah Liontin Tahitian AAA 11mm
+    $resLiontin = $this->actingAs($this->admin)->postJson('/api/admin/products', [
+        'name' => 'Liontin Mutiara Hitam Tahitian Peacock 18K',
+        'description' => 'Liontin anggun mutiara hitam Tahitian kilau peacock',
+        'category_slug' => 'liontin-mutiara',
+        'varietas' => 'Tahitian',
+        'grade' => 'AAA',
+        'ukuran_mm' => '11.5',
+        'berat' => '4.8 gr',
+        'bentuk' => 'Drop',
+        'kelompok_warna' => 'langka',
+        'varian_warna' => 'Peacock Green',
+        'price' => 18500000,
+        'stock' => 4,
+        'status' => 'published',
+        'photos' => [$photo1, $photo2],
+        'primary_photo_index' => 0,
+    ]);
+
+    $resLiontin->assertStatus(201);
+    expect($resLiontin->json('data.category_slug'))->toBe('liontin-mutiara');
+    expect($resLiontin->json('data.varietas'))->toBe('Tahitian');
+
+    // 2. Tambah Bros Freshwater Baroque AA 13mm
+    $photoBros = UploadedFile::fake()->image('bros_front.jpg', 600, 600);
+    $resBros = $this->actingAs($this->admin)->postJson('/api/admin/products', [
+        'name' => 'Bros Kebaya Mutiara Air Tawar Floral Silver 925',
+        'description' => 'Bros kebaya klasik dengan mutiara air tawar bentuk baroque',
+        'category_slug' => 'bros-mutiara',
+        'varietas' => 'Freshwater',
+        'grade' => 'AA',
+        'ukuran_mm' => '13.0',
+        'berat' => '6.2 gr',
+        'bentuk' => 'Baroque',
+        'kelompok_warna' => 'putih',
+        'varian_warna' => 'Silvery White',
+        'price' => 3200000,
+        'stock' => 7,
+        'status' => 'published',
+        'photos' => [$photoBros],
+        'primary_photo_index' => 0,
+    ]);
+
+    $resBros->assertStatus(201);
+    expect($resBros->json('data.category_slug'))->toBe('bros-mutiara');
+    expect($resBros->json('data.grade'))->toBe('AA');
+});

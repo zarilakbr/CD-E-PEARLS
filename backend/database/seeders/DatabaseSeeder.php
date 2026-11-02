@@ -115,6 +115,8 @@ class DatabaseSeeder extends Seeder
             'price_change_percent_threshold' => '10',
             'price_change_nominal_threshold' => '2000000',
             'discount_percent_threshold' => '15',
+            'min_product_price_threshold' => '100000',
+            'max_product_price_threshold' => '100000000',
         ];
 
         foreach ($settings as $key => $val) {

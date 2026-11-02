@@ -93,9 +93,11 @@ test.describe('S-2 SPI: Pusat Kendali (/spi)', () => {
     await expect(page.locator('text=Pengaturan Parameter Toko & Kebijakan Finansial').first()).toBeVisible();
     await expect(page.locator('input[value*="CD\'E"]').first()).toBeVisible();
 
-    // 7. Menu Audit Log
-    await page.locator('aside nav button:has-text("Audit Log")').click();
+    // 7. Sub-tab Audit Log (di dalam Menu Ringkasan - 5 Menu Terpadu U-10)
+    await page.locator('aside nav button:has-text("Ringkasan")').click();
     await page.waitForTimeout(1000);
-    await expect(page.locator('text=Log Audit Forensik & Jejak Rekam Sistem').first()).toBeVisible();
+    await page.locator('button:has-text("Log Audit Forensik")').click();
+    await page.waitForTimeout(1000);
+    await expect(page.locator('input[placeholder*="Cari pelaku"]').first()).toBeVisible();
   });
 });

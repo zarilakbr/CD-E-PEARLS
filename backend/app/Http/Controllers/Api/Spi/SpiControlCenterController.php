@@ -426,6 +426,8 @@ class SpiControlCenterController extends Controller
             'bank_accounts' => 'BCA 056-8899-221 a.n CD\'E Pearls Lombok; Mandiri 161-00-8877-112 a.n CD\'E Pearls',
             'shipping_flat_cost' => 50000,
             'payment_timeout_hours' => 24,
+            'min_product_price_threshold' => 100000,
+            'max_product_price_threshold' => 100000000,
         ];
 
         return response()->json([
@@ -449,6 +451,8 @@ class SpiControlCenterController extends Controller
             'bank_accounts' => ['required', 'string'],
             'shipping_flat_cost' => ['required', 'numeric', 'min:0'],
             'payment_timeout_hours' => ['required', 'integer', 'min:1', 'max:168'],
+            'min_product_price_threshold' => ['nullable', 'numeric', 'min:0'],
+            'max_product_price_threshold' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $oldSettings = Setting::whereIn('key', array_keys($validated))->pluck('value', 'key')->toArray();

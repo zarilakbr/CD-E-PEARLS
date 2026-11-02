@@ -48,6 +48,16 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
   initialMenu,
 }) => {
   const { user } = useAuth();
+  const [summarySubTab, setSummarySubTab] = useState<'metrics' | 'audit-log'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname;
+      const m = new URLSearchParams(window.location.search).get('menu');
+      if (p === '/spi/audit-log' || p === '/spi/log-aktivitas' || m === 'audit-log') {
+        return 'audit-log';
+      }
+    }
+    return 'metrics';
+  });
   const [activeMenu, setActiveMenu] = useState<string>(() => {
     if (initialMenu) return initialMenu;
     if (typeof window !== 'undefined') {
@@ -55,7 +65,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
       if (path === '/spi/pesanan') return 'pesanan';
       if (path === '/spi/produk-stok') return 'produk-stok';
       if (path === '/spi/pengguna' || path === '/spi/akun-role') return 'pengguna';
-      if (path === '/spi/audit-log' || path === '/spi/log-aktivitas') return 'audit-log';
+      if (path === '/spi/audit-log' || path === '/spi/log-aktivitas') return 'ringkasan';
       if (path === '/spi/pengaturan-toko') return 'pengaturan-toko';
 
       const params = new URLSearchParams(window.location.search);
@@ -119,9 +129,13 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
 
   useEffect(() => {
     if (activeMenu === 'ringkasan') {
-      fetchSummary();
+      if (summarySubTab === 'audit-log') {
+        fetchAuditLogs();
+      } else {
+        fetchSummary();
+      }
     }
-  }, [activeMenu]);
+  }, [activeMenu, summarySubTab]);
 
   // =========================================================================
   // 2. DATA: PESANAN
@@ -476,7 +490,116 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
             </div>
           </div>
 
-          {/* Revenue & Key Metrics */}
+          {/* Sub-tab Navigation (U-10: 5 Menu SPI dengan Audit Log sebagai sub-tab di Ringkasan) */}
+          <div className="flex items-center gap-2 border-b border-[#E6DDD0] pb-2">
+            <button
+              type="button"
+              onClick={() => setSummarySubTab('metrics')}
+              className={`min-h-[38px] px-4 rounded-full text-xs font-semibold cursor-pointer transition-all ${
+                summarySubTab === 'metrics'
+                  ? 'bg-[#12263A] text-[#D9B877] shadow-sm'
+                  : 'bg-white text-[#4A5666] hover:bg-[#F4F1EB] border border-[#E6DDD0]'
+              }`}
+            >
+              Metrik & Analisis
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSummarySubTab('audit-log');
+                fetchAuditLogs();
+              }}
+              className={`min-h-[38px] px-4 rounded-full text-xs font-semibold cursor-pointer transition-all ${
+                summarySubTab === 'audit-log'
+                  ? 'bg-[#12263A] text-[#D9B877] shadow-sm'
+                  : 'bg-white text-[#4A5666] hover:bg-[#F4F1EB] border border-[#E6DDD0]'
+              }`}
+            >
+              Log Audit Forensik
+            </button>
+          </div>
+
+          {summarySubTab === 'audit-log' ? (
+            <div className="space-y-6">
+              <div className="bg-white p-4 rounded-2xl border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-4">
+                <div className="relative flex-1 min-w-[240px] max-w-md">
+                  <input
+                    type="text"
+                    placeholder="Cari pelaku, jenis aksi, IP address..."
+                    value={auditSearch}
+                    onChange={(e) => setAuditSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && fetchAuditLogs()}
+                    className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
+                  />
+                  <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchAuditLogs}
+                  className="min-h-[40px] px-4 rounded-full border border-[#E6DDD0] text-[#12263A] hover:bg-[#F4F1EB] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingAudit ? 'animate-spin' : ''}`} />
+                  <span>Segarkan Log</span>
+                </button>
+              </div>
+
+              <DataTable>
+                <thead>
+                  <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+                    <th className="py-3.5 px-4 text-left">Waktu &amp; Tanggal</th>
+                    <th className="py-3.5 px-4 text-left">Pelaku &amp; Peran</th>
+                    <th className="py-3.5 px-4 text-left">Aksi Sistem</th>
+                    <th className="py-3.5 px-4 text-left">Target Objek</th>
+                    <th className="py-3.5 px-4 text-left">Nilai Lama</th>
+                    <th className="py-3.5 px-4 text-left">Nilai Baru</th>
+                    <th className="py-3.5 px-4 text-left">Alamat IP</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E6DDD0]/60 text-xs">
+                  {auditLogList.map((log) => (
+                    <tr key={log.id} className="hover:bg-[#FBF8F3] transition-colors">
+                      <td className="py-3.5 px-4 font-mono text-[11px] text-[#4A5666] whitespace-nowrap">
+                        {new Date(log.created_at).toLocaleDateString('id-ID', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        })}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-[#12263A]">{log.actor_name}</div>
+                        <span className="text-[10px] text-[#4A5666] uppercase">{log.actor_role}</span>
+                      </td>
+                      <td className="py-3.5 px-4 font-medium text-[#12263A]">{log.action}</td>
+                      <td className="py-3.5 px-4 text-[#4A5666] font-mono text-[11px]">
+                        {log.target_type}:{log.target_id}
+                      </td>
+                      <td className="py-3.5 px-4 text-red-700 font-mono text-[11px] max-w-[140px] truncate" title={JSON.stringify(log.old_value)}>
+                        {log.old_value ? JSON.stringify(log.old_value) : '-'}
+                      </td>
+                      <td className="py-3.5 px-4 text-emerald-700 font-mono text-[11px] max-w-[140px] truncate" title={JSON.stringify(log.new_value)}>
+                        {log.new_value ? JSON.stringify(log.new_value) : '-'}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-[#4A5666] text-[11px]">
+                        {log.ip_address || '127.0.0.1'}
+                      </td>
+                    </tr>
+                  ))}
+                  {auditLogList.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-xs text-[#4A5666]">
+                        Belum ada rekaman audit log.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </DataTable>
+            </div>
+          ) : (
+            <>
+              {/* Revenue & Key Metrics */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <StatCard
               label="Omzet Hari Ini"
@@ -627,6 +750,8 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               </table>
             </div>
           </div>
+            </>
+          )}
         </div>
       )}
 

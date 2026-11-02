@@ -61,9 +61,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 1. Check OAuth callback parameters in URL
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
-      const authCode = searchParams.get('auth_code');
+      const authCode = searchParams.get('code') || searchParams.get('auth_code');
       const authToken = searchParams.get('auth_token');
-      const authError = searchParams.get('auth_error');
+      const authError = searchParams.get('error') || searchParams.get('auth_error');
 
       if (authCode) {
         // U-5: Immediately scrub authorization code from URL with replaceState
