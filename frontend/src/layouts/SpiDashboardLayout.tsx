@@ -6,7 +6,6 @@ import {
   X,
   ShieldCheck,
   LayoutDashboard,
-  FileText,
   Users,
   ChevronRight,
   ChevronLeft,

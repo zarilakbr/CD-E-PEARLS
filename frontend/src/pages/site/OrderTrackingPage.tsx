@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Truck, Search, CheckCircle2, MapPin, ShieldCheck, AlertCircle, Key, Phone, Hash } from 'lucide-react';
+import { Truck, Search, AlertCircle, Key, Phone, Hash } from 'lucide-react';
 import { orderApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 
