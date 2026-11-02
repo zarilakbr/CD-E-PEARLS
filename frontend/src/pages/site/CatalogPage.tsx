@@ -22,9 +22,11 @@ import { ProductCardSkeleton } from '../../components/ui/skeleton';
 import { ProductCard } from '../../components/common/ProductCard';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../components/ui/sheet';
 import { Slider } from '../../components/ui/slider';
+import { catalogApi } from '../../lib/api';
 import { mockCategories, mockProducts, type MockProduct } from '../../data/mock';
 
 interface CatalogPageProps {
+  products?: MockProduct[];
   onAddToCart: (productName: string) => void;
   onSelectProduct: (product: MockProduct) => void;
   initialCategory?: string;
@@ -32,6 +34,7 @@ interface CatalogPageProps {
 }
 
 export const CatalogPage: React.FC<CatalogPageProps> = ({
+  products: propProducts,
   onAddToCart,
   onSelectProduct,
   initialCategory = 'all',
@@ -62,6 +65,43 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [mobileVisibleCount, setMobileVisibleCount] = useState(8);
   const [isLoading, setIsLoading] = useState(false);
+  const [liveProducts, setLiveProducts] = useState<MockProduct[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    catalogApi.getProducts({ per_page: 100 })
+      .then((res) => {
+        const items = res?.data || res;
+        if (isMounted && Array.isArray(items) && items.length > 0) {
+          const mapped: MockProduct[] = items.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            category: item.category?.name || 'Kalung Mutiara',
+            categorySlug: item.category_slug || 'kalung-mutiara',
+            variety: item.varietas || 'South Sea',
+            grade: item.grade || 'AAA',
+            pearlSize: item.ukuran_mm ? `${item.ukuran_mm} mm` : '12 mm',
+            metal: item.logam || 'Emas 18K',
+            weight: item.berat || '5.0 gr',
+            bentuk: item.bentuk || 'Bulat',
+            colorGroup: item.kelompok_warna || 'emas',
+            colorVariant: item.varian_warna || 'Champagne',
+            price: Number(item.price) || 0,
+            formattedPrice: `Rp ${Number(item.price).toLocaleString('id-ID')}`,
+            stock: Number(item.stock) || 0,
+            status: (item.status === 'published' ? 'Aktif' : 'Nonaktif') as 'Aktif' | 'Nonaktif',
+            description: item.description || '',
+            image: item.image || '/images/cat_ring_silk.jpg',
+            images: item.images,
+          }));
+          setLiveProducts(mapped);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Sync state if URL changes externally
   useEffect(() => {
@@ -134,7 +174,9 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
   };
 
   // Filter products
-  const filteredProducts = mockProducts.filter((p) => {
+  const rawProducts = liveProducts.length > 0 ? liveProducts : (propProducts && propProducts.length > 0 ? propProducts : mockProducts);
+  const filteredProducts = rawProducts.filter((p) => {
+    if (p.status === 'Nonaktif' || (p as any).status === 'archived' || (p as any).status === 'draft') return false;
     if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
