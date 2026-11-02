@@ -7,7 +7,7 @@ export const authChannel = typeof window !== 'undefined' && 'BroadcastChannel' i
   : null;
 
 // In browser development, requests to /api or /sanctum proxy to Laravel backend
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

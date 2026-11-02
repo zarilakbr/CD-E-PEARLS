@@ -351,3 +351,37 @@ Jika Cloudflare merilis rentang IP baru:
 ### C. Penjelasan Temuan Status Git Duplikat `ApprovalController.php`
 - Pada sesi sebelumnya, `git status` sempat menampilkan `ApprovalController.php` dua kali karena variasi resolusi case-sensitive vs case-insensitive pada sistem file NTFS Windows (antara `Api/Spi/` dan representasi path relatif).
 - Telah diverifikasi bahwa hanya terdapat tepat satu berkas fisik di disk pada lokasi `backend/app/Http/Controllers/Api/Spi/ApprovalController.php`. Tidak ada controller duplikat di repositori.
+
+
+---
+
+## 11. Pengendalian Pengindeksan Mesin Pencari (Search Engine Indexing Control)
+
+Untuk mencegah perayap mesin pencari (Googlebot, Bingbot, dll.) mengindeks situs selama fase pengujian di domain gratisan Cloudflare:
+
+### A. Kebijakan Default (Noindex Terkendali)
+Secara bawaan tanpa variabel environment (`VITE_ALLOW_INDEXING` bernilai `false` atau tidak diatur):
+1. **Meta Tag**: `<meta name="robots" content="noindex, nofollow" />` disematkan pada berkas `index.html`.
+2. **Robots.txt**: Berkas `dist/robots.txt` berisi:
+   ```text
+   User-agent: *
+   Disallow: /
+   ```
+3. **HTTP Header Cloudflare**: Berkas konfigurasi aset `dist/_headers` menyertakan header:
+   ```text
+   /*
+     X-Robots-Tag: noindex, nofollow
+   ```
+
+### B. Prosedur Pencabutan Noindex Saat Peluncuran Resmi (Go-Live)
+Ketika domain utama resmi butik telah siap dan diizinkan untuk diindeks publik:
+1. Masuk ke Cloudflare Dashboard > **Workers & Pages** > Pilih proyek `cdepearlslombok`.
+2. Buka menu **Settings** > **Variables and Secrets** > **Add variable**.
+3. Tambahkan variabel baru:
+   - Nama: `VITE_ALLOW_INDEXING`
+   - Nilai: `true`
+4. Jalankan deploy ulang (melalui push Git atau perintah CLI `npm run build && npx wrangler deploy`).
+5. Skrip otomatis build akan:
+   - Mengubah meta robots menjadi `<meta name="robots" content="index, follow" />`.
+   - Mengubah `robots.txt` menjadi `User-agent: *\nAllow: /`.
+   - Menghapus header `X-Robots-Tag: noindex` dari `_headers`.
