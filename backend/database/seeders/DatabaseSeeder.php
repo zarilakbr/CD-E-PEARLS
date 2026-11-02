@@ -375,7 +375,7 @@ class DatabaseSeeder extends Seeder
         $firstProduct = Product::where('code', 'PRD-LMB-001')->first();
         if ($firstProduct) {
             $order = Order::updateOrCreate(
-                ['order_number' => 'ORD-2026-081'],
+                ['order_number' => 'CDE-2026-0081'],
                 [
                     'user_id' => $user->id,
                     'customer_name' => 'Siti Rahma',
@@ -425,11 +425,11 @@ class DatabaseSeeder extends Seeder
         );
 
         Approval::updateOrCreate(
-            ['title' => 'Otorisasi Konfirmasi Pembayaran Manual ORD-2026-081'],
+            ['title' => 'Otorisasi Konfirmasi Pembayaran Manual CDE-2026-0081'],
             [
                 'type' => 'payment_override',
                 'target_type' => 'order',
-                'target_id' => 'ORD-2026-081',
+                'target_id' => 'CDE-2026-0081',
                 'old_value' => ['payment_status' => 'WAITING_PAYMENT'],
                 'new_value' => ['payment_status' => 'PAID', 'verified_by' => 'admin@cdepearls.com'],
                 'requester_id' => $admin->id,
@@ -463,7 +463,7 @@ class DatabaseSeeder extends Seeder
             'actor_role' => 'spi',
             'action' => 'APPROVE_PAYMENT_OVERRIDE',
             'target_type' => 'order',
-            'target_id' => 'ORD-2026-081',
+            'target_id' => 'CDE-2026-0081',
             'old_value' => ['payment_status' => 'WAITING_PAYMENT'],
             'new_value' => ['payment_status' => 'PAID'],
             'ip_address' => '127.0.0.1',

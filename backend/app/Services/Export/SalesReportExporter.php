@@ -17,14 +17,18 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class SalesReportExporter
 {
     /**
-     * Sanitasi formula injection untuk proteksi spreadsheet (awali kutip tunggal jika dimulai =, +, -, @).
+     * Sanitasi formula injection untuk proteksi spreadsheet (awali kutip tunggal jika dimulai =, +, -, @, \t, \r, \n, |, %).
+     * Melakukan ltrim terlebih dahulu agar spasi/tab tidak memotong pencegahan.
      */
     private function sanitizeValue(mixed $value): mixed
     {
         if (is_string($value) && $value !== '') {
-            $firstChar = $value[0];
-            if (in_array($firstChar, ['=', '+', '-', '@'], true)) {
-                return "'".$value;
+            $trimmed = ltrim($value);
+            if ($trimmed !== '') {
+                $firstChar = $trimmed[0];
+                if (in_array($firstChar, ['=', '+', '-', '@', "\t", "\r", "\n", '|', '%'], true)) {
+                    return "'".$value;
+                }
             }
         }
 
@@ -36,14 +40,7 @@ class SalesReportExporter
      */
     public function export(Request $request): BinaryFileResponse
     {
-        // Support token in query for direct download links if header not present
-        if (!$request->user() && $request->filled('token')) {
-            $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($request->token);
-            if ($accessToken && $accessToken->tokenable && $accessToken->tokenable->role === 'spi') {
-                \Illuminate\Support\Facades\Auth::setUser($accessToken->tokenable);
-            }
-        }
-
+        // U-8.a: Direct token in query (?token=) dihapus; ekspor hanya menerima otentikasi resmi
         $user = $request->user();
         if (!$user || $user->role !== 'spi') {
             abort(403, 'Akses khusus Satuan Pengawas Internal (SPI).');
@@ -148,6 +145,7 @@ class SalesReportExporter
             'Nama Pelanggan',
             'Nomor Telepon',
             'Alamat Pengiriman',
+            'Catatan Pesanan',
             'Status Pesanan',
             'Status Pembayaran',
             'Metode Pembayaran',
@@ -159,12 +157,21 @@ class SalesReportExporter
         $writer->addRow(new Row(array_map(fn($h) => Cell::fromValue($h, $boldStyle), $orderHeaders)));
 
         foreach ($orders as $ord) {
+            $cleanPhone = preg_replace('/\D/', '', (string) $ord->customer_phone);
+            $maskedPhone = (strlen($cleanPhone) >= 8)
+                ? substr($cleanPhone, 0, 4) . '****' . substr($cleanPhone, -4)
+                : ($cleanPhone ? '****' . substr($cleanPhone, -4) : '-');
+
+            $addrParts = array_map('trim', explode(',', (string) $ord->customer_address));
+            $cityOnly = count($addrParts) >= 2 ? $addrParts[count($addrParts) - 2] : ($addrParts[0] ?? '-');
+
             $writer->addRow(Row::fromValues([
                 $this->sanitizeValue($ord->order_number),
                 $ord->created_at ? Carbon::parse($ord->created_at)->format('Y-m-d H:i') : '-',
                 $this->sanitizeValue($ord->customer_name),
-                $this->sanitizeValue($ord->customer_phone ?: '-'),
-                $this->sanitizeValue($ord->customer_address ?: '-'),
+                $this->sanitizeValue($maskedPhone),
+                $this->sanitizeValue($cityOnly),
+                $this->sanitizeValue($ord->notes ?: '-'),
                 $this->sanitizeValue($ord->order_status),
                 $this->sanitizeValue($ord->payment_status),
                 $this->sanitizeValue($ord->payment_method),

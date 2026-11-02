@@ -58,8 +58,6 @@ class AdminProductRequest extends FormRequest
             'photo_alts' => ['nullable', 'array'],
             'photo_alts.*' => ['nullable', 'string', 'max:255'],
             'primary_photo_index' => ['nullable', 'integer', 'min:0'],
-            'image' => ['nullable', 'string'],
-            'images' => ['nullable', 'array'],
             'reason' => ['nullable', 'string'],
         ];
     }

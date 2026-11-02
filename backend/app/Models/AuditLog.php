@@ -15,16 +15,42 @@ class AuditLog extends Model
     protected $fillable = [
         'actor_id',
         'actor_name',
+        'user_name',
         'actor_role',
         'action',
         'target_type',
         'target_id',
         'old_value',
         'new_value',
+        'details',
         'ip_address',
         'user_agent',
         'created_at',
     ];
+
+    public function setUserNameAttribute($value): void
+    {
+        $this->attributes['actor_name'] = $value;
+    }
+
+    public function getUserNameAttribute(): ?string
+    {
+        return $this->attributes['actor_name'] ?? null;
+    }
+
+    public function setDetailsAttribute($value): void
+    {
+        if (is_array($value)) {
+            $this->attributes['new_value'] = json_encode($value);
+        } elseif (is_string($value)) {
+            $this->attributes['new_value'] = json_encode(['details' => $value]);
+        }
+    }
+
+    public function getDetailsAttribute(): ?array
+    {
+        return $this->new_value;
+    }
 
     protected $casts = [
         'old_value' => 'array',

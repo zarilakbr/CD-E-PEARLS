@@ -199,7 +199,7 @@ class SpiControlCenterController extends Controller
             $query->where('stock', '<=', 3);
         }
 
-        $perPage = (int) $request->input('per_page', 20);
+        $perPage = min(max((int) $request->input('per_page', 20), 1), 100);
         $products = $query->orderBy('stock', 'asc')->paginate($perPage);
 
         return response()->json([
@@ -288,7 +288,7 @@ class SpiControlCenterController extends Controller
             });
         }
 
-        $perPage = (int) $request->input('per_page', 20);
+        $perPage = min(max((int) $request->input('per_page', 20), 1), 100);
         $users = $query->latest('id')->paginate($perPage);
 
         return response()->json([

@@ -13,6 +13,7 @@ use App\Models\Address;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\TurnstileService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -410,7 +411,6 @@ class AuthController extends Controller
         }
 
         Auth::login($user, true);
-        $token = $user->createToken('auth_token')->plainTextToken;
 
         AuditLog::create([
             'actor_id' => $user->id,
@@ -424,7 +424,60 @@ class AuthController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect(config('app.frontend_url', 'http://localhost:5173') . '/?auth_token=' . $token . '&role=' . $user->role);
+        // U-5: Generate short-lived (60s) single-use authorization code (prevent token leak in URL)
+        $authCode = bin2hex(random_bytes(32));
+        $hashedCode = hash('sha256', $authCode);
+        \Illuminate\Support\Facades\Cache::put('oauth_auth_code:' . $hashedCode, [
+            'user_id' => $user->id,
+            'created_at' => now()->timestamp,
+        ], 60);
+
+        return redirect(config('app.frontend_url', 'http://localhost:5173') . '/?auth_code=' . $authCode . '&role=' . $user->role)
+            ->header('Referrer-Policy', 'no-referrer');
+    }
+
+    /**
+     * Exchange short-lived authorization code for Sanctum Bearer token (U-5).
+     */
+    public function exchangeAuthCode(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'code' => 'required|string|size:64',
+        ]);
+
+        $hashedCode = hash('sha256', $validated['code']);
+        $cacheKey = 'oauth_auth_code:' . $hashedCode;
+
+        $data = \Illuminate\Support\Facades\Cache::pull($cacheKey);
+
+        if (! $data || empty($data['user_id'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode otorisasi tidak valid, telah kedaluwarsa, atau sudah digunakan.',
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $user = User::find($data['user_id']);
+        if (! $user || $user->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun pengguna tidak aktif atau tidak ditemukan.',
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pertukaran kode otorisasi berhasil.',
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
+        ]);
     }
 
     /**
@@ -629,12 +682,26 @@ class AuthController extends Controller
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $user = User::where('email', $email)->first();
-        if (! $user) {
+        // U-6: Check if token is older than 60 minutes
+        if ($record->created_at && Carbon::parse($record->created_at)->addMinutes(60)->isPast()) {
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Pengguna tidak ditemukan.',
-            ], Response::HTTP_NOT_FOUND);
+                'message' => 'Token penyetelan ulang kata sandi tidak valid atau telah kedaluwarsa.',
+                'error' => 'EXPIRED_TOKEN',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $user = User::where('email', $email)->first();
+        if (! $user) {
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Token penyetelan ulang kata sandi tidak valid atau telah kedaluwarsa.',
+                'error' => 'INVALID_TOKEN',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $user->update([
@@ -642,6 +709,10 @@ class AuthController extends Controller
             'must_change_password' => false,
         ]);
 
+        // U-6: Revoke all existing Sanctum tokens for security
+        $user->tokens()->delete();
+
+        // Delete used token (single-use)
         DB::table('password_reset_tokens')->where('email', $email)->delete();
 
         AuditLog::create([

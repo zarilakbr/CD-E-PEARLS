@@ -48,7 +48,7 @@ class ProductAdminController extends Controller
             $query->where('varietas', $request->varietas);
         }
 
-        $perPage = (int) $request->input('per_page', 20);
+        $perPage = min(max((int) $request->input('per_page', 20), 1), 100);
         $products = $query->latest('id')->paginate($perPage);
 
         return response()->json([
@@ -69,8 +69,10 @@ class ProductAdminController extends Controller
         $validated = $request->validated();
 
         // 1. Process multiple photo uploads with randomized filenames & true MIME
+        // U-8.c: Disallow raw string images from JSON payload; only multipart files allowed
+        unset($validated['image'], $validated['images']);
         $uploadedImages = [];
-        $primaryImageUrl = $validated['image'] ?? null;
+        $primaryImageUrl = null;
         $primaryIndex = (int) ($validated['primary_photo_index'] ?? 0);
         $photoAlts = $request->input('photo_alts', []);
 
@@ -115,12 +117,34 @@ class ProductAdminController extends Controller
             $validated['discount_percent'] = 0;
         }
 
-        // 4. Default status
-        if (empty($validated['status'])) {
+        // 4. Default status & Price sanity gate (U-8.d)
+        $price = (float) $validated['price'];
+        $minPrice = 100000; // Minimal Rp 100.000 untuk perhiasan mutiara
+        $maxPrice = (float) (\App\Models\Setting::where('key', 'max_product_price_threshold')->value('value') ?? 100000000);
+
+        $requiresApproval = ($price < $minPrice || $price > $maxPrice);
+
+        if ($requiresApproval) {
+            $validated['status'] = 'pending_approval';
+        } elseif (empty($validated['status'])) {
             $validated['status'] = 'published';
         }
 
         $product = Product::create($validated);
+
+        if ($requiresApproval) {
+            Approval::create([
+                'title' => "Otorisasi Harga Produk Baru: {$product->name} (Rp ".number_format($product->price, 0, ',', '.').")",
+                'type' => 'new_product_price_audit',
+                'target_type' => 'product',
+                'target_id' => (string) $product->id,
+                'old_value' => null,
+                'new_value' => ['price' => $product->price, 'status' => 'pending_approval'],
+                'requester_id' => $user->id,
+                'status' => 'pending',
+                'reason' => "Harga produk (Rp ".number_format($price, 0, ',', '.').") berada di luar rentang wajar (Rp ".number_format($minPrice, 0, ',', '.')." - Rp ".number_format($maxPrice, 0, ',', '.')."). Membutuhkan persetujuan SPI sebelum dipublikasikan ke katalog.",
+            ]);
+        }
 
         // 5. Initial stock movement
         StockMovement::create([

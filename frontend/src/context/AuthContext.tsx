@@ -61,10 +61,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 1. Check OAuth callback parameters in URL
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
+      const authCode = searchParams.get('auth_code');
       const authToken = searchParams.get('auth_token');
       const authError = searchParams.get('auth_error');
 
-      if (authToken) {
+      if (authCode) {
+        // U-5: Immediately scrub authorization code from URL with replaceState
+        window.history.replaceState({}, '', window.location.pathname);
+        apiClient.post('/auth/exchange', { code: authCode })
+          .then((res) => {
+            if (res.data?.token) {
+              localStorage.setItem('cde_auth_token', res.data.token);
+              authChannel?.postMessage({ type: 'LOGIN', timestamp: Date.now() });
+              fetchCurrentUser();
+            }
+          })
+          .catch(() => {
+            fetchCurrentUser();
+          });
+      } else if (authToken) {
         localStorage.setItem('cde_auth_token', authToken);
         window.history.replaceState({}, '', window.location.pathname);
         authChannel?.postMessage({ type: 'LOGIN', timestamp: Date.now() });
