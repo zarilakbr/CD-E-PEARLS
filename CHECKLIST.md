@@ -136,7 +136,7 @@ Dokumen Pelacakan Fitur: **Sudah Selesai (Completed)** vs **Belum / Rencana Lanj
 ## 3. SPI — Sistem Pengendali Internal Khusus Owner Butik (`SPI`)
 
 ### 3.1. Keamanan & Hak Pengendali Tunggal Owner (Single Master Portal)
-- [x] **Portal Tunggal SPI Khusus Owner**: Sesuai instruksi pemilik, modul dan akun staf atelier ditiadakan/dihapus (*staff owner dihapus*). Sistem beroperasi dengan satu-satunya akun pemegang kendali penuh: **Owner Butik: Hj. Baiq Ratna Sari** (`owner@cdepearls.com` / `secret123`).
+- [x] **Portal Tunggal SPI Khusus Owner**: Sesuai instruksi pemilik, modul dan akun staf atelier ditiadakan/dihapus (*staff owner dihapus*). Sistem beroperasi dengan akun pemegang kendali penuh melalui portal SPI terotentikasi (kredensial dikonfigurasi melalui environment variable SEED_SPI_* secara aman tanpa pencatatan kredensial pada repositori).
 - [x] **Pure Shadcn UI Component Standards**: 100% menggunakan primitif Shadcn UI (`Card`, `Button`, `Badge`, `Input`, `Textarea`, `Table`, `Tabs`, `Separator`, `Alert`, `Dialog`) dengan palet luxury resmi (`#382218`, `#BD8F4B`, `#BF9384`, `#E3CAC3`, `#BA4E4E`, `#FFFFFF`).
 - [x] **Pure Lucide React Icons**: Menggunakan icon resmi ekosistem Shadcn UI (`lucide-react`) tanpa emoji di seluruh tombol, tabel, badge, dan modal.
 - [x] **Login Screen Khusus Owner**: Form login kredensial terisolasi dengan kartu Shadcn UI dan tombol akses cepat 1-klik untuk Owner Butik.
