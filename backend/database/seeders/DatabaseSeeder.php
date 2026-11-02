@@ -117,6 +117,7 @@ class DatabaseSeeder extends Seeder
             'discount_percent_threshold' => '15',
             'min_product_price_threshold' => '100000',
             'max_product_price_threshold' => '100000000',
+            'reservation_hours' => '24',
         ];
 
         foreach ($settings as $key => $val) {

@@ -289,27 +289,65 @@ Mekanisme keamanan:
 
 ---
 
-## 9. Konfigurasi Trusted Reverse Proxy Cloudflare (U-4)
+## 9. Konfigurasi Trusted Reverse Proxy & Keamanan IP Klien (U-4 & U-11)
 
-Untuk memastikan bahwa client IP (`$request->ip()`) yang dideteksi oleh rate limiter dan audit log adalah IP asli pengunjung dan tidak dapat dipalsukan (anti-IP spoofing), backend mengonfigurasi whitelist resmi subnet Cloudflare:
+Untuk memastikan bahwa IP klien (`$request->ip()`) yang dideteksi oleh rate limiter, security gate, dan audit log adalah alamat IP pengunjung sebenarnya (anti-IP spoofing), backend menggunakan konfigurasi proxy berlapis yang fleksibel:
 
-- **Sumber Resmi**:
+- **Sumber Resmi Subnet Cloudflare**:
   - IPv4: `https://www.cloudflare.com/ips-v4`
   - IPv6: `https://www.cloudflare.com/ips-v6`
 - **Tanggal Pengambilan Data**: November 2026
 - **Berkas Konfigurasi**: `backend/config/trustedproxy.php`
 - **Integrasi Framework**: Terdaftar di `backend/bootstrap/app.php` melalui `$middleware->trustProxies(at: (require __DIR__.'/../config/trustedproxy.php')['proxies'])`.
 
-### Prosedur Pembaruan Berkala IP Cloudflare
+### A. Konfigurasi Fleksibel via Environment (`.env`)
+Backend mendukung penambahan proxy host lain (misal: Nginx upstream, AWS ALB, Traefik, Railway Private Network) tanpa mengubah kode:
+```env
+# Aktifkan kepercayaan pada subnet resmi Cloudflare (default: true)
+TRUST_CLOUDFLARE_PROXIES=true
+
+# Tambahkan subnet atau IP proxy privat host backend (dipisahkan koma)
+TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.1
+```
+
+### B. Cara Memeriksa IP Klien di Host Backend
+Untuk memverifikasi bahwa host backend mendeteksi IP klien asli dengan benar:
+1. **Melalui Tinker**:
+   ```bash
+   php artisan tinker --execute="echo request()->ip();"
+   ```
+2. **Melalui Audit Log**:
+   Setiap aksi otentikasi atau perubahan data mencatat kolom `ip_address` pada tabel `audit_logs`. Periksa apakah IP yang tercatat cocok dengan IP publik klien (bukan IP internal reverse proxy).
+3. **Melalui Log Nginx/Apache**:
+   Pastikan format log menyertakan `$http_cf_connecting_ip` atau `$http_x_forwarded_for` bersama dengan `$remote_addr`.
+
+### C. Prosedur Pembaruan Berkala IP Cloudflare
 Jika Cloudflare merilis rentang IP baru:
 1. Unduh daftar IP terbaru:
    ```bash
    curl -s https://www.cloudflare.com/ips-v4
    curl -s https://www.cloudflare.com/ips-v6
    ```
-2. Perbarui array `'proxies'` di `backend/config/trustedproxy.php`.
+2. Perbarui daftar di `backend/config/trustedproxy.php`.
 3. Jalankan tes verifikasi:
    ```bash
    php artisan test tests/Feature/TrustCloudflareProxiesTest.php
    ```
 4. **Penting**: Jangan pernah menyetel `'proxies' => '*'` di lingkungan produksi untuk mencegah serangan header injection (`X-Forwarded-For`).
+
+---
+
+## 10. Catatan Operasional & Kebijakan Sistem (U-11)
+
+### A. Masa Reservasi Stok Pesanan (`reservation_hours`)
+- Masa waktu tunggu pembayaran sebelum pesanan kedaluwarsa dan stok dikembalikan otomatis kini dapat dikonfigurasi melalui pengaturan SPI dengan kunci `reservation_hours`.
+- Nilai awal default sistem adalah **24 jam**.
+- Command terjadwal `orders:expire-reservations` membaca nilai ini secara dinamis dari database (fallback ke `payment_timeout_hours` atau 24 jam).
+
+### B. Status Modul Kelola Voucher
+- Basis data tabel `vouchers` dan API validasi server telah aktif penuh (mencegah manipulasi harga/diskon di sisi klien).
+- Antarmuka pengguna (UI) khusus untuk admin/SPI menambah atau mengubah voucher saat ini belum diimplementasikan; pembuatan voucher saat ini dikelola melalui database seeder atau konsol administrasi.
+
+### C. Penjelasan Temuan Status Git Duplikat `ApprovalController.php`
+- Pada sesi sebelumnya, `git status` sempat menampilkan `ApprovalController.php` dua kali karena variasi resolusi case-sensitive vs case-insensitive pada sistem file NTFS Windows (antara `Api/Spi/` dan representasi path relatif).
+- Telah diverifikasi bahwa hanya terdapat tepat satu berkas fisik di disk pada lokasi `backend/app/Http/Controllers/Api/Spi/ApprovalController.php`. Tidak ada controller duplikat di repositori.

@@ -30,10 +30,14 @@ class ExpireOrderReservationsCommand extends Command
      */
     public function handle(): int
     {
+        $hours = (int) (\App\Models\Setting::where('key', 'reservation_hours')->value('value')
+            ?? \App\Models\Setting::where('key', 'payment_timeout_hours')->value('value')
+            ?? 24);
+
         $expiredOrders = Order::with('items')
             ->where('payment_status', 'WAITING_PAYMENT')
             ->where('order_status', '!=', 'CANCELLED')
-            ->where('created_at', '<=', now()->subHours(2))
+            ->where('created_at', '<=', now()->subHours($hours))
             ->get();
 
         $count = 0;
@@ -76,7 +80,7 @@ class ExpireOrderReservationsCommand extends Command
                 OrderStatusHistory::create([
                     'order_id' => $order->id,
                     'status' => 'CANCELLED',
-                    'notes' => 'Pesanan dibatalkan otomatis oleh sistem karena batas waktu pembayaran (2 jam) telah berakhir.',
+                    'notes' => "Pesanan dibatalkan otomatis oleh sistem karena batas waktu pembayaran ({$hours} jam) telah berakhir.",
                     'changed_by' => 'System Cron',
                 ]);
             });
