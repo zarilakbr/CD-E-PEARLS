@@ -26,7 +26,7 @@ Dokumen ini menjelaskan tata cara deployment aplikasi **CD'E Pearls Lombok** (La
 1. **Buat Database PostgreSQL**:
    ```sql
    CREATE DATABASE cde_pearls;
-   CREATE USER cde_admin WITH ENCRYPTED PASSWORD 'RahasiaKuatMutiara2026!';
+   CREATE USER cde_admin WITH ENCRYPTED PASSWORD 'YOUR_STRONG_DATABASE_PASSWORD';
    GRANT ALL PRIVILEGES ON DATABASE cde_pearls TO cde_admin;
    ```
 
