@@ -7,7 +7,7 @@ export const authChannel = typeof window !== 'undefined' && 'BroadcastChannel' i
   : null;
 
 // In browser development, requests to /api or /sanctum proxy to Laravel backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'https://api.cdepearlslombok.id/api/v1';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -487,11 +487,11 @@ export const certificateApi = {
 export const reportApi = {
   getSalesCsvDownloadUrl(params?: { payment_status?: string; order_status?: string }): string {
     const query = new URLSearchParams(params as Record<string, string>).toString();
-    return `/api/v1/admin/reports/sales/csv${query ? '?' + query : ''}`;
+    return `${API_BASE_URL}/admin/reports/sales/csv${query ? '?' + query : ''}`;
   },
 
   getInventoryCsvDownloadUrl(): string {
-    return '/api/v1/admin/reports/inventory/csv';
+    return `${API_BASE_URL}/admin/reports/inventory/csv`;
   },
 };
 
@@ -627,7 +627,7 @@ export const spiApi = {
 
   getAuditLogsCsvExportUrl(params?: { actor_role?: string; action?: string; date_from?: string; date_to?: string }): string {
     const query = new URLSearchParams(params as Record<string, string>).toString();
-    return `/api/v1/spi/audit-logs/export-csv${query ? '?' + query : ''}`;
+    return `${API_BASE_URL}/spi/audit-logs/export-csv${query ? '?' + query : ''}`;
   },
 
   async getStaff() {
@@ -679,7 +679,7 @@ export const spiApi = {
   },
 
   getAuditFindingsReportUrl(): string {
-    return '/api/v1/spi/audit-findings/export-report';
+    return `${API_BASE_URL}/spi/audit-findings/export-report`;
   },
 
   // S-2 SPI Pusat Kendali Endpoints
@@ -765,6 +765,6 @@ export const spiApi = {
 
   getSalesReportExportUrl(params?: { start_date?: string; end_date?: string; status?: string; category?: string }): string {
     const query = new URLSearchParams(params as Record<string, string>).toString();
-    return `/api/v1/spi/reports/sales/export${query ? '?' + query : ''}`;
+    return `${API_BASE_URL}/spi/reports/sales/export${query ? '?' + query : ''}`;
   },
 };
