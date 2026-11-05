@@ -20,6 +20,8 @@ return [
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
 
+    'must_verify_email' => (bool) env('AUTH_REQUIRE_EMAIL_VERIFICATION', true),
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Guards

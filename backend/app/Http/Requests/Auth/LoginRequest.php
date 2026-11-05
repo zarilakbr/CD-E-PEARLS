@@ -11,6 +11,18 @@ class LoginRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Normalize email input before validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->email)) {
+            $this->merge([
+                'email' => strtolower(trim($this->email)),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -29,4 +41,3 @@ class LoginRequest extends FormRequest
         ];
     }
 }
-

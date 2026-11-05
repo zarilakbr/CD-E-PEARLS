@@ -19,7 +19,7 @@ interface AuthContextType {
     email: string;
     password: string;
     password_confirmation: string;
-    phone: string;
+    phone?: string;
     address?: string;
     turnstile_token?: string;
   }) => Promise<{ success: boolean; message?: string; error?: string }>;
@@ -152,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           localStorage.setItem('cde_auth_sync', JSON.stringify({ event: 'LOGIN', timestamp: Date.now() }));
         } catch { }
-        return { success: true, message: res.message };
+        return { success: true, message: res.message, user: res.user };
       } catch (err: any) {
         const error = err.response?.data?.error || 'LOGIN_FAILED';
         const message = err.response?.data?.message || 'Login gagal, periksa email dan kata sandi Anda.';
@@ -168,7 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: string;
       password: string;
       password_confirmation: string;
-      phone: string;
+      phone?: string;
       address?: string;
       turnstile_token?: string;
     }) => {
@@ -180,7 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           localStorage.setItem('cde_auth_sync', JSON.stringify({ event: 'LOGIN', timestamp: Date.now() }));
         } catch { }
-        return { success: true, message: res.message };
+        return { success: true, message: res.message, user: res.user };
       } catch (err: any) {
         const error = err.response?.data?.error || 'REGISTER_FAILED';
         const message = err.response?.data?.message || 'Pendaftaran akun gagal. Periksa data Anda.';

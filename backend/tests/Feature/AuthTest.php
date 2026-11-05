@@ -113,7 +113,7 @@ test('frozen account cannot log in', function () {
         ]);
 });
 
-test('repeated failed logins do not trigger global account lockout dos', function () {
+test('repeated failed logins trigger account lockout after 5 attempts', function () {
     $user = User::create([
         'name' => 'Lockout Target',
         'email' => 'lockout@cdepearls.com',
@@ -123,8 +123,8 @@ test('repeated failed logins do not trigger global account lockout dos', functio
         'email_verified_at' => now(),
     ]);
 
-    // Perform 10 failed attempts from attacker IP
-    for ($i = 0; $i < 10; $i++) {
+    // Perform 5 failed attempts from attacker IP
+    for ($i = 0; $i < 5; $i++) {
         RateLimiter::clear(Str::transliterate("login:lockout@cdepearls.com|127.0.0.1"));
         $this->postJson('/api/v1/auth/login', [
             'email' => 'lockout@cdepearls.com',
@@ -133,8 +133,9 @@ test('repeated failed logins do not trigger global account lockout dos', functio
     }
 
     $user->refresh();
-    // User must NOT be globally locked (eliminating DoS vector)
-    expect($user->locked_until)->toBeNull();
+    // User must be locked after 5 attempts
+    expect($user->locked_until)->not->toBeNull();
+    expect($user->failed_logins)->toBe(5);
 });
 
 test('authenticated user can view profile and update password', function () {

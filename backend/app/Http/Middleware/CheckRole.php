@@ -26,12 +26,15 @@ class CheckRole
             ], Response::HTTP_UNAUTHORIZED);
         }
 
-        // Account freeze check
-        if ($user->isFrozen()) {
+        // Account active / freeze check
+        if (! $user->isActive()) {
+            $msg = $user->isFrozen()
+                ? 'Akun Anda sedang dibekukan oleh SPI. Akses dinonaktifkan sementara.'
+                : 'Akun Anda tidak aktif. Akses dinonaktifkan.';
             return response()->json([
                 'success' => false,
-                'message' => 'Akun Anda sedang dibekukan oleh SPI. Akses dinonaktifkan sementara.',
-                'error' => 'ACCOUNT_FROZEN',
+                'message' => $msg,
+                'error' => $user->isFrozen() ? 'ACCOUNT_FROZEN' : 'ACCOUNT_INACTIVE',
             ], Response::HTTP_FORBIDDEN);
         }
 

@@ -56,7 +56,8 @@ apiClient.interceptors.response.use(
  */
 export async function getCsrfCookie(): Promise<void> {
   try {
-    await axios.get('/sanctum/csrf-cookie', { withCredentials: true });
+    const sanctumUrl = API_BASE_URL.replace(/\/api\/v1\/?$/, '') + '/sanctum/csrf-cookie';
+    await axios.get(sanctumUrl, { withCredentials: true });
   } catch (err) {
     console.warn('Sanctum CSRF cookie initialization note:', err);
   }
@@ -129,7 +130,7 @@ export const authApi = {
   async register(data: {
     name: string;
     email: string;
-    phone: string;
+    phone?: string;
     password: string;
     password_confirmation: string;
     address?: string;
@@ -397,7 +398,7 @@ export const addressApi = {
   async createAddress(data: {
     label?: string;
     recipient_name: string;
-    phone: string;
+    phone?: string;
     address_line: string;
     city: string;
     province: string;

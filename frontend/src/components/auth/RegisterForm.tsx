@@ -24,10 +24,15 @@ const registerSchema = z
   .object({
     name: z.string().min(3, 'Nama lengkap minimal 3 karakter'),
     email: z.string().email('Format email tidak valid'),
-    phone: z.string().regex(phoneRegex, 'Format nomor telepon tidak valid (contoh: 08123456789)'),
+    phone: z
+      .string()
+      .optional()
+      .refine((val) => !val || phoneRegex.test(val), {
+        message: 'Format nomor telepon tidak valid (contoh: 08123456789)',
+      }),
     password: z
       .string()
-      .min(10, 'Kata sandi minimal 10 karakter')
+      .min(8, 'Kata sandi minimal 8 karakter')
       .regex(/[A-Z]/, 'Wajib mengandung minimal 1 huruf besar')
       .regex(/[a-z]/, 'Wajib mengandung minimal 1 huruf kecil')
       .regex(/[0-9]/, 'Wajib mengandung minimal 1 angka'),

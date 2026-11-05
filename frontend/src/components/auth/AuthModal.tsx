@@ -138,8 +138,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         turnstile_token: turnstileToken || undefined,
       });
 
-      if (res.success && res.user) {
-        onLoginSuccess(res.user.role, res.user.name);
+      if (res.success) {
+        onLoginSuccess(res.user?.role || 'user', res.user?.name || 'Pelanggan');
         onClose();
       } else {
         setServerError(res.message || 'Login gagal.');

@@ -27,6 +27,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller
 {
+    private const DUMMY_HASH = '$2y$12$e8w.xvy59/G6G8L4tL1d..v8mHlG5q0c7G1Vl/2R9sU5YVq8sPZ1y';
+
     protected TurnstileService $turnstile;
 
     public function __construct(TurnstileService $turnstile)
@@ -106,12 +108,16 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'email' => $email,
-            'phone' => $validated['phone'],
+            'phone' => $validated['phone'] ?? null,
             'password' => Hash::make($validated['password']),
             'role' => 'user', // Strictly user role
             'status' => 'active',
+            'locale' => 'id',
+            'theme' => 'light',
             'email_verified_at' => null,
             'must_change_password' => false,
+            'failed_logins' => 0,
+            'locked_until' => null,
         ]);
 
         if (! empty($validated['address'])) {
@@ -191,12 +197,80 @@ class AuthController extends Controller
 
         $user = User::where('email', $email)->first();
 
-        // 4. Credential verification with anti-enumeration (identical 401 response, no global lockout DoS)
-        if (! $user || ! Hash::check($validated['password'], $user->password)) {
+        // 3a. Account Lockout Check (15 minutes lockout after 5 failed attempts)
+        if ($user) {
+            if ($user->isLocked()) {
+                $secondsRemaining = now()->diffInSeconds($user->locked_until);
+                $minutesRemaining = max(1, (int) ceil($secondsRemaining / 60));
+
+                return response()->json([
+                    'success' => false,
+                    'error' => 'ACCOUNT_LOCKED',
+                    'message' => "Akun Anda terkunci sementara karena 5 kali percobaan masuk gagal. Silakan coba lagi dalam {$minutesRemaining} menit.",
+                    'locked_until' => $user->locked_until->toIso8601String(),
+                    'retry_after_seconds' => $secondsRemaining,
+                ], Response::HTTP_LOCKED);
+            }
+
+            // Auto-unlock if lockout duration has passed
+            if ($user->locked_until && $user->locked_until->isPast()) {
+                $user->update([
+                    'failed_logins' => 0,
+                    'locked_until' => null,
+                ]);
+            }
+        }
+
+        // 4. Credential verification with anti-enumeration and brute-force tracking
+        $isPasswordValid = false;
+        if (! $user) {
+            Hash::check($validated['password'], self::DUMMY_HASH);
+        } elseif (empty($user->password)) {
+            // Google OAuth account without standard password
+            Hash::check($validated['password'], self::DUMMY_HASH);
+        } else {
+            $isPasswordValid = Hash::check($validated['password'], $user->password);
+        }
+
+        if (! $isPasswordValid) {
             $attempts = RateLimiter::attempts($emailKey) + 1;
             $decay = min(60 * pow(2, max(0, $attempts - 5)), 900);
             RateLimiter::hit($emailKey, $decay);
             RateLimiter::hit($ipKey, 3600);
+
+            // Increment failed_logins and lock if threshold (5) reached
+            if ($user) {
+                $newFailed = ($user->failed_logins ?? 0) + 1;
+                if ($newFailed >= 5) {
+                    $lockedUntil = now()->addMinutes(15);
+                    $user->update([
+                        'failed_logins' => $newFailed,
+                        'locked_until' => $lockedUntil,
+                    ]);
+
+                    AuditLog::create([
+                        'actor_id' => $user->id,
+                        'actor_name' => $user->name,
+                        'actor_role' => $user->role,
+                        'action' => 'ACCOUNT_LOCKED',
+                        'target_type' => 'user',
+                        'target_id' => (string) $user->id,
+                        'ip_address' => $request->ip(),
+                        'user_agent' => $request->userAgent(),
+                        'created_at' => now(),
+                    ]);
+
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'ACCOUNT_LOCKED',
+                        'message' => 'Akun Anda terkunci selama 15 menit karena 5 kali percobaan login gagal.',
+                        'locked_until' => $lockedUntil->toIso8601String(),
+                        'retry_after_seconds' => 900,
+                    ], Response::HTTP_LOCKED);
+                }
+
+                $user->update(['failed_logins' => $newFailed]);
+            }
 
             AuditLog::create([
                 'action' => 'LOGIN_FAILED',
@@ -214,17 +288,20 @@ class AuthController extends Controller
             ], Response::HTTP_UNAUTHORIZED);
         }
 
-        // 5. Status frozen check
-        if ($user->isFrozen()) {
+        // 5. Account active status check (strictly active accounts allowed)
+        if ($user->status !== 'active') {
+            $msg = $user->isFrozen()
+                ? 'Akun Anda sedang dibekukan oleh Satuan Pengawas Internal (SPI). Hubungi pengawasan butik.'
+                : 'Akun Anda tidak aktif. Silakan hubungi layanan pelanggan untuk informasi lebih lanjut.';
             return response()->json([
                 'success' => false,
-                'message' => 'Akun Anda sedang dibekukan oleh Satuan Pengawas Internal (SPI). Hubungi pengawasan butik.',
-                'error' => 'ACCOUNT_FROZEN',
+                'error' => $user->isFrozen() ? 'ACCOUNT_FROZEN' : 'ACCOUNT_INACTIVE',
+                'message' => $msg,
             ], Response::HTTP_FORBIDDEN);
         }
 
-        // 5b. Email verification check
-        if (empty($user->email_verified_at)) {
+        // 5b. Email verification check (if enforced)
+        if (config('auth.must_verify_email', true) && empty($user->email_verified_at)) {
             return response()->json([
                 'success' => false,
                 'error' => 'ACCOUNT_UNVERIFIED',
@@ -232,10 +309,11 @@ class AuthController extends Controller
             ], Response::HTTP_FORBIDDEN);
         }
 
-        // 6. Success: clear counters and update timestamp
+        // 6. Success: clear counters, unlock, and update timestamp
         RateLimiter::clear($emailKey);
         $user->update([
             'failed_logins' => 0,
+            'locked_until' => null,
             'last_login_at' => now(),
         ]);
 
@@ -383,18 +461,20 @@ class AuthController extends Controller
             }
 
             // Link Google account for Customer
-            // If existing account was unverified, invalidate old password and revoke existing sessions
-            if (is_null($user->email_verified_at)) {
-                $user->tokens()->delete();
-                $user->password = null;
-            }
-
-            $user->update([
+            $updateData = [
                 'google_id' => $googleUser->getId(),
                 'avatar_url' => $googleUser->getAvatar() ?? $user->avatar_url,
                 'email_verified_at' => $user->email_verified_at ?? now(),
                 'last_login_at' => now(),
-            ]);
+            ];
+
+            // If existing account was unverified, invalidate old password and revoke existing sessions
+            if (is_null($user->email_verified_at)) {
+                $user->tokens()->delete();
+                $updateData['password'] = null;
+            }
+
+            $user->update($updateData);
         } else {
             // Register new customer via Google (strictly user role)
             $user = User::create([

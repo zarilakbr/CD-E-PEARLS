@@ -62,7 +62,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/leads', [LeadController::class, 'store']);
 
     // 4. Authenticated Routes (Sanctum SPA Session / Token)
-    Route::middleware(['auth:sanctum', 'not_frozen'])->group(function () {
+    Route::middleware(['auth:sanctum', 'not_frozen', 'must_change_password'])->group(function () {
         // Authenticated User Profile & Security
         Route::prefix('auth')->group(function () {
             Route::get('/me', [AuthController::class, 'me']);

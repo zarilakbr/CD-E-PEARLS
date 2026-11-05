@@ -92,9 +92,29 @@ class User extends Authenticatable
         return $this->status === 'frozen';
     }
 
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
     public function isLocked(): bool
     {
         return $this->locked_until && $this->locked_until->isFuture();
+    }
+
+    public function lockAccount(int $minutes = 15): void
+    {
+        $this->update([
+            'locked_until' => now()->addMinutes($minutes),
+        ]);
+    }
+
+    public function unlockAccount(): void
+    {
+        $this->update([
+            'failed_logins' => 0,
+            'locked_until' => null,
+        ]);
     }
 
     public function addresses()
