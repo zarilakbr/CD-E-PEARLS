@@ -65,7 +65,7 @@ import {
 
 const getAdminProductImage = (category?: string, name?: string) => {
   const str = ((category || '') + ' ' + (name || '')).toLowerCase();
-  if (str.includes('cincin')) return '/images/cat_ring_silk.jpg';
+  if (str.includes('cincin')) return '/images/placeholder_jewelry.svg';
   if (str.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
   if (str.includes('anting')) return '/images/terroir_pearl_plate_left.jpg';
   if (str.includes('butir') || str.includes('lepas')) return '/images/hero_pearl_dark_luxury.jpg';
@@ -200,7 +200,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             stock: Number(item.stock) || 0,
             status: (item.status === 'published' ? 'Aktif' : 'Nonaktif') as 'Aktif' | 'Nonaktif',
             description: item.description || '',
-            image: item.image || '/images/cat_ring_silk.jpg',
+            image: item.image || '/images/placeholder_jewelry.svg',
             images: item.images,
           }));
           setProducts(mapped);
@@ -358,7 +358,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         stock: Number(savedProductData.stock) !== undefined ? Number(savedProductData.stock) : Number(productData.stock) || 0,
         status: (savedProductData.status === 'published' ? 'Aktif' : 'Nonaktif') as 'Aktif' | 'Nonaktif',
         description: savedProductData.description || productData.description || '',
-        image: savedProductData.image || productData.image || '/images/cat_ring_silk.jpg',
+        image: savedProductData.image || productData.image || '/images/placeholder_jewelry.svg',
         images: savedProductData.images || productData.images,
       };
 
@@ -388,7 +388,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         stock: Number(productData.stock) || 5,
         status: (productData.status as 'Aktif' | 'Nonaktif') || 'Aktif',
         description: productData.description || 'Deskripsi perhiasan mutiara Lombok...',
-        image: productData.image || '/images/cat_ring_silk.jpg',
+        image: productData.image || '/images/placeholder_jewelry.svg',
         images: productData.images,
       };
       if (productData.id) {

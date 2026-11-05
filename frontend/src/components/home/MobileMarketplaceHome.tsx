@@ -14,17 +14,19 @@ import {
   Award,
   ArrowRight,
 } from 'lucide-react';
-import { mockProducts, type MockProduct } from '../../data/mock';
+import { type MockProduct } from '../../data/mock';
 import { usePrefersReducedMotion } from '../../lib/motion';
 
 interface MobileMarketplaceHomeProps {
   onSelectProduct: (p: MockProduct) => void;
   onAddToCart: (name: string) => void;
+  products?: MockProduct[];
 }
 
 export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
   onSelectProduct,
   onAddToCart,
+  products = [],
 }) => {
   const navigate = useNavigate();
   const prefersReduced = usePrefersReducedMotion();
@@ -82,19 +84,15 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
   // 2. Baris Ikon Kategori (5 Kategori, Foto Bulat 56px, Label 1 Kata)
   const categoryIcons = [
     { slug: 'kalung', name: 'Kalung', image: '/images/hero_pearl_shell.jpg' },
-    { slug: 'cincin', name: 'Cincin', image: '/images/cat_ring_silk.jpg' },
+    { slug: 'cincin', name: 'Cincin', image: '/images/placeholder_jewelry.svg' },
     { slug: 'anting', name: 'Anting', image: '/images/terroir_pearl_plate_left.jpg' },
     { slug: 'gelang', name: 'Gelang', image: '/images/placeholder_jewelry.svg' },
     { slug: 'bros', name: 'Bros', image: '/images/placeholder_jewelry.svg' },
   ];
 
-  // 4. Produk Terbaru (6 Produk)
-  const latestProducts = mockProducts.slice(0, 6);
-
-  // 5. Produk Terlaris (Hanya jika ada data terjual nyata)
-  const bestSellerProducts = mockProducts
-    .filter((p) => typeof p.id === 'number' && p.id % 2 === 1)
-    .slice(0, 6);
+  const activeProducts = products || [];
+  const latestProducts = activeProducts.slice(0, 6);
+  const bestSellerProducts = activeProducts.filter((p) => p.isBestseller).slice(0, 6);
 
   return (
     <div data-slot="mobile-marketplace-home" className="w-full flex flex-col gap-5 px-3 py-3 bg-[var(--bg)] font-sans select-none pb-12">
@@ -237,43 +235,51 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
       </div>
 
       {/* ========================================================
-          4. KOLEKSI TERBARU (Judul max 2 kata + 2 Kolom Grid)
+          4. KOLEKSI TERBARU (Atau Keadaan Kosong Rapi)
          ======================================================== */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="font-serif text-base font-bold text-[var(--text)]">
-            Koleksi Terbaru
-          </h2>
-          <button
-            type="button"
-            onClick={() => navigate('/katalog')}
-            className="text-[11px] text-[#8A6A2F] dark:text-[#D9B877] font-semibold hover:underline"
-          >
-            Lihat semua
-          </button>
-        </div>
+      {latestProducts.length > 0 ? (
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="font-serif text-base font-bold text-[var(--text)]">
+              Koleksi Terbaru
+            </h2>
+            <button
+              type="button"
+              onClick={() => navigate('/katalog')}
+              className="text-[11px] text-[#8A6A2F] dark:text-[#D9B877] font-semibold hover:underline"
+            >
+              Lihat semua
+            </button>
+          </div>
 
-        {/* 2 Kolom Grid pada Mobile (Gap 8px) */}
-        <div className="grid grid-cols-2 gap-2">
-          {latestProducts.map((p) => (
-            <ProductCard
-              key={p.id}
-              id={p.id}
-              name={p.name}
-              category={p.category}
-              variety={p.variety}
-              grade={p.grade}
-              price={p.price}
-              formattedPrice={p.formattedPrice}
-              image={p.image}
-              rating={4.9}
-              soldCount={12}
-              onAddToCart={() => onAddToCart(p.name)}
-              onSelect={() => onSelectProduct(p)}
-            />
-          ))}
+          {/* 2 Kolom Grid pada Mobile (Gap 8px) */}
+          <div className="grid grid-cols-2 gap-2">
+            {latestProducts.map((p) => (
+              <ProductCard
+                key={p.id}
+                id={p.id}
+                name={p.name}
+                category={p.category}
+                variety={p.variety}
+                grade={p.grade}
+                price={p.price}
+                formattedPrice={p.formattedPrice}
+                image={p.image}
+                onAddToCart={() => onAddToCart(p.name)}
+                onSelect={() => onSelectProduct(p)}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="p-8 text-center bg-[var(--surface)] border border-[var(--border)] rounded-2xl space-y-2">
+          <Sparkles className="w-8 h-8 text-[#8A6A2F] dark:text-[#D9B877] mx-auto opacity-70" />
+          <h3 className="font-serif text-base font-bold text-[var(--text)]">Koleksi Segera Hadir</h3>
+          <p className="text-xs text-[var(--text-2)] max-w-xs mx-auto">
+            Atelier perhiasan mutiara air laut Lombok kami sedang menyiapkan koleksi istimewa untuk Anda.
+          </p>
+        </div>
+      )}
 
       {/* ========================================================
           5. PRODUK TERLARIS (Hanya bila ada data nyata)
@@ -305,8 +311,6 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
                 price={p.price}
                 formattedPrice={p.formattedPrice}
                 image={p.image}
-                rating={5.0}
-                soldCount={28}
                 onAddToCart={() => onAddToCart(p.name)}
                 onSelect={() => onSelectProduct(p)}
               />

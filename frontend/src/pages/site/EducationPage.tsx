@@ -29,7 +29,7 @@ export const EducationPage: React.FC<EducationPageProps> = ({ onNavigateCatalog 
     {
       title: '3. Bentuk Sempurna (Shape)',
       badge: 'Round & Drop',
-      image: '/images/cat_ring_silk.jpg',
+      image: '/images/hero_pearl_shell.jpg',
       desc: 'Bentuk bulat simetris sempurna (Round) adalah yang paling langka dan bernilai tinggi. CD\'E Pearls juga menyediakan Drop (tetes air) simetris dan Baroque berkarakter artistik tinggi.',
     },
     {

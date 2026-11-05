@@ -85,7 +85,7 @@ export const pearlVarietiesData: PearlVariety[] = [
     grade: '100% Nacre Murni',
     sizeRange: '6–10 mm',
     description: 'Terbentuk tanpa inti buatan (full nacre) menghasilkan pantulan cahaya kristalin alami yang sangat kuat.',
-    image: '/images/cat_ring_silk.jpg',
+    image: '/images/hero_pearl_shell.jpg',
   },
   {
     id: 'mabe-blister',

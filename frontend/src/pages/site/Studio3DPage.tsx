@@ -76,7 +76,7 @@ export const Studio3DPage: React.FC<Studio3DPageProps> = ({
                 <img
                   src={
                     jewelryType.includes('Cincin')
-                      ? '/images/cat_ring_silk.jpg'
+                      ? '/images/placeholder_jewelry.svg'
                       : jewelryType.includes('Gelang')
                       ? '/images/featured_pearl_dark_luxury.jpg'
                       : jewelryType.includes('Anting')

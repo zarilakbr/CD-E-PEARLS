@@ -12,7 +12,7 @@ interface ProductDetailModalProps {
 const getSmartImageFallback = (item: MockProduct) => {
   if (item.image && !item.image.includes('placeholder')) return item.image;
   const cat = (item.category || '').toLowerCase();
-  if (cat.includes('cincin')) return '/images/cat_ring_silk.jpg';
+  if (cat.includes('cincin')) return '/images/placeholder_jewelry.svg';
   if (cat.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
   if (cat.includes('anting')) return '/images/terroir_pearl_plate_left.jpg';
   if (cat.includes('butir')) return '/images/hero_pearl_dark_luxury.jpg';

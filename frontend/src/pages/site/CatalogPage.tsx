@@ -23,7 +23,7 @@ import { ProductCard } from '../../components/common/ProductCard';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../components/ui/sheet';
 import { Slider } from '../../components/ui/slider';
 import { catalogApi } from '../../lib/api';
-import { mockCategories, mockProducts, type MockProduct } from '../../data/mock';
+import { type MockProduct } from '../../data/mock';
 
 interface CatalogPageProps {
   products?: MockProduct[];
@@ -34,7 +34,7 @@ interface CatalogPageProps {
 }
 
 export const CatalogPage: React.FC<CatalogPageProps> = ({
-  products: propProducts,
+  products: _propProducts,
   onAddToCart,
   onSelectProduct,
   initialCategory = 'all',
@@ -59,25 +59,32 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
   const [sortBy, setSortBy] = useState<string>(paramSort);
   const [maxPrice, setMaxPrice] = useState<number>(paramMaxPrice);
   const [readyOnly, setReadyOnly] = useState<boolean>(paramReady);
-  const [wishlistIds, setWishlistIds] = useState<number[]>([1, 3]);
+  const [wishlistIds, setWishlistIds] = useState<number[]>([]);
   const [gridColumns, setGridColumns] = useState<'3' | '4'>('4');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [mobileVisibleCount, setMobileVisibleCount] = useState(8);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [liveProducts, setLiveProducts] = useState<MockProduct[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
 
-  useEffect(() => {
-    let isMounted = true;
-    catalogApi.getProducts({ per_page: 100 })
-      .then((res) => {
+  const fetchCatalog = () => {
+    setIsLoading(true);
+    setIsError(false);
+    Promise.all([
+      catalogApi.getProducts({ per_page: 100 }),
+      catalogApi.getCategories().catch(() => []),
+    ])
+      .then(([res, catRes]) => {
         const items = res?.data || res;
-        if (isMounted && Array.isArray(items) && items.length > 0) {
+        const catList = catRes?.data || catRes;
+        if (Array.isArray(items)) {
           const mapped: MockProduct[] = items.map((item: any) => ({
             id: item.id,
             name: item.name,
-            category: item.category?.name || 'Kalung Mutiara',
-            categorySlug: item.category_slug || 'kalung-mutiara',
+            category: item.category?.name || 'Mutiara South Sea',
+            categorySlug: item.category_slug || item.category?.slug || 'kalung-mutiara',
             variety: item.varietas || 'South Sea',
             grade: item.grade || 'AAA',
             pearlSize: item.ukuran_mm ? `${item.ukuran_mm} mm` : '12 mm',
@@ -91,16 +98,28 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
             stock: Number(item.stock) || 0,
             status: (item.status === 'published' ? 'Aktif' : 'Nonaktif') as 'Aktif' | 'Nonaktif',
             description: item.description || '',
-            image: item.image || '/images/cat_ring_silk.jpg',
+            image: item.image || '/images/placeholder_jewelry.svg',
             images: item.images,
           }));
           setLiveProducts(mapped);
+        } else {
+          setLiveProducts([]);
+        }
+        if (Array.isArray(catList)) {
+          setCategories(catList);
         }
       })
-      .catch(() => {});
-    return () => {
-      isMounted = false;
-    };
+      .catch(() => {
+        setIsError(true);
+        setLiveProducts([]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchCatalog();
   }, []);
 
   // Sync state if URL changes externally
@@ -174,7 +193,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
   };
 
   // Filter products
-  const rawProducts = liveProducts.length > 0 ? liveProducts : (propProducts && propProducts.length > 0 ? propProducts : mockProducts);
+  const rawProducts = liveProducts;
   const filteredProducts = rawProducts.filter((p) => {
     if (p.status === 'Nonaktif' || (p as any).status === 'archived' || (p as any).status === 'draft') return false;
     if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -231,7 +250,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
             >
               Semua
             </button>
-            {mockCategories.map((c) => (
+            {categories.map((c) => (
               <button
                 key={c.id}
                 type="button"
@@ -294,7 +313,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
           <div className="flex flex-wrap items-center gap-1.5">
             {selectedCategory !== 'all' && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[11px] font-medium text-[var(--text)]">
-                <span>{mockCategories.find((c) => c.slug === selectedCategory)?.name || selectedCategory}</span>
+                <span>{categories.find((c) => c.slug === selectedCategory)?.name || selectedCategory}</span>
                 <button
                   type="button"
                   onClick={() => handleCategorySelect('all')}
@@ -376,9 +395,33 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
           </span>
         </div>
 
-        {/* Daftar Produk: Grid 2 Kolom (gap-2, padding-3) */}
+        {/* Daftar Produk: Grid 2 Kolom (gap-2, padding-3) / Status Kosong / Galat */}
         <div className="p-3">
-          {sortedProducts.length > 0 ? (
+          {isLoading ? (
+            <div className="text-center py-12 px-4 space-y-3">
+              <div className="w-8 h-8 border-2 border-[#8A6A2F] border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-xs text-[var(--text-2)]">Menyelaraskan koleksi mutiara...</p>
+            </div>
+          ) : isError ? (
+            <div className="text-center py-12 px-4 space-y-3">
+              <p className="text-xs text-red-600 font-semibold">Gagal memuat katalog perhiasan. Periksa koneksi internet Anda.</p>
+              <button
+                type="button"
+                onClick={fetchCatalog}
+                className="min-h-[44px] px-5 rounded-full bg-[#12263A] text-white dark:bg-[#D9B877] dark:text-[#12263A] text-xs font-semibold touch-feedback cursor-pointer"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          ) : rawProducts.length === 0 ? (
+            <div className="text-center py-14 px-4 space-y-3">
+              <Sparkles className="w-8 h-8 text-[#8A6A2F] dark:text-[#D9B877] mx-auto opacity-70" />
+              <h3 className="font-serif text-base font-bold text-[var(--text)]">Koleksi Segera Hadir</h3>
+              <p className="text-xs text-[var(--text-2)] max-w-xs mx-auto">
+                Atelier perhiasan mutiara air laut Lombok kami sedang menyiapkan koleksi istimewa untuk Anda.
+              </p>
+            </div>
+          ) : sortedProducts.length > 0 ? (
             <>
               <div className="grid grid-cols-2 gap-2">
                 {sortedProducts.slice(0, mobileVisibleCount).map((p) => (
@@ -392,8 +435,6 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                     price={p.price}
                     formattedPrice={p.formattedPrice}
                     image={p.image}
-                    rating={4.8}
-                    soldCount={12}
                     isWishlisted={wishlistIds.includes(p.id)}
                     onToggleWishlist={() => toggleWishlist(p.id)}
                     onAddToCart={() => onAddToCart(p.name)}
@@ -649,9 +690,9 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                 variant={selectedCategory === 'all' ? 'default' : 'outline'}
                 onClick={() => setSelectedCategory('all')}
               >
-                Semua ({mockProducts.length})
+                Semua ({rawProducts.length})
               </Button>
-              {mockCategories.map((c) => (
+              {categories.map((c) => (
                 <Button
                   key={c.id}
                   type="button"
@@ -778,9 +819,9 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                       }`}
                     >
                       <span>Semua Kategori</span>
-                      <span className="text-[11px] opacity-70">{mockProducts.length}</span>
+                      <span className="text-[11px] opacity-70">{rawProducts.length}</span>
                     </button>
-                    {mockCategories.map((c) => (
+                    {categories.map((c) => (
                       <button
                         key={c.id}
                         type="button"
@@ -912,6 +953,27 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                     ))}
                   </div>
                 </div>
+              ) : isError ? (
+                <Card className="p-12 text-center max-w-md mx-auto space-y-4 border-red-200">
+                  <p className="text-sm text-red-600 font-medium">
+                    Gagal memuat katalog perhiasan. Periksa koneksi internet Anda.
+                  </p>
+                  <Button variant="default" onClick={fetchCatalog}>
+                    Coba Lagi
+                  </Button>
+                </Card>
+              ) : rawProducts.length === 0 ? (
+                <Card className="p-16 text-center max-w-md mx-auto space-y-4">
+                  <div className="w-20 h-20 rounded-full bg-[#FBF8F3] border border-[#E6DDD0] mx-auto flex items-center justify-center text-[#8A6A2F]">
+                    <Sparkles className="w-10 h-10 stroke-[1.5]" />
+                  </div>
+                  <h3 className="font-serif text-2xl font-medium text-[#12263A]">
+                    Koleksi Segera Hadir
+                  </h3>
+                  <p className="text-xs text-[#4A5666] leading-relaxed">
+                    Atelier perhiasan mutiara air laut Lombok kami sedang menyiapkan koleksi istimewa untuk Anda.
+                  </p>
+                </Card>
               ) : sortedProducts.length > 0 ? (
                 <div
                   className={`grid grid-cols-1 sm:grid-cols-2 ${

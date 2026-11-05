@@ -45,9 +45,6 @@ const NotFoundPage = React.lazy(() => import('./pages/common/NotFoundPage').then
 const ServerErrorPage = React.lazy(() => import('./pages/common/ServerErrorPage').then((m) => ({ default: m.ServerErrorPage })));
 
 import {
-  mockProducts,
-  mockOrders,
-  mockStockItems,
   mockApprovals,
   mockSpiAuditLogs,
   mockStaffAccounts,
@@ -197,9 +194,9 @@ const AppContent: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Centralized Live Data States (Shared across Admin & SPI)
-  const [products, setProducts] = useState<MockProduct[]>(mockProducts);
-  const [orders, setOrders] = useState<MockOrder[]>(mockOrders);
-  const [stockItems, setStockItems] = useState<MockStockItem[]>(mockStockItems);
+  const [products, setProducts] = useState<MockProduct[]>([]);
+  const [orders, setOrders] = useState<MockOrder[]>([]);
+  const [stockItems, setStockItems] = useState<MockStockItem[]>([]);
   const [approvals, setApprovals] = useState<MockApprovalItem[]>(mockApprovals);
   const [auditLogs, setAuditLogs] = useState<MockSpiAuditLog[]>(mockSpiAuditLogs);
   const [staffAccounts, setStaffAccounts] = useState<MockStaffAccount[]>(mockStaffAccounts);

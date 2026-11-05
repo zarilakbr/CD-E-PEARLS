@@ -75,19 +75,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setItems([]);
   };
 
-  const applyCoupon = (code: string) => {
-    const clean = code.trim().toUpperCase();
-    if (clean === 'LOMBOK10') {
-      setCouponCode('LOMBOK10');
-      setDiscountPercent(10);
-      return { success: true, message: 'Kupon LOMBOK10 aktif! Diskon 10% berhasil diterapkan.' };
-    }
-    if (clean === 'CDEVIP') {
-      setCouponCode('CDEVIP');
-      setDiscountPercent(15);
-      return { success: true, message: 'Kupon CDEVIP aktif! Diskon VIP 15% berhasil diterapkan.' };
-    }
-    return { success: false, message: 'Kode kupon tidak valid. Coba LOMBOK10 atau CDEVIP.' };
+  const applyCoupon = (_code: string) => {
+    return { success: false, message: 'Kupon diskon divalidasi langsung melalui sistem server saat checkout.' };
   };
 
   const removeCoupon = () => {

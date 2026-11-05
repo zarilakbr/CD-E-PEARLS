@@ -27,7 +27,7 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Stepper } from '../../components/common/Stepper';
 import { ProductCard } from '../../components/common/ProductCard';
-import { mockOrders, mockProducts, type MockOrder } from '../../data/mock';
+import { mockOrders, type MockOrder, type MockProduct } from '../../data/mock';
 import { authApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { GuestAccountHub } from './GuestAccountHub';
@@ -35,7 +35,7 @@ import { SiteLayout } from '../../layouts/SiteLayout';
 
 const getItemImage = (name: string) => {
   const n = (name || '').toLowerCase();
-  if (n.includes('cincin')) return '/images/cat_ring_silk.jpg';
+  if (n.includes('cincin')) return '/images/placeholder_jewelry.svg';
   if (n.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
   if (n.includes('anting')) return '/images/terroir_pearl_plate_left.jpg';
   if (n.includes('butir') || n.includes('lepas')) return '/images/hero_pearl_dark_luxury.jpg';
@@ -84,11 +84,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   const [selectedOrder, setSelectedOrder] = useState<MockOrder | null>(null);
 
   // Tracking Search State
-  const [trackingQuery, setTrackingQuery] = useState('ORD-2026-081');
-  const [searchedTrackingOrder, setSearchedTrackingOrder] = useState<MockOrder | null>(mockOrders[0]);
+  const [trackingQuery, setTrackingQuery] = useState('');
+  const [searchedTrackingOrder, setSearchedTrackingOrder] = useState<MockOrder | null>(null);
 
   // Wishlist State
-  const [wishlistProducts, setWishlistProducts] = useState(mockProducts.slice(0, 4));
+  const [wishlistProducts, setWishlistProducts] = useState<MockProduct[]>([]);
 
   // Addresses State
   const [addresses, setAddresses] = useState([

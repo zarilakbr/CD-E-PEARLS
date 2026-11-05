@@ -45,8 +45,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const numericPrice =
     typeof price === 'number'
       ? price
-      : parseInt(String(price).replace(/\D/g, ''), 10) || 12500000;
-  const displayPrice = formattedPrice || `Rp ${numericPrice.toLocaleString('id-ID')}`;
+      : parseInt(String(price).replace(/\D/g, ''), 10) || 0;
+  const displayPrice = formattedPrice || (numericPrice > 0 ? `Rp ${numericPrice.toLocaleString('id-ID')}` : 'Hubungi Kami');
 
   const hasCustomImage = Boolean(image && image.trim() && !image.includes('placeholder'));
 
@@ -54,7 +54,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     if (hasCustomImage && image) return image;
     const n = name.toLowerCase();
     const c = category.toLowerCase();
-    if (n.includes('cincin') || c.includes('cincin')) return '/images/cat_ring_silk.jpg';
+    if (n.includes('cincin') || c.includes('cincin')) return '/images/placeholder_jewelry.svg';
     if (n.includes('gelang') || c.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
     if (n.includes('anting') || c.includes('anting')) return '/images/terroir_pearl_plate_left.jpg';
     if (n.includes('lepas') || c.includes('lepas')) return '/images/hero_pearl_dark_luxury.jpg';
