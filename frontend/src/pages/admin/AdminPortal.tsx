@@ -44,24 +44,20 @@ import { ProductFormModal } from '../../components/admin/ProductFormModal';
 import { APPROVAL_RULES } from '../../config/approvalRules';
 import { reportApi, apiClient } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
-import {
-  mockCategories,
-  mockProducts,
-  mockOrders,
-  mockCustomers,
-  mockStockItems,
-  mockStockMovements,
-  mockCertificates,
-  mockSalesChartData,
-  mockCategorySalesData,
-  mockBestsellers,
-  type MockProduct,
-  type MockOrder,
-  type MockCategory,
-  type MockCertificate,
-  type MockStockItem,
-  type MockApprovalItem,
-} from '../../data/mock';
+import type {
+  MockProduct,
+  MockOrder,
+  MockCategory,
+  MockCertificate,
+  MockStockItem,
+  MockStockMovement,
+  MockCustomer,
+  MockApprovalItem,
+} from '../../types/models';
+
+const salesChartData: Array<{ date: string; sales: number; orders: number }> = [];
+const categorySalesData: Array<{ category: string; sales: number }> = [];
+const bestsellers: Array<{ rank: number; name: string; category: string; sold: number; revenue: number }> = [];
 
 const getAdminProductImage = (category?: string, name?: string) => {
   const str = ((category || '') + ' ' + (name || '')).toLowerCase();
@@ -163,7 +159,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   };
 
   // Products state (CRUD)
-  const [internalProducts, setInternalProducts] = useState<MockProduct[]>(mockProducts);
+  const [internalProducts, setInternalProducts] = useState<MockProduct[]>([]);
   const products = propProducts || internalProducts;
   const setProducts = propSetProducts || setInternalProducts;
   const [productSearch, setProductSearch] = useState('');
@@ -213,7 +209,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   }, []);
 
   // Categories state (Full CRUD)
-  const [categories, setCategories] = useState<MockCategory[]>(mockCategories);
+  const [categories, setCategories] = useState<MockCategory[]>([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isCategoryEditModalOpen, setIsCategoryEditModalOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -222,7 +218,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [categoryToDelete, setCategoryToDelete] = useState<MockCategory | null>(null);
 
   // Orders state
-  const [internalOrders, setInternalOrders] = useState<MockOrder[]>(mockOrders);
+  const [internalOrders, setInternalOrders] = useState<MockOrder[]>([]);
   const orders = propOrders || internalOrders;
   const setOrders = propSetOrders || setInternalOrders;
   const [orderStatusTab, setOrderStatusTab] = useState('Semua');
@@ -232,25 +228,25 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [inputCourier, setInputCourier] = useState('JNE Express (Berasuransi)');
 
   // Customers state
-  const [customers] = useState(mockCustomers);
-  const [selectedCustomer, setSelectedCustomer] = useState<(typeof mockCustomers)[0] | null>(null);
+  const [customers] = useState<MockCustomer[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<MockCustomer | null>(null);
 
   // Stock state (CRUD Adjustments & Movement Audit)
-  const [internalStockItems, setInternalStockItems] = useState<MockStockItem[]>(mockStockItems);
+  const [internalStockItems, setInternalStockItems] = useState<MockStockItem[]>([]);
   const stockItems = propStockItems || internalStockItems;
   const setStockItems = propSetStockItems || setInternalStockItems;
   void setStockItems;
-  const [stockMovements] = useState(mockStockMovements);
+  const [stockMovements] = useState<MockStockMovement[]>([]);
   const [isAdjustStockOpen, setIsAdjustStockOpen] = useState(false);
-  const [selectedStockItem, setSelectedStockItem] = useState<(typeof mockStockItems)[0] | null>(null);
+  const [selectedStockItem, setSelectedStockItem] = useState<MockStockItem | null>(null);
   const [stockAdjustQty, setStockAdjustQty] = useState(1);
   const [stockAdjustNotes, setStockAdjustNotes] = useState('');
 
   // Certificates state (Full CRUD: Issue, Preview/Print, Revoke)
-  const [certificates, setCertificates] = useState<MockCertificate[]>(mockCertificates);
+  const [certificates, setCertificates] = useState<MockCertificate[]>([]);
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const [newCertNumber, setNewCertNumber] = useState('');
-  const [newCertProduct, setNewCertProduct] = useState(mockProducts[0]?.name || '');
+  const [newCertProduct, setNewCertProduct] = useState('');
   const [newCertLab, setNewCertLab] = useState('Laboratorium Gemologi Independen');
   const [newCertGrade, setNewCertGrade] = useState('AAA - Mirror Luster');
   const [newCertPearlSize, setNewCertPearlSize] = useState('11-12 mm');
@@ -872,7 +868,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             {/* Recharts Line Chart */}
             <div className="w-full h-[180px] lg:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={mockSalesChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <LineChart data={salesChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E6DDD0" vertical={false} />
                   <XAxis dataKey="date" stroke="#4A5666" fontSize={12} tickLine={false} />
                   <YAxis
@@ -1079,7 +1075,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
             >
               <option value="Semua">Semua Kategori</option>
-              {mockCategories.map(c => (
+              {categories.map(c => (
                 <option key={c.id} value={c.name}>{c.name}</option>
               ))}
             </select>
@@ -2295,7 +2291,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </h3>
               <div className="h-[180px] lg:h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockSalesChartData}>
+                  <LineChart data={salesChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E6DDD0" vertical={false} />
                     <XAxis dataKey="date" stroke="#4A5666" fontSize={11} tickLine={false} />
                     <YAxis stroke="#4A5666" fontSize={10} tickLine={false} tickFormatter={(val) => `${(val / 1000000).toFixed(0)}M`} />
@@ -2315,7 +2311,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </h3>
               <div className="h-[180px] lg:h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={mockCategorySalesData}>
+                  <BarChart data={categorySalesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E6DDD0" vertical={false} />
                     <XAxis dataKey="category" stroke="#4A5666" fontSize={11} tickLine={false} />
                     <YAxis stroke="#4A5666" fontSize={10} tickLine={false} tickFormatter={(val) => `${(val / 1000000).toFixed(0)}M`} />
@@ -2348,17 +2344,25 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E6DDD0]/60">
-                  {mockBestsellers.map((b) => (
-                    <tr key={b.rank} className="hover:bg-[#F4F1EB]/50">
-                      <td className="py-3 px-3 font-serif font-bold text-sm text-[#8A6A2F]">#{b.rank}</td>
-                      <td className="py-3 px-3 font-medium text-[#12263A]">{b.name}</td>
-                      <td className="py-3 px-3 text-[#4A5666]">{b.category}</td>
-                      <td className="py-3 px-3 font-bold text-[#12263A]">{b.sold} Unit</td>
-                      <td className="py-3 px-3 font-serif font-semibold text-[#12263A]">
-                        Rp {b.revenue.toLocaleString('id-ID')}
+                  {bestsellers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-6 text-center text-[#4A5666]">
+                        Belum ada data penjualan tercatat.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    bestsellers.map((b) => (
+                      <tr key={b.rank} className="hover:bg-[#F4F1EB]/50">
+                        <td className="py-3 px-3 font-serif font-bold text-sm text-[#8A6A2F]">#{b.rank}</td>
+                        <td className="py-3 px-3 font-medium text-[#12263A]">{b.name}</td>
+                        <td className="py-3 px-3 text-[#4A5666]">{b.category}</td>
+                        <td className="py-3 px-3 font-bold text-[#12263A]">{b.sold} Unit</td>
+                        <td className="py-3 px-3 font-serif font-semibold text-[#12263A]">
+                          Rp {b.revenue.toLocaleString('id-ID')}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

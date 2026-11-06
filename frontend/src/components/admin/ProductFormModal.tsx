@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Upload, Save, Star, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
-import { type MockProduct } from '../../data/mock';
+import type { MockProduct } from '../../types/models';
 
 interface PhotoItem {
   id: string;

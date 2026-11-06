@@ -11,7 +11,7 @@ import {
 import { ProductCard } from '../../components/common/ProductCard';
 import { PearlVarietiesMarquee } from '../../components/home/PearlVarietiesMarquee';
 import { MobileMarketplaceHome } from '../../components/home/MobileMarketplaceHome';
-import { type MockProduct } from '../../data/mock';
+import type { MockProduct } from '../../types/models';
 import { catalogApi } from '../../lib/api';
 
 interface PublicHomePageProps {

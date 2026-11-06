@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Award, ShoppingBag, MessageCircle, ShieldCheck, Sparkles } from 'lucide-react';
-import type { MockProduct } from '../../data/mock';
+import type { MockProduct } from '../../types/models';
 
 interface ProductDetailModalProps {
   product: MockProduct | null;

@@ -8,7 +8,6 @@ export interface MockCategory {
   status: 'Aktif' | 'Nonaktif';
   image?: string;
 }
-export const MockCategory = {};
 
 export interface MockProduct {
   id: number;
@@ -34,7 +33,6 @@ export interface MockProduct {
   isBestseller?: boolean;
   image?: string;
 }
-export const MockProduct = {};
 
 export interface MockOrderItem {
   productId: number;
@@ -44,7 +42,6 @@ export interface MockOrderItem {
   price: number;
   quantity: number;
 }
-export const MockOrderItem = {};
 
 export interface MockOrder {
   id: string; // #[ORD-2026-081]
@@ -72,7 +69,6 @@ export interface MockOrder {
     current?: boolean;
   }[];
 }
-export const MockOrder = {};
 
 export interface MockCustomer {
   id: number;
@@ -95,7 +91,6 @@ export interface MockCustomer {
     isPrimary: boolean;
   }[];
 }
-export const MockCustomer = {};
 
 export interface MockStockItem {
   id: number;
@@ -105,7 +100,6 @@ export interface MockStockItem {
   minLimit: number;
   status: 'Aman' | 'Menipis' | 'Habis';
 }
-export const MockStockItem = {};
 
 export interface MockStockMovement {
   id: number;
@@ -115,7 +109,6 @@ export interface MockStockMovement {
   quantity: number;
   notes: string;
 }
-export const MockStockMovement = {};
 
 export interface MockCertificate {
   id: number;
@@ -127,7 +120,6 @@ export interface MockCertificate {
   issueDate: string;
   pdfFileUrl: string;
 }
-export const MockCertificate = {};
 
 export interface MockSpiAuditLog {
   id: number;
@@ -141,7 +133,6 @@ export interface MockSpiAuditLog {
   ipAddress: string;
   status: 'Disetujui' | 'Perlu Review' | 'Ditolak';
 }
-export const MockSpiAuditLog = {};
 
 export type ApprovalType =
   | 'KONFIRMASI_PEMBAYARAN'
@@ -168,7 +159,6 @@ export interface MockApprovalItem {
   reviewedDate?: string;
   reviewNotes?: string;
 }
-export const MockApprovalItem = {};
 
 export interface MockSpiFinding {
   id: number;
@@ -181,7 +171,6 @@ export interface MockSpiFinding {
   status: 'Dalam Investigasi' | 'Selesai';
   date: string;
 }
-export const MockSpiFinding = {};
 
 export interface MockVipDiscountRequest {
   id: number;
@@ -195,7 +184,6 @@ export interface MockVipDiscountRequest {
   status: 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
   date: string;
 }
-export const MockVipDiscountRequest = {};
 
 export interface MockStaffAccount {
   id: number;
@@ -206,22 +194,4 @@ export interface MockStaffAccount {
   lastActive: string;
   permissions: string[];
 }
-export const MockStaffAccount = {};
 
-// ================= DATA KATALOG (KOSONG - SUMBER DATA PRODUKSI HANYA API RESMI) =================
-
-export const mockCategories: MockCategory[] = [];
-export const mockProducts: MockProduct[] = [];
-export const mockOrders: MockOrder[] = [];
-export const mockCustomers: MockCustomer[] = [];
-export const mockStockItems: MockStockItem[] = [];
-export const mockStockMovements: MockStockMovement[] = [];
-export const mockCertificates: MockCertificate[] = [];
-export const mockSalesChartData: Array<{ date: string; sales: number; orders: number }> = [];
-export const mockCategorySalesData: Array<{ category: string; sales: number }> = [];
-export const mockBestsellers: Array<{ rank: number; name: string; category: string; sold: number; revenue: number }> = [];
-export const mockSpiAuditLogs: MockSpiAuditLog[] = [];
-export const mockApprovals: MockApprovalItem[] = [];
-export const mockSpiFindings: MockSpiFinding[] = [];
-export const mockVipDiscountRequests: MockVipDiscountRequest[] = [];
-export const mockStaffAccounts: MockStaffAccount[] = [];

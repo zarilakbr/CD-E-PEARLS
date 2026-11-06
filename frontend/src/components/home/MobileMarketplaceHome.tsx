@@ -14,7 +14,7 @@ import {
   Award,
   ArrowRight,
 } from 'lucide-react';
-import { type MockProduct } from '../../data/mock';
+import type { MockProduct } from '../../types/models';
 import { usePrefersReducedMotion } from '../../lib/motion';
 
 interface MobileMarketplaceHomeProps {

@@ -27,7 +27,7 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Stepper } from '../../components/common/Stepper';
 import { ProductCard } from '../../components/common/ProductCard';
-import { mockOrders, type MockOrder, type MockProduct } from '../../data/mock';
+import type { MockOrder, MockProduct } from '../../types/models';
 import { authApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { GuestAccountHub } from './GuestAccountHub';
@@ -79,7 +79,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   }, [initialMenu]);
 
   // Customer Orders State
-  const [orders] = useState<MockOrder[]>(mockOrders);
+  const [orders] = useState<MockOrder[]>([]);
   const [orderStatusTab, setOrderStatusTab] = useState('Semua');
   const [selectedOrder, setSelectedOrder] = useState<MockOrder | null>(null);
 

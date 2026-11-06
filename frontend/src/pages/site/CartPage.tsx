@@ -10,7 +10,7 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { Stepper } from '../../components/common/Stepper';
-import { type MockOrder } from '../../data/mock';
+import type { MockOrder } from '../../types/models';
 
 interface CartItem {
   id: number;

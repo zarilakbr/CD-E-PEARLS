@@ -124,5 +124,114 @@ test.describe('Tahap M: Pengujian Pencabutan Data Mock Katalog & Verifikasi Sumb
     const testImages = page.locator('img[src*="cat_ring_silk"]');
     await expect(testImages).toHaveCount(0);
   });
+
+  test('4. Mobile viewport (iPhone 14) pada /katalog dengan API kosong: bebas gambar uji, bebas metrik palsu & nol galat konsol', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const consoleErrors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.route('**/api/v1/products*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [], meta: { total: 0 } }),
+      });
+    });
+
+    await page.route('**/api/v1/categories*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [] }),
+      });
+    });
+
+    await page.goto('/katalog', { waitUntil: 'domcontentloaded' });
+
+    // Empty state heading mobile
+    const emptyStateHeading = page.locator('text=Koleksi Segera Hadir').filter({ visible: true }).first();
+    await expect(emptyStateHeading).toBeVisible({ timeout: 10000 });
+
+    // 0 kartu produk
+    const productCards = page.locator('[data-slot="product-card"]').filter({ visible: true });
+    await expect(productCards).toHaveCount(0);
+
+    // 0 gambar uji coba
+    const testImages = page.locator('img[src*="cat_ring_silk"]');
+    await expect(testImages).toHaveCount(0);
+
+    // Bebas nama produk uji lama
+    const bodyText = await page.textContent('body');
+    expect(bodyText).not.toContain('Kalung Mutiara South Sea Princess AAA');
+    expect(bodyText).not.toContain('Gelang Rantai Mutiara Emas Imperial');
+
+    // Nol galat konsol kritis
+    const criticalErrors = consoleErrors.filter((e) => !e.includes('favicon') && !e.includes('Turnstile'));
+    expect(criticalErrors).toHaveLength(0);
+  });
+
+  test('5. Mobile viewport (iPhone 14) pada Beranda (/) dengan API kosong: bebas gambar uji, bebas metrik palsu & nol galat konsol', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const consoleErrors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.route('**/api/v1/products*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [] }),
+      });
+    });
+
+    await page.route('**/api/v1/categories*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [] }),
+      });
+    });
+
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    // Empty state heading mobile
+    const emptyState = page.locator('text=Koleksi Segera Hadir').filter({ visible: true }).first();
+    await expect(emptyState).toBeVisible({ timeout: 10000 });
+
+    // 0 kartu produk
+    const productCards = page.locator('[data-slot="product-card"]').filter({ visible: true });
+    await expect(productCards).toHaveCount(0);
+
+    // 0 gambar uji
+    const testImages = page.locator('img[src*="cat_ring_silk"]');
+    await expect(testImages).toHaveCount(0);
+
+    // Nol galat konsol kritis
+    const criticalErrors = consoleErrors.filter((e) => !e.includes('favicon') && !e.includes('Turnstile'));
+    expect(criticalErrors).toHaveLength(0);
+  });
+
+  test('6. Keranjang belanja kosong dan Checkout tidak crash serta tidak ada kolom voucher yang mati', async ({ page }) => {
+    // 1. Kunjungi keranjang kosong
+    await page.goto('/keranjang', { waitUntil: 'domcontentloaded' });
+    const emptyCartHeading = page.getByRole('heading', { name: /Tas Belanja (Masih|Anda) Kosong/i }).filter({ visible: true }).first();
+    await expect(emptyCartHeading).toBeVisible({ timeout: 10000 });
+
+    // 2. Kunjungi checkout dengan keranjang kosong
+    await page.goto('/checkout', { waitUntil: 'domcontentloaded' });
+    const emptyCheckoutNotice = page.locator('text=Keranjang belanja Anda saat ini masih kosong.').first();
+    await expect(emptyCheckoutNotice).toBeVisible({ timeout: 10000 });
+
+    // Buktikan tidak ada kolom voucher yang mati
+    const voucherInput = page.locator('input[placeholder*="Contoh: MUTIARABERCAHAYA"]');
+    await expect(voucherInput).toHaveCount(0);
+  });
 });
 

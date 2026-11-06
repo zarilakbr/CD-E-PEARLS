@@ -23,7 +23,7 @@ import { ProductCard } from '../../components/common/ProductCard';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../components/ui/sheet';
 import { Slider } from '../../components/ui/slider';
 import { catalogApi } from '../../lib/api';
-import { type MockProduct } from '../../data/mock';
+import type { MockProduct } from '../../types/models';
 
 interface CatalogPageProps {
   products?: MockProduct[];
