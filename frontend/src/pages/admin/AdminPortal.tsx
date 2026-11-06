@@ -55,8 +55,6 @@ import type {
   MockApprovalItem,
 } from '../../types/models';
 
-const salesChartData: Array<{ date: string; sales: number; orders: number }> = [];
-const categorySalesData: Array<{ category: string; sales: number }> = [];
 const bestsellers: Array<{ rank: number; name: string; category: string; sold: number; revenue: number }> = [];
 
 const getAdminProductImage = (category?: string, name?: string) => {
@@ -171,13 +169,86 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [editingProduct, setEditingProduct] = useState<Partial<MockProduct> | null>(null);
   const [productToDelete, setProductToDelete] = useState<MockProduct | null>(null);
 
-  // Load live products from backend on mount
+  // Live Dashboard Statistics from API
+  const [dashboardStats, setDashboardStats] = useState<{
+    total_revenue: number;
+    total_orders: number;
+    total_products: number;
+    total_pearl_stock: number;
+    pending_approvals: number;
+    revenue_trend: Array<{ date: string; label: string; revenue: number; orders_count: number }>;
+    category_stats: Array<{ name: string; products_count: number }>;
+  } | null>(null);
+
+  const liveSalesChartData = dashboardStats?.revenue_trend && dashboardStats.revenue_trend.length > 0
+    ? dashboardStats.revenue_trend.map((r) => ({
+        date: r.label || r.date,
+        sales: r.revenue,
+        orders: r.orders_count,
+      }))
+    : [];
+
+  const liveCategorySalesData = dashboardStats?.category_stats && dashboardStats.category_stats.length > 0
+    ? dashboardStats.category_stats.map((c) => ({
+        category: c.name,
+        sales: c.products_count,
+      }))
+    : [];
+
+  // Categories state (Full CRUD)
+  const [categories, setCategories] = useState<MockCategory[]>([]);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isCategoryEditModalOpen, setIsCategoryEditModalOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatSubtitle, setNewCatSubtitle] = useState('');
+  const [editingCategory, setEditingCategory] = useState<MockCategory | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<MockCategory | null>(null);
+
+  // Orders state
+  const [internalOrders, setInternalOrders] = useState<MockOrder[]>([]);
+  const orders = propOrders || internalOrders;
+  const setOrders = propSetOrders || setInternalOrders;
+  const [orderStatusTab, setOrderStatusTab] = useState('Semua');
+  const [orderSearch, setOrderSearch] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<MockOrder | null>(null);
+  const [inputResi, setInputResi] = useState('');
+  const [inputCourier, setInputCourier] = useState('JNE Express (Berasuransi)');
+
+  // Customers state
+  const [customers, setCustomers] = useState<MockCustomer[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<MockCustomer | null>(null);
+
+  // Stock state (CRUD Adjustments & Movement Audit)
+  const [internalStockItems, setInternalStockItems] = useState<MockStockItem[]>([]);
+  const stockItems = propStockItems || internalStockItems;
+  const setStockItems = propSetStockItems || setInternalStockItems;
+  const [stockMovements, setStockMovements] = useState<MockStockMovement[]>([]);
+  void setStockMovements;
+  const [isAdjustStockOpen, setIsAdjustStockOpen] = useState(false);
+  const [selectedStockItem, setSelectedStockItem] = useState<MockStockItem | null>(null);
+  const [stockAdjustQty, setStockAdjustQty] = useState(1);
+  const [stockAdjustNotes, setStockAdjustNotes] = useState('');
+
+  // Certificates state (Full CRUD: Issue, Preview/Print, Revoke)
+  const [certificates, setCertificates] = useState<MockCertificate[]>([]);
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
+  const [newCertNumber, setNewCertNumber] = useState('');
+  const [newCertProduct, setNewCertProduct] = useState('');
+  const [newCertLab, setNewCertLab] = useState('Laboratorium Gemologi Independen');
+  const [newCertGrade, setNewCertGrade] = useState('AAA - Mirror Luster');
+  const [newCertPearlSize, setNewCertPearlSize] = useState('11-12 mm');
+  const [selectedCertPreview, setSelectedCertPreview] = useState<MockCertificate | null>(null);
+  const [certToDelete, setCertToDelete] = useState<MockCertificate | null>(null);
+
+  // Load live data from backend on mount
   React.useEffect(() => {
     let isMounted = true;
+
+    // 1. Produk Admin & Stok
     apiClient.get('/admin/products?per_page=100')
       .then((res) => {
         const items = res.data?.data || res.data;
-        if (isMounted && Array.isArray(items) && items.length > 0) {
+        if (isMounted && Array.isArray(items)) {
           const mapped: MockProduct[] = items.map((item: any) => ({
             id: item.id,
             name: item.name,
@@ -200,58 +271,135 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             images: item.images,
           }));
           setProducts(mapped);
+
+          const derivedStock: MockStockItem[] = mapped.map((p) => ({
+            id: p.id,
+            productName: p.name,
+            sku: (p as any).code || `SKU-${p.id}`,
+            stock: p.stock,
+            minLimit: 2,
+            status: p.stock === 0 ? 'Habis' : p.stock <= 2 ? 'Menipis' : 'Aman',
+          }));
+          setStockItems(derivedStock);
         }
       })
       .catch(() => {});
+
+    // 2. Ringkasan Dasbor Admin
+    apiClient.get('/admin/dashboard')
+      .then((res) => {
+        if (isMounted && res.data?.data) {
+          setDashboardStats(res.data.data);
+        }
+      })
+      .catch(() => {});
+
+    // 3. Pesanan Toko
+    apiClient.get('/orders?per_page=100')
+      .then((res) => {
+        const ords = res.data?.data || res.data;
+        if (isMounted && Array.isArray(ords)) {
+          const mappedOrders: MockOrder[] = ords.map((o: any) => ({
+            id: o.order_number || `#ORD-${o.id}`,
+            date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+            customerName: o.customer_name || 'Pelanggan Butik',
+            customerEmail: o.customer_email || o.user?.email || '',
+            customerPhone: o.customer_phone || '',
+            shippingAddress: o.customer_address || '',
+            city: o.city || 'Indonesia',
+            productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
+            items: (o.items || []).map((it: any) => ({
+              productId: it.product_id,
+              name: it.product?.name || it.product_name || 'Mutiara Lombok',
+              pearlSize: it.pearl_size || '12 mm',
+              metal: it.metal || 'Emas 18K',
+              price: Number(it.price) || 0,
+              quantity: Number(it.quantity) || 1,
+            })),
+            subtotal: Number(o.subtotal || o.total) || 0,
+            shippingCost: Number(o.shipping_cost) || 0,
+            insuranceCost: Number(o.insurance_cost) || 0,
+            total: Number(o.total) || 0,
+            paymentMethod: o.payment_method || 'TRANSFER_BANK',
+            status: o.order_status === 'DELIVERED' ? 'Selesai' : o.order_status === 'SHIPPED' ? 'Dikirim' : o.order_status === 'PROCESSING' ? 'Dikemas' : o.order_status === 'CANCELLED' ? 'Dibatalkan' : 'Menunggu Pembayaran',
+            trackingNumber: o.tracking_number,
+            courier: o.courier || 'JNE Express (Berasuransi)',
+            timeline: (o.status_histories || []).map((h: any) => ({
+              status: h.status,
+              date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
+              description: h.notes || '',
+              completed: true,
+            })),
+          }));
+          setOrders(mappedOrders);
+        }
+      })
+      .catch(() => {});
+
+    // 4. Pelanggan Toko
+    apiClient.get('/admin/customers?per_page=100')
+      .then((res) => {
+        const custs = res.data?.data || res.data;
+        if (isMounted && Array.isArray(custs)) {
+          const mappedCustomers: MockCustomer[] = custs.map((c: any) => ({
+            id: c.id,
+            name: c.name || 'Pelanggan',
+            email: c.email || '',
+            phone: c.phone || '',
+            city: c.city || 'Indonesia',
+            totalOrders: c.orders_count || 0,
+            totalSpend: Number(c.orders_sum_total) || 0,
+            joinDate: c.created_at ? new Date(c.created_at).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }) : '',
+            addresses: [],
+          }));
+          setCustomers(mappedCustomers);
+        }
+      })
+      .catch(() => {});
+
+    // 5. Kategori Produk
+    apiClient.get('/categories')
+      .then((res) => {
+        const cats = res.data?.data || res.data;
+        if (isMounted && Array.isArray(cats)) {
+          const mappedCats: MockCategory[] = cats.map((cat: any) => ({
+            id: cat.id,
+            name: cat.name,
+            subtitle: cat.subtitle || 'Koleksi Mutiara Air Laut Lombok',
+            slug: cat.slug,
+            productsCount: cat.products_count || 0,
+            order: cat.order || cat.id,
+            status: 'Aktif',
+          }));
+          setCategories(mappedCats);
+        }
+      })
+      .catch(() => {});
+
+    // 6. Sertifikat Gemologi
+    apiClient.get('/admin/certificates?per_page=100')
+      .then((res) => {
+        const certs = res.data?.data || res.data;
+        if (isMounted && Array.isArray(certs)) {
+          const mappedCerts: MockCertificate[] = certs.map((c: any) => ({
+            id: c.id,
+            certNumber: c.nomor || c.cert_number,
+            productName: c.product?.name || 'Mutiara South Sea Lombok',
+            issuingLab: c.lab || 'Laboratorium Gemologi Independen',
+            grade: c.grade || 'AAA - Mirror Luster',
+            pearlSize: c.ukuran_mm ? `${c.ukuran_mm} mm` : '11-12 mm',
+            issueDate: c.tanggal_terbit ? new Date(c.tanggal_terbit).toLocaleDateString('id-ID') : '',
+            pdfFileUrl: c.pdf_file_url || '',
+          }));
+          setCertificates(mappedCerts);
+        }
+      })
+      .catch(() => {});
+
     return () => {
       isMounted = false;
     };
   }, []);
-
-  // Categories state (Full CRUD)
-  const [categories, setCategories] = useState<MockCategory[]>([]);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [isCategoryEditModalOpen, setIsCategoryEditModalOpen] = useState(false);
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatSubtitle, setNewCatSubtitle] = useState('');
-  const [editingCategory, setEditingCategory] = useState<MockCategory | null>(null);
-  const [categoryToDelete, setCategoryToDelete] = useState<MockCategory | null>(null);
-
-  // Orders state
-  const [internalOrders, setInternalOrders] = useState<MockOrder[]>([]);
-  const orders = propOrders || internalOrders;
-  const setOrders = propSetOrders || setInternalOrders;
-  const [orderStatusTab, setOrderStatusTab] = useState('Semua');
-  const [orderSearch, setOrderSearch] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState<MockOrder | null>(null);
-  const [inputResi, setInputResi] = useState('');
-  const [inputCourier, setInputCourier] = useState('JNE Express (Berasuransi)');
-
-  // Customers state
-  const [customers] = useState<MockCustomer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<MockCustomer | null>(null);
-
-  // Stock state (CRUD Adjustments & Movement Audit)
-  const [internalStockItems, setInternalStockItems] = useState<MockStockItem[]>([]);
-  const stockItems = propStockItems || internalStockItems;
-  const setStockItems = propSetStockItems || setInternalStockItems;
-  void setStockItems;
-  const [stockMovements] = useState<MockStockMovement[]>([]);
-  const [isAdjustStockOpen, setIsAdjustStockOpen] = useState(false);
-  const [selectedStockItem, setSelectedStockItem] = useState<MockStockItem | null>(null);
-  const [stockAdjustQty, setStockAdjustQty] = useState(1);
-  const [stockAdjustNotes, setStockAdjustNotes] = useState('');
-
-  // Certificates state (Full CRUD: Issue, Preview/Print, Revoke)
-  const [certificates, setCertificates] = useState<MockCertificate[]>([]);
-  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
-  const [newCertNumber, setNewCertNumber] = useState('');
-  const [newCertProduct, setNewCertProduct] = useState('');
-  const [newCertLab, setNewCertLab] = useState('Laboratorium Gemologi Independen');
-  const [newCertGrade, setNewCertGrade] = useState('AAA - Mirror Luster');
-  const [newCertPearlSize, setNewCertPearlSize] = useState('11-12 mm');
-  const [selectedCertPreview, setSelectedCertPreview] = useState<MockCertificate | null>(null);
-  const [certToDelete, setCertToDelete] = useState<MockCertificate | null>(null);
 
   // Reports state
   const [reportPeriod, setReportPeriod] = useState('30 hari');
@@ -811,27 +959,23 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             <StatCard
               label="Total Penjualan"
-              value="Rp 157.800.000"
-              note="+18,4% dibanding bulan lalu"
-              trend="up"
+              value={`Rp ${(dashboardStats?.total_revenue || 0).toLocaleString('id-ID')}`}
+              note={`${dashboardStats?.total_orders ?? orders.length} transaksi tercatat`}
             />
             <StatCard
               label="Pesanan Baru"
-              value="28 Pesanan"
-              note="3 menunggu pengiriman hari ini"
-              trend="up"
+              value={`${orders.filter(o => o.status === 'Menunggu Pembayaran' || o.status === 'Dikemas').length} Pesanan`}
+              note={orders.length > 0 ? `${orders.length} total pesanan masuk` : 'Belum ada pesanan'}
             />
             <StatCard
               label="Produk Aktif"
               value={`${products.filter(p => p.status === 'Aktif').length} Item`}
               note="Semua grade bersertifikat resmi"
-              trend="neutral"
             />
             <StatCard
               label="Pelanggan"
-              value="142 Akun"
-              note="+12 pelanggan baru minggu ini"
-              trend="up"
+              value={`${customers.length} Akun`}
+              note={customers.length > 0 ? `${customers.length} pelanggan terdaftar` : 'Belum ada pelanggan'}
             />
           </div>
 
@@ -868,7 +1012,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             {/* Recharts Line Chart */}
             <div className="w-full h-[180px] lg:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={salesChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <LineChart data={liveSalesChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E6DDD0" vertical={false} />
                   <XAxis dataKey="date" stroke="#4A5666" fontSize={12} tickLine={false} />
                   <YAxis
@@ -918,6 +1062,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 </h3>
 
                 <div className="space-y-3">
+                  {stockItems.length === 0 && (
+                    <p className="text-xs text-[#4A5666] py-6 text-center">
+                      Semua stok perhiasan dalam kondisi aman.
+                    </p>
+                  )}
                   {stockItems.slice(0, 4).map((item) => (
                     <div
                       key={item.id}
@@ -986,6 +1135,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E6DDD0]/60">
+                      {orders.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-xs text-[#4A5666]">
+                            Belum ada transaksi pesanan terbaru.
+                          </td>
+                        </tr>
+                      )}
                       {orders.slice(0, 5).map((order) => (
                         <tr
                           key={order.id}
@@ -1860,7 +2016,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               label="Stok Menipis"
               value={`${stockItems.filter(s => s.status === 'Menipis').length} SKU`}
               note="Mendekati batas minimum panen"
-              trend="down"
             />
             <StatCard
               label="Stok Habis"
@@ -2262,21 +2417,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <StatCard
               label="Total Penjualan"
-              value="Rp 157.800.000"
-              note="Akumulasi periode terpilih"
-              trend="up"
+              value={`Rp ${(dashboardStats?.total_revenue || 0).toLocaleString('id-ID')}`}
+              note="Akumulasi seluruh transaksi resmi"
             />
             <StatCard
               label="Jumlah Pesanan"
-              value="28 Transaksi"
-              note="Rata-rata 1 pesanan / hari"
-              trend="up"
+              value={`${orders.length} Transaksi`}
+              note={orders.length > 0 ? 'Total tercatat di basis data' : 'Belum ada transaksi'}
             />
             <StatCard
               label="Rata-rata Nilai Pesanan"
-              value="Rp 5.635.700"
-              note="Rasio konversi private concierge 34%"
-              trend="neutral"
+              value={`Rp ${(orders.length > 0 ? Math.round((dashboardStats?.total_revenue || 0) / orders.length) : 0).toLocaleString('id-ID')}`}
+              note="Rata-rata per transaksi"
             />
           </div>
 
@@ -2291,7 +2443,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </h3>
               <div className="h-[180px] lg:h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={salesChartData}>
+                  <LineChart data={liveSalesChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E6DDD0" vertical={false} />
                     <XAxis dataKey="date" stroke="#4A5666" fontSize={11} tickLine={false} />
                     <YAxis stroke="#4A5666" fontSize={10} tickLine={false} tickFormatter={(val) => `${(val / 1000000).toFixed(0)}M`} />
@@ -2311,7 +2463,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </h3>
               <div className="h-[180px] lg:h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={categorySalesData}>
+                  <BarChart data={liveCategorySalesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E6DDD0" vertical={false} />
                     <XAxis dataKey="category" stroke="#4A5666" fontSize={11} tickLine={false} />
                     <YAxis stroke="#4A5666" fontSize={10} tickLine={false} tickFormatter={(val) => `${(val / 1000000).toFixed(0)}M`} />
@@ -2463,7 +2615,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   </label>
                   <label className="flex items-center gap-2 text-xs text-[#12263A]">
                     <input type="checkbox" defaultChecked className="accent-[#12263A] w-4 h-4" />
-                    <span>Wajibkan Asuransi 100% untuk Nilai di atas Rp 5.000.000</span>
+                    <span>Wajibkan Asuransi Penuh untuk Nilai Tinggi</span>
                   </label>
                 </div>
                 <button type="button" onClick={() => alert('Pengaturan kurir tersimpan')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
@@ -2490,11 +2642,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 <h3 className="font-serif text-xl font-semibold text-[#12263A]">Akun &amp; Keamanan</h3>
                 <div>
                   <label className="block text-xs font-semibold text-[#12263A] mb-1">Nama Petugas</label>
-                  <input type="text" defaultValue="Budi Santoso" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
+                  <input type="text" placeholder="Nama Petugas" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#12263A] mb-1">Email Login</label>
-                  <input type="email" defaultValue="admin.operasional@cdepearls.com" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
+                  <input type="email" placeholder="admin@cdepearls.com" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#12263A] mb-1">Kata Sandi Baru</label>
@@ -2554,7 +2706,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   rows={3}
                   value={paymentApprovalNotes}
                   onChange={(e) => setPaymentApprovalNotes(e.target.value)}
-                  placeholder="Contoh: Bukti mutasi transfer Bank Mandiri senilai Rp 12.635.000 telah masuk rekening butik atas nama Siti Rahmawati."
+                  placeholder="Contoh: Bukti mutasi transfer telah terverifikasi masuk rekening butik atas nama pemesan."
                   className="w-full p-3 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
                 />
               </div>

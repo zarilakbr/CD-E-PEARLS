@@ -605,25 +605,21 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               label="Omzet Hari Ini"
               value={`Rp ${(summaryData?.revenue.today || 0).toLocaleString('id-ID')}`}
               note="Transaksi Sah Database"
-              trend="up"
             />
             <StatCard
               label="Omzet 7 Hari Terakhir"
               value={`Rp ${(summaryData?.revenue.days_7 || 0).toLocaleString('id-ID')}`}
               note="Akumulasi Mingguan"
-              trend="neutral"
             />
             <StatCard
               label="Omzet 30 Hari Terakhir"
               value={`Rp ${(summaryData?.revenue.days_30 || 0).toLocaleString('id-ID')}`}
               note="Akumulasi Bulanan"
-              trend="up"
             />
             <StatCard
               label="Pelanggan Baru (30 Hari)"
               value={`${summaryData?.new_customers_count || 0} Akun`}
               note="Terdaftar Aktif"
-              trend="neutral"
             />
           </div>
 
