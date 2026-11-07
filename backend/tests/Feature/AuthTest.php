@@ -113,7 +113,7 @@ test('frozen account cannot log in', function () {
         ]);
 });
 
-test('repeated failed logins trigger account lockout after 5 attempts', function () {
+test('repeated failed logins trigger rate limit without locking account in database to prevent DoS', function () {
     $user = User::create([
         'name' => 'Lockout Target',
         'email' => 'lockout@cdepearls.com',
@@ -123,19 +123,29 @@ test('repeated failed logins trigger account lockout after 5 attempts', function
         'email_verified_at' => now(),
     ]);
 
+    $emailKey = Str::transliterate("login:lockout@cdepearls.com|127.0.0.1");
+    RateLimiter::clear($emailKey);
+    RateLimiter::clear('login:ip:127.0.0.1');
+
     // Perform 5 failed attempts from attacker IP
     for ($i = 0; $i < 5; $i++) {
-        RateLimiter::clear(Str::transliterate("login:lockout@cdepearls.com|127.0.0.1"));
-        $this->postJson('/api/v1/auth/login', [
+        $res = $this->postJson('/api/v1/auth/login', [
             'email' => 'lockout@cdepearls.com',
             'password' => 'WrongPassword!',
         ]);
+        $res->assertStatus(401);
     }
 
+    // 6th attempt from attacker is rate limited (429)
+    $resBlocked = $this->postJson('/api/v1/auth/login', [
+        'email' => 'lockout@cdepearls.com',
+        'password' => 'WrongPassword!',
+    ]);
+    $resBlocked->assertStatus(429);
+
+    // Account row in DB must NOT be locked (Anti-DoS)
     $user->refresh();
-    // User must be locked after 5 attempts
-    expect($user->locked_until)->not->toBeNull();
-    expect($user->failed_logins)->toBe(5);
+    expect($user->locked_until)->toBeNull();
 });
 
 test('authenticated user can view profile and update password', function () {
