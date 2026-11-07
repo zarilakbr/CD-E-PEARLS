@@ -121,6 +121,7 @@ Route::prefix('v1')->group(function () {
 
                 // S-1 Product Management (under /v1/admin/products)
                 Route::get('/products', [ProductAdminController::class, 'index']);
+                Route::post('/products/upload-image', [ProductAdminController::class, 'uploadImage']);
                 Route::post('/products', [ProductAdminController::class, 'store']);
                 Route::put('/products/{id}', [ProductAdminController::class, 'update']);
                 Route::delete('/products/{id}', [ProductAdminController::class, 'destroy']);
@@ -208,6 +209,7 @@ Route::prefix('v1')->group(function () {
 // S-1 Direct Root Alias /api/admin/products for Admin & SPI
 Route::middleware(['auth:sanctum', 'role:admin,spi'])->prefix('admin')->group(function () {
     Route::get('/products', [ProductAdminController::class, 'index']);
+    Route::post('/products/upload-image', [ProductAdminController::class, 'uploadImage']);
     Route::post('/products', [ProductAdminController::class, 'store']);
     Route::put('/products/{id}', [ProductAdminController::class, 'update']);
     Route::delete('/products/{id}', [ProductAdminController::class, 'destroy']);

@@ -271,7 +271,7 @@ export const ProductDetailPage: React.FC = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#8A6A2F] dark:text-[#D9B877] uppercase tracking-wider">
               <Sparkles className="w-3 h-3" />
-              <span>{product.category || 'Mutiara Laut Selatan'}</span>
+              <span>{typeof product.category === 'object' && product.category !== null ? (product.category as any).name : (product.category || 'Mutiara Laut Selatan')}</span>
             </div>
             <h2 className="font-serif text-lg font-bold text-[var(--text)] leading-snug line-clamp-2">
               {product.name}
@@ -615,7 +615,7 @@ export const ProductDetailPage: React.FC = () => {
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#8A6A2F] dark:text-[#D9B877] mb-2">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>{product.category || 'Mutiara Laut Selatan'}</span>
+                <span>{typeof product.category === 'object' && product.category !== null ? (product.category as any).name : (product.category || 'Mutiara Laut Selatan')}</span>
               </div>
               <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#12263A] dark:text-[#FBF8F3] leading-tight">
                 {product.name}
