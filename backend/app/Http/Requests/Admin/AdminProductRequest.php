@@ -71,6 +71,7 @@ class AdminProductRequest extends FormRequest
             'grade.in' => 'Grade mutiara harus salah satu dari: Low, C, B, A, AA, atau AAA.',
             'kelompok_warna.in' => 'Kelompok warna harus salah satu dari: putih, emas, kuning, atau langka.',
             'photos.*.mimetypes' => 'Berkas foto harus berupa citra asli bertipe JPEG, PNG, atau WebP.',
+            'photos.*.dimensions' => 'Dimensi foto produk tidak boleh melebihi 4000 piksel pada sisi terpanjang.',
         ];
     }
 }

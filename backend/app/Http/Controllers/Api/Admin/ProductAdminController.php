@@ -61,7 +61,7 @@ class ProductAdminController extends Controller
     }
 
     /**
-     * Upload standalone product image with EXIF stripping, dimension cap, WebP conversion, and randomized filename.
+     * Upload standalone product image with EXIF stripping, dimension validation (max 4000px), WebP conversion, and randomized filename.
      */
     public function uploadImage(Request $request): JsonResponse
     {
@@ -75,7 +75,7 @@ class ProductAdminController extends Controller
                 'dimensions:max_width=4000,max_height=4000',
             ],
         ], [
-            'image.dimensions' => 'Dimensi gambar melebihi batas maksimum 4000 piksel pada sisi terpanjang.',
+            'image.dimensions' => 'Dimensi gambar tidak boleh melebihi 4000 piksel pada sisi terpanjang.',
         ]);
 
         $url = $this->processAndStoreImage($request->file('image'));
@@ -90,7 +90,7 @@ class ProductAdminController extends Controller
     }
 
     /**
-     * Process and store uploaded image with EXIF stripping, dimension cap, WebP version, and randomized filename.
+     * Process and store uploaded image with EXIF stripping, WebP version, and randomized filename.
      */
     protected function processAndStoreImage($file): string
     {
@@ -108,20 +108,11 @@ class ProductAdminController extends Controller
             $content = file_get_contents($realPath);
             $gd = @imagecreatefromstring($content);
             if ($gd !== false) {
-                // Batasi dimensi maksimum: jika salah satu sisi > 4000 px, perkecil proporsional
                 $origWidth = imagesx($gd);
                 $origHeight = imagesy($gd);
-                $maxSide = max($origWidth, $origHeight);
-
-                if ($maxSide > 4000) {
-                    $ratio = 4000 / $maxSide;
-                    $newWidth = (int) round($origWidth * $ratio);
-                    $newHeight = (int) round($origHeight * $ratio);
-                    $scaledGd = imagescale($gd, $newWidth, $newHeight);
-                    if ($scaledGd !== false) {
-                        imagedestroy($gd);
-                        $gd = $scaledGd;
-                    }
+                if (max($origWidth, $origHeight) > 4000) {
+                    imagedestroy($gd);
+                    abort(422, 'Dimensi gambar tidak boleh melebihi 4000 piksel pada sisi terpanjang.');
                 }
 
                 // 1. Simpan berkas utama (jpg/png/webp) tanpa EXIF

@@ -68,7 +68,7 @@ test('1. otorisasi upload gambar produk: admin dan spi diizinkan, pelanggan dito
     $resSpi->assertStatus(201);
 });
 
-test('2. validasi tipe file, batas ukuran 5MB, dan batas dimensi maksimum 4000px', function () {
+test('2. validasi tipe file, batas ukuran 5MB, batas dimensi 4001px ditolak dan 4000px diterima', function () {
     // 2a. File bukan gambar (PDF / TXT) ditolak 422
     $invalidDoc = UploadedFile::fake()->create('document.pdf', 500, 'application/pdf');
     $resDoc = $this->actingAs($this->admin)->postJson('/api/v1/admin/products/upload-image', [
@@ -85,15 +85,28 @@ test('2. validasi tipe file, batas ukuran 5MB, dan batas dimensi maksimum 4000px
     $resOversized->assertStatus(422)
         ->assertJsonValidationErrors(['image']);
 
-    // 2c. File gambar melebihi dimensi 4000px ditolak 422
-    $oversizedDim = UploadedFile::fake()->image('huge-dim.jpg', 4001, 1000)->size(1000);
-    $resDim = $this->actingAs($this->admin)->postJson('/api/v1/admin/products/upload-image', [
-        'image' => $oversizedDim,
+    // 2c. Gambar 4001 px pada sisi terpanjang DITOLAK 422 dengan pesan Indonesia yang jelas
+    $image4001 = UploadedFile::fake()->image('oversized-4001.jpg', 4001, 800)->size(1000);
+    $res4001 = $this->actingAs($this->admin)->postJson('/api/v1/admin/products/upload-image', [
+        'image' => $image4001,
     ]);
-    $resDim->assertStatus(422)
+    $res4001->assertStatus(422)
         ->assertJsonValidationErrors(['image']);
+    expect($res4001->json('errors.image.0'))->toBe('Dimensi gambar tidak boleh melebihi 4000 piksel pada sisi terpanjang.');
 
-    // 2d. File gambar valid (WebP 2MB, 300x300) diterima sukses 201
+    // 2d. Gambar 4000 px pada sisi terpanjang (batas maksimum persis) DITERIMA 201
+    $image4000 = UploadedFile::fake()->image('boundary-4000.jpg', 4000, 800)->size(1000);
+    $res4000 = $this->actingAs($this->admin)->postJson('/api/v1/admin/products/upload-image', [
+        'image' => $image4000,
+    ]);
+    $res4000->assertStatus(201)
+        ->assertJson([
+            'success' => true,
+        ]);
+    expect($res4000->json('url'))->toStartWith('/storage/products/');
+    expect($res4000->json('webp_url'))->toEndWith('.webp');
+
+    // 2e. File gambar valid (WebP 2MB, 300x300) diterima sukses 201
     $validWebp = UploadedFile::fake()->image('authentic-pearl.webp', 300, 300)->size(2048);
     $resWebp = $this->actingAs($this->admin)->postJson('/api/v1/admin/products/upload-image', [
         'image' => $validWebp,
