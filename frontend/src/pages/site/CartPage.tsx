@@ -10,7 +10,7 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { Stepper } from '../../components/common/Stepper';
-import { mockOrders, type MockOrder } from '../../data/mock';
+import type { MockOrder } from '../../types/models';
 
 interface CartItem {
   id: number;
@@ -24,7 +24,7 @@ interface CartItem {
 
 const getItemImage = (category: string) => {
   const cat = category.toLowerCase();
-  if (cat.includes('cincin')) return '/images/cat_ring_silk.jpg';
+  if (cat.includes('cincin')) return '/images/placeholder_jewelry.svg';
   if (cat.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
   if (cat.includes('anting')) return '/images/terroir_pearl_plate_left.jpg';
   if (cat.includes('butir') || cat.includes('lepas')) return '/images/hero_pearl_dark_luxury.jpg';
@@ -45,29 +45,10 @@ export const CartPage: React.FC<CartPageProps> = ({
   onNavigate: _onNavigate,
 }) => {
   const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: 1,
-      name: 'Kalung Mutiara South Sea Princess AAA',
-      category: 'Kalung Mutiara',
-      pearlSize: '11-12 mm',
-      metal: 'Emas 18K',
-      price: 18500000,
-      quantity: 1,
-    },
-    {
-      id: 3,
-      name: 'Anting Stud Mutiara Putih Lombok AAA',
-      category: 'Anting Mutiara',
-      pearlSize: '9-10 mm',
-      metal: 'Emas 18K',
-      price: 7800000,
-      quantity: 1,
-    },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  const [selectAll, setSelectAll] = useState(true);
-  const [selectedItemIds, setSelectedItemIds] = useState<number[]>([1, 3]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
 
   // Order status lookup box state
   const [orderLookupNumber, setOrderLookupNumber] = useState('');
@@ -112,12 +93,7 @@ export const CartPage: React.FC<CartPageProps> = ({
   const handleLookup = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderLookupNumber) return;
-    const found = mockOrders.find(
-      (o) =>
-        o.id.toLowerCase().includes(orderLookupNumber.toLowerCase()) ||
-        o.trackingNumber?.toLowerCase().includes(orderLookupNumber.toLowerCase())
-    );
-    setLookupResult(found || null);
+    setLookupResult(null);
     setLookupSearched(true);
   };
 

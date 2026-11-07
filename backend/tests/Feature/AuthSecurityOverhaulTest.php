@@ -58,6 +58,20 @@ test('1. register sukses dengan data valid dan password kuat', function () {
     expect($user->must_change_password)->toBeFalse();
 });
 
+// Skenario 1b: Validasi Panjang Minimum Password >= 12 Karakter
+test('1b. register dengan password kurang dari 12 karakter ditolak dengan validasi 422', function () {
+    $response = $this->postJson('/api/v1/auth/register', [
+        'name' => 'Pendek User',
+        'email' => 'shortpass@cdepearls.com',
+        'phone' => '081234567890',
+        'password' => 'Short123!', // 9 karakter (kurang dari 12)
+        'password_confirmation' => 'Short123!',
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['password']);
+});
+
 // Skenario 2: Register Dengan Email Duplikat
 test('2. register dengan email duplikat ditolak dengan validasi 422', function () {
     User::create([
@@ -141,7 +155,7 @@ test('4. login sukses dengan kredensial valid dan mengembalikan token', function
 });
 
 // Skenario 5: Login Salah Password
-test('5. login salah password mengembalikan pesan generik dan menambah failed_logins', function () {
+test('5. login salah password mengembalikan pesan generik dan tidak mengunci akun di database', function () {
     $user = User::create([
         'name' => 'Wrong Password User',
         'email' => 'wrongpass.user@cdepearls.com',
@@ -166,12 +180,11 @@ test('5. login salah password mengembalikan pesan generik dan menambah failed_lo
         ]);
 
     $user->refresh();
-    expect($user->failed_logins)->toBe(1);
     expect($user->locked_until)->toBeNull();
 });
 
-// Skenario 6: Akun Terkunci Setelah 5 Kali Gagal
-test('6. akun terkunci selama 15 menit setelah 5 kali gagal dan menampilkan sisa waktu kunci', function () {
+// Skenario 6: Anti-DoS Rate Limiter (Blokir IP/Akun via Cache, Bukan Kunci Database)
+test('6. rate limiter memblokir brute force per-IP (429) tanpa mengunci akun korban di database (Anti-DoS)', function () {
     $user = User::create([
         'name' => 'Lockout Victim',
         'email' => 'locktest@cdepearls.com',
@@ -182,62 +195,71 @@ test('6. akun terkunci selama 15 menit setelah 5 kali gagal dan menampilkan sisa
         'failed_logins' => 0,
     ]);
 
-    // Lakukan 4 percobaan gagal pertama
-    for ($i = 1; $i <= 4; $i++) {
-        RateLimiter::clear(Str::transliterate('login:locktest@cdepearls.com|127.0.0.1'));
-        RateLimiter::clear('login:ip:127.0.0.1');
+    $emailKey = Str::transliterate('login:locktest@cdepearls.com|127.0.0.1');
+    RateLimiter::clear($emailKey);
+    RateLimiter::clear('login:ip:127.0.0.1');
 
+    // 5 percobaan gagal dari IP penyerang (127.0.0.1)
+    for ($i = 1; $i <= 5; $i++) {
         $res = $this->postJson('/api/v1/auth/login', [
             'email' => 'locktest@cdepearls.com',
             'password' => 'WrongPassAttempt' . $i,
             'turnstile_token' => '1x00000000000000000000AA',
         ]);
-
         $res->assertStatus(401);
     }
 
+    // Percobaan ke-6 dari IP penyerang langsung diblokir Rate Limiter (429 Too Many Requests)
+    $resBlocked = $this->postJson('/api/v1/auth/login', [
+        'email' => 'locktest@cdepearls.com',
+        'password' => 'WrongPassAttempt6',
+        'turnstile_token' => '1x00000000000000000000AA',
+    ]);
+    $resBlocked->assertStatus(429)
+        ->assertJson([
+            'success' => false,
+            'error' => 'TOO_MANY_REQUESTS',
+        ]);
+
+    // Bukti Anti-DoS: Akun korban di database TIDAK dikunci (locked_until tetap NULL)
     $user->refresh();
-    expect($user->failed_logins)->toBe(4);
     expect($user->locked_until)->toBeNull();
 
-    // Percobaan ke-5 (Mencapai batas penguncian 5 gagal)
-    RateLimiter::clear(Str::transliterate('login:locktest@cdepearls.com|127.0.0.1'));
-    RateLimiter::clear('login:ip:127.0.0.1');
-
-    $res5 = $this->postJson('/api/v1/auth/login', [
+    // Bukti Anti-DoS: Pengguna sah yang login dari IP berbeda tetap bisa masuk dengan sukses (200 OK)
+    $resLegit = $this->withServerVariables(['REMOTE_ADDR' => '192.168.1.100'])->postJson('/api/v1/auth/login', [
         'email' => 'locktest@cdepearls.com',
-        'password' => 'WrongPassAttempt5',
+        'password' => 'TargetPassword2026!',
+        'turnstile_token' => '1x00000000000000000000AA',
+    ]);
+    $resLegit->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+        ]);
+});
+
+// Skenario 6b: Akun yang dikunci secara administratif oleh SPI/Admin ditolak dengan status 423
+test('6b. akun yang dikunci manual oleh admin (locked_until di masa depan) ditolak login 423', function () {
+    $user = User::create([
+        'name' => 'Admin Locked User',
+        'email' => 'adminlocked@cdepearls.com',
+        'password' => Hash::make('TargetPassword2026!'),
+        'role' => 'user',
+        'status' => 'active',
+        'email_verified_at' => now(),
+        'locked_until' => now()->addMinutes(15),
+    ]);
+
+    $res = $this->postJson('/api/v1/auth/login', [
+        'email' => 'adminlocked@cdepearls.com',
+        'password' => 'TargetPassword2026!',
         'turnstile_token' => '1x00000000000000000000AA',
     ]);
 
-    $res5->assertStatus(423)
+    $res->assertStatus(423)
         ->assertJson([
             'success' => false,
             'error' => 'ACCOUNT_LOCKED',
         ]);
-
-    $user->refresh();
-    expect($user->failed_logins)->toBe(5);
-    expect($user->locked_until)->not->toBeNull();
-    expect($user->isLocked())->toBeTrue();
-
-    // Percobaan berikutnya saat akun masih terkunci langsung ditolak dengan info sisa waktu
-    RateLimiter::clear(Str::transliterate('login:locktest@cdepearls.com|127.0.0.1'));
-    RateLimiter::clear('login:ip:127.0.0.1');
-
-    $resLocked = $this->postJson('/api/v1/auth/login', [
-        'email' => 'locktest@cdepearls.com',
-        'password' => 'TargetPassword2026!', // Password benar pun tetap ditolak saat locked
-        'turnstile_token' => '1x00000000000000000000AA',
-    ]);
-
-    $resLocked->assertStatus(423)
-        ->assertJson([
-            'success' => false,
-            'error' => 'ACCOUNT_LOCKED',
-        ]);
-    expect($resLocked->json('message'))->toContain('menit');
-    expect($resLocked->json('retry_after_seconds'))->toBeGreaterThan(0);
 });
 
 // Skenario 7: Akun Status Non-Aktif Ditolak

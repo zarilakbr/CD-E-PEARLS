@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { mockProducts } from '../../data/mock';
 import { catalogApi } from '../../lib/api';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -48,6 +47,10 @@ export const ProductDetailPage: React.FC = () => {
   const { toggleWishlist, isInWishlist } = useWishlist();
 
   const [product, setProduct] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [isVariantSheetOpen, setIsVariantSheetOpen] = useState(false);
@@ -59,37 +62,52 @@ export const ProductDetailPage: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState<string>('Silver White');
   const [selectedMetal, setSelectedMetal] = useState<string>('Emas Kuning 18K');
 
-  useEffect(() => {
+  const fetchProductDetail = () => {
     if (!id) return;
+    setIsLoading(true);
+    setIsNotFound(false);
+    setError(null);
 
-    // Check mock products first
-    const foundMock = mockProducts.find((p) => String(p.id) === String(id));
-    if (foundMock) {
-      setProduct(foundMock);
-      setSelectedImage(foundMock.image || '/images/hero_pearl_shell.jpg');
-      if (foundMock.metal) setSelectedMetal(foundMock.metal);
-      document.title = `${foundMock.name} | CD'E Pearls Lombok`;
-    } else {
-      // Try catalog API
-      catalogApi
-        .getProduct(id)
-        .then((res: any) => {
-          if (res) {
-            setProduct(res);
-            setSelectedImage(res.image || '/images/hero_pearl_shell.jpg');
-            if (res.metal) setSelectedMetal(res.metal);
-            document.title = `${res.name} | CD'E Pearls Lombok`;
-          }
-        })
-        .catch(() => {
-          if (mockProducts.length > 0) {
-            const fallback = mockProducts[0];
-            setProduct(fallback);
-            setSelectedImage(fallback.image || '/images/hero_pearl_shell.jpg');
-            document.title = `${fallback.name} | CD'E Pearls Lombok`;
-          }
-        });
-    }
+    catalogApi
+      .getProduct(id)
+      .then((res: any) => {
+        const item = res?.data || res;
+        if (item && item.id) {
+          setProduct(item);
+          setSelectedImage(item.image || '/images/hero_pearl_shell.jpg');
+          if (item.metal) setSelectedMetal(item.metal);
+          document.title = `${item.name} | CD'E Pearls Lombok`;
+
+          // Muat produk terkait dari API resmi
+          catalogApi
+            .getProducts({ per_page: 6 })
+            .then((pRes: any) => {
+              const pItems = pRes?.data || pRes;
+              if (Array.isArray(pItems)) {
+                setRelatedProducts(
+                  pItems.filter((p: any) => String(p.id) !== String(item.id)).slice(0, 4)
+                );
+              }
+            })
+            .catch(() => {});
+        } else {
+          setIsNotFound(true);
+        }
+      })
+      .catch((err: any) => {
+        if (err?.response?.status === 404) {
+          setIsNotFound(true);
+        } else {
+          setError('Gagal memuat detail perhiasan mutiara. Periksa koneksi internet Anda.');
+        }
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchProductDetail();
   }, [id]);
 
   // Track Carousel Slide
@@ -104,7 +122,7 @@ export const ProductDetailPage: React.FC = () => {
     };
   }, [carouselApi]);
 
-  if (!product) {
+  if (isLoading) {
     return (
       <div className="w-full max-w-[1200px] mx-auto px-4 py-16 text-center font-sans">
         <div className="w-8 h-8 border-2 border-[#8A6A2F] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -113,22 +131,52 @@ export const ProductDetailPage: React.FC = () => {
     );
   }
 
+  if (isNotFound) {
+    return (
+      <div className="w-full max-w-[1200px] mx-auto px-4 py-20 text-center font-sans space-y-4">
+        <div className="w-16 h-16 rounded-full bg-[#FBF8F3] border border-[#E6DDD0] mx-auto flex items-center justify-center text-[#8A6A2F]">
+          <ShoppingBag className="w-8 h-8" />
+        </div>
+        <h2 className="font-serif text-2xl font-bold text-[#12263A] dark:text-[#FBF8F3]">
+          Perhiasan Tidak Ditemukan
+        </h2>
+        <p className="text-sm text-[#4A5666] dark:text-[#A0AEC0] max-w-md mx-auto">
+          Koleksi mutiara yang Anda cari tidak tersedia atau belum dipublikasikan ke katalog resmi.
+        </p>
+        <Link
+          to="/katalog"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652] transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Kembali ke Katalog</span>
+        </Link>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="w-full max-w-[1200px] mx-auto px-4 py-20 text-center font-sans space-y-4">
+        <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+          {error || 'Terjadi kesalahan saat memuat data produk.'}
+        </p>
+        <button
+          type="button"
+          onClick={fetchProductDetail}
+          className="px-6 py-2.5 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652] transition-colors cursor-pointer"
+        >
+          Coba Lagi
+        </button>
+      </div>
+    );
+  }
+
   const isFavorited = isInWishlist(product.id);
 
   const images: string[] =
-    product.images && Array.isArray(product.images) && product.images.length > 1
-      ? product.images
-      : [
-          product.image || '/images/hero_pearl_shell.jpg',
-          '/images/cat_ring_silk.jpg',
-          '/images/terroir_pearl_plate_left.jpg',
-          '/images/featured_pearl_dark_luxury.jpg',
-          '/images/hero_pearl_dark_luxury.jpg',
-        ];
-
-  const relatedProducts = mockProducts
-    .filter((p) => String(p.id) !== String(product.id))
-    .slice(0, 4);
+    product.images && Array.isArray(product.images) && product.images.length > 0
+      ? product.images.map((img: any) => (typeof img === 'string' ? img : img.url || '/images/hero_pearl_shell.jpg'))
+      : [product.image || '/images/hero_pearl_shell.jpg'];
 
   const handleAddToCartDirect = () => {
     addToCart({
@@ -223,7 +271,7 @@ export const ProductDetailPage: React.FC = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#8A6A2F] dark:text-[#D9B877] uppercase tracking-wider">
               <Sparkles className="w-3 h-3" />
-              <span>{product.category || 'Mutiara Laut Selatan'}</span>
+              <span>{typeof product.category === 'object' && product.category !== null ? (product.category as any).name : (product.category || 'Mutiara Laut Selatan')}</span>
             </div>
             <h2 className="font-serif text-lg font-bold text-[var(--text)] leading-snug line-clamp-2">
               {product.name}
@@ -336,39 +384,39 @@ export const ProductDetailPage: React.FC = () => {
         </div>
 
         {/* 5. Produk Terkait: Scroll Horizontal 4 Kartu */}
-        <div className="p-3.5 space-y-2.5">
-          <div className="flex items-center justify-between px-0.5">
-            <h3 className="font-serif text-sm font-bold text-[var(--text)]">
-              Koleksi Terkait
-            </h3>
-            <Link
-              to="/katalog"
-              className="text-[11px] text-[#8A6A2F] dark:text-[#D9B877] font-semibold hover:underline"
-            >
-              Lihat semua
-            </Link>
+        {relatedProducts.length > 0 && (
+          <div className="p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between px-0.5">
+              <h3 className="font-serif text-sm font-bold text-[var(--text)]">
+                Koleksi Terkait
+              </h3>
+              <Link
+                to="/katalog"
+                className="text-[11px] text-[#8A6A2F] dark:text-[#D9B877] font-semibold hover:underline"
+              >
+                Lihat semua
+              </Link>
+            </div>
+            <div className="flex gap-2.5 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1">
+              {relatedProducts.map((p) => (
+                <div key={p.id} className="w-[160px] shrink-0 snap-start">
+                  <ProductCard
+                    id={p.id}
+                    name={p.name}
+                    category={p.category}
+                    variety={p.variety}
+                    grade={p.grade}
+                    price={p.price}
+                    formattedPrice={p.formattedPrice}
+                    image={p.image}
+                    onAddToCart={() => addToCart(p as any)}
+                    onSelect={() => navigate(`/produk/${p.id}`)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2.5 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1">
-            {relatedProducts.map((p) => (
-              <div key={p.id} className="w-[160px] shrink-0 snap-start">
-                <ProductCard
-                  id={p.id}
-                  name={p.name}
-                  category={p.category}
-                  variety={p.variety}
-                  grade={p.grade}
-                  price={p.price}
-                  formattedPrice={p.formattedPrice}
-                  image={p.image}
-                  rating={4.8}
-                  soldCount={12}
-                  onAddToCart={() => addToCart(p as any)}
-                  onSelect={() => navigate(`/produk/${p.id}`)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* 3. Bilah Aksi Bawah Tetap (Favorit + Keranjang + Beli Sekarang) */}
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--surface)]/95 backdrop-blur-md border-t border-[var(--border)] p-3 pb-safe shadow-lg">
@@ -567,7 +615,7 @@ export const ProductDetailPage: React.FC = () => {
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#8A6A2F] dark:text-[#D9B877] mb-2">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>{product.category || 'Mutiara Laut Selatan'}</span>
+                <span>{typeof product.category === 'object' && product.category !== null ? (product.category as any).name : (product.category || 'Mutiara Laut Selatan')}</span>
               </div>
               <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#12263A] dark:text-[#FBF8F3] leading-tight">
                 {product.name}

@@ -27,19 +27,15 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Stepper } from '../../components/common/Stepper';
 import { ProductCard } from '../../components/common/ProductCard';
-import { mockOrders, mockProducts, type MockOrder } from '../../data/mock';
-import { authApi } from '../../lib/api';
+import type { MockOrder, MockProduct } from '../../types/models';
+import { authApi, apiClient } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { GuestAccountHub } from './GuestAccountHub';
 import { SiteLayout } from '../../layouts/SiteLayout';
+import { useDashboardSync } from '../../hooks/useDashboardSync';
 
-const getItemImage = (name: string) => {
-  const n = (name || '').toLowerCase();
-  if (n.includes('cincin')) return '/images/cat_ring_silk.jpg';
-  if (n.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
-  if (n.includes('anting')) return '/images/terroir_pearl_plate_left.jpg';
-  if (n.includes('butir') || n.includes('lepas')) return '/images/hero_pearl_dark_luxury.jpg';
-  return '/images/hero_pearl_shell.jpg';
+const getItemImage = (_name?: string) => {
+  return '/images/placeholder_jewelry.svg';
 };
 
 interface CustomerPortalProps {
@@ -79,44 +75,19 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   }, [initialMenu]);
 
   // Customer Orders State
-  const [orders] = useState<MockOrder[]>(mockOrders);
+  const [orders, setOrders] = useState<MockOrder[]>([]);
   const [orderStatusTab, setOrderStatusTab] = useState('Semua');
   const [selectedOrder, setSelectedOrder] = useState<MockOrder | null>(null);
 
   // Tracking Search State
-  const [trackingQuery, setTrackingQuery] = useState('ORD-2026-081');
-  const [searchedTrackingOrder, setSearchedTrackingOrder] = useState<MockOrder | null>(mockOrders[0]);
+  const [trackingQuery, setTrackingQuery] = useState('');
+  const [searchedTrackingOrder, setSearchedTrackingOrder] = useState<MockOrder | null>(null);
 
   // Wishlist State
-  const [wishlistProducts, setWishlistProducts] = useState(mockProducts.slice(0, 4));
+  const [wishlistProducts, setWishlistProducts] = useState<MockProduct[]>([]);
 
   // Addresses State
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      label: 'Rumah',
-      recipient: 'Siti Rahmawati',
-      phone: '+62 812-3456-7890',
-      province: 'DKI Jakarta',
-      city: 'Jakarta Pusat',
-      district: 'Menteng',
-      postalCode: '10310',
-      fullAddress: 'Jl. Menteng Raya No. 45, RT 02 / RW 05',
-      isPrimary: true,
-    },
-    {
-      id: 2,
-      label: 'Kantor',
-      recipient: 'Siti Rahmawati (Divisi Legal)',
-      phone: '+62 812-3456-7890',
-      province: 'DKI Jakarta',
-      city: 'Jakarta Selatan',
-      district: 'Kebayoran Baru',
-      postalCode: '12190',
-      fullAddress: 'Gedung Menara Sudirman Lt. 18, Jl. Jend. Sudirman Kav. 60',
-      isPrimary: false,
-    },
-  ]);
+  const [addresses, setAddresses] = useState<any[]>([]);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [newAddress, setNewAddress] = useState({
     label: 'Rumah',
@@ -131,23 +102,146 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
   // Profile State
   const [profileData, setProfileData] = useState({
-    name: user?.name || 'Siti Rahmawati',
-    email: user?.email || 'siti.rahma@gmail.com',
-    phone: user?.phone || '+62 812-3456-7890',
-    birthDate: '1992-05-14',
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    birthDate: '',
   });
   const [profileSaveMessage, setProfileSaveMessage] = useState<string | null>(null);
 
-  // Sync profileData when user loads
+  // Real-time synchronization layer with 10s ETag polling (Tahap N2)
+  const { lastSyncLabel } = useDashboardSync({
+    enabled: !!user,
+    onStatusChange: (_newStatus, _oldStatus, latestOrder) => {
+      if (latestOrder) {
+        setOrders((prev) =>
+          prev.map((o) => {
+            if (o.id === latestOrder.order_number || o.id === latestOrder.id) {
+              const s = (latestOrder.order_status || '').toUpperCase();
+              return {
+                ...o,
+                status:
+                  s === 'DELIVERED'
+                    ? 'Selesai'
+                    : s === 'SHIPPED'
+                    ? 'Dikirim'
+                    : s === 'PROCESSING'
+                    ? 'Dikemas'
+                    : s === 'CANCELLED'
+                    ? 'Dibatalkan'
+                    : 'Menunggu Pembayaran',
+                trackingNumber: latestOrder.tracking_number || o.trackingNumber,
+              };
+            }
+            return o;
+          })
+        );
+      }
+    },
+    onDataUpdated: (data) => {
+      if (data.latest_order) {
+        setOrders((prev) =>
+          prev.map((o) => {
+            if (o.id === data.latest_order?.order_number || o.id === data.latest_order?.id) {
+              const s = (data.latest_order.order_status || '').toUpperCase();
+              return {
+                ...o,
+                status:
+                  s === 'DELIVERED'
+                    ? 'Selesai'
+                    : s === 'SHIPPED'
+                    ? 'Dikirim'
+                    : s === 'PROCESSING'
+                    ? 'Dikemas'
+                    : s === 'CANCELLED'
+                    ? 'Dibatalkan'
+                    : 'Menunggu Pembayaran',
+                trackingNumber: data.latest_order.tracking_number || o.trackingNumber,
+              };
+            }
+            return o;
+          })
+        );
+      }
+    },
+  });
+
+  // Load live customer data from API
   useEffect(() => {
+    let isMounted = true;
     if (user) {
-      setProfileData((prev) => ({
-        ...prev,
-        name: user.name || prev.name,
-        email: user.email || prev.email,
-        phone: user.phone || prev.phone,
-      }));
+      setProfileData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        birthDate: '',
+      });
+
+      // 1. Pesanan Saya
+      apiClient.get('/user/orders')
+        .then((res) => {
+          const ords = res.data?.data || res.data;
+          if (isMounted && Array.isArray(ords)) {
+            const mappedOrders: MockOrder[] = ords.map((o: any) => ({
+              id: o.order_number || `#ORD-${o.id}`,
+              date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+              customerName: o.customer_name || user?.name || 'Pelanggan Butik',
+              customerEmail: o.customer_email || user?.email || '',
+              customerPhone: o.customer_phone || '',
+              shippingAddress: o.customer_address || '',
+              city: o.city || 'Indonesia',
+              productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
+              items: (o.items || []).map((it: any) => ({
+                productId: it.product_id,
+                name: it.product?.name || it.product_name || 'Mutiara Lombok',
+                pearlSize: it.pearl_size || '12 mm',
+                metal: it.metal || 'Emas 18K',
+                price: Number(it.price) || 0,
+                quantity: Number(it.quantity) || 1,
+              })),
+              subtotal: Number(o.subtotal || o.total) || 0,
+              shippingCost: Number(o.shipping_cost) || 0,
+              insuranceCost: Number(o.insurance_cost) || 0,
+              total: Number(o.total) || 0,
+              paymentMethod: o.payment_method || 'TRANSFER_BANK',
+              status: o.order_status === 'DELIVERED' ? 'Selesai' : o.order_status === 'SHIPPED' ? 'Dikirim' : o.order_status === 'PROCESSING' ? 'Dikemas' : o.order_status === 'CANCELLED' ? 'Dibatalkan' : 'Menunggu Pembayaran',
+              trackingNumber: o.tracking_number,
+              courier: o.courier || 'JNE Express (Berasuransi)',
+              timeline: (o.status_histories || []).map((h: any) => ({
+                status: h.status,
+                date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
+                description: h.notes || '',
+                completed: true,
+              })),
+            }));
+            setOrders(mappedOrders);
+          }
+        })
+        .catch(() => {});
+
+      // 2. Alamat Tersimpan
+      apiClient.get('/addresses')
+        .then((res) => {
+          const adds = res.data?.data || res.data;
+          if (isMounted && Array.isArray(adds)) {
+            setAddresses(adds);
+          }
+        })
+        .catch(() => {});
+
+      // 3. Wishlist
+      apiClient.get('/wishlist')
+        .then((res) => {
+          const wish = res.data?.data || res.data;
+          if (isMounted && Array.isArray(wish)) {
+            setWishlistProducts(wish);
+          }
+        })
+        .catch(() => {});
     }
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   // Logout Dialog State
@@ -255,6 +349,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               </span>
             </div>
 
+            <div className="flex items-center justify-between px-2 text-[11px] text-[var(--text-2)]">
+              <span className="flex items-center gap-1.5 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                {lastSyncLabel}
+              </span>
+            </div>
+
             {/* Lima status pesanan ala marketplace: Belum bayar, Dikemas, Dikirim, Selesai, Retur */}
             <div className="bg-white dark:bg-[#12263A] border border-[var(--border)] rounded-2xl p-3 shadow-2xs">
               <div className="text-[12px] font-semibold text-[var(--text)] mb-2 px-1">
@@ -308,6 +409,12 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   Lihat Semua
                 </button>
               </div>
+
+              {orders.length === 0 && (
+                <div className="bg-white dark:bg-[#12263A] border border-[var(--border)] rounded-2xl p-6 text-center shadow-2xs">
+                  <p className="text-xs text-[var(--text-2)]">Belum ada pesanan aktif</p>
+                </div>
+              )}
 
               {orders.slice(0, 2).map((ord) => (
                 <div key={ord.id} className="bg-white dark:bg-[#12263A] border border-[var(--border)] rounded-2xl p-3 space-y-2.5 shadow-2xs">
@@ -392,27 +499,33 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
           {/* DESKTOP SUMMARY (lg:block) */}
           <div className="hidden lg:block space-y-8 animate-in fade-in duration-300">
-            <PageHeader
-              title={`Halo, ${profileData.name}`}
-              description="Selamat datang di akun pribadi perhiasan CD'E Pearls. Pantau pesanan aktif Anda dan koleksi mutiara favorit."
-            />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <PageHeader
+                title={`Halo, ${profileData.name}`}
+                description="Selamat datang di akun pribadi perhiasan CD'E Pearls. Pantau pesanan aktif Anda dan koleksi mutiara favorit."
+              />
+              <span className="text-[11px] font-medium text-[#4A5666] bg-[#F4F1EB] px-3 py-1.5 rounded-full border border-[#E6DDD0] inline-flex items-center gap-1.5 self-start sm:self-auto shrink-0 shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{lastSyncLabel}</span>
+              </span>
+            </div>
 
           {/* 3 Kartu Ringkasan Pelanggan */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <StatCard
               label="Pesanan Aktif"
               value={`${orders.filter(o => o.status === 'Dikirim' || o.status === 'Dikemas').length} Pesanan`}
-              note="1 perhiasan dalam perjalanan pengiriman"
+              note={orders.filter(o => o.status === 'Dikirim' || o.status === 'Dikemas').length > 0 ? `${orders.filter(o => o.status === 'Dikirim' || o.status === 'Dikemas').length} perhiasan dalam pengiriman` : 'Tidak ada pengiriman aktif'}
             />
             <StatCard
               label="Menunggu Pembayaran"
               value={`${orders.filter(o => o.status === 'Menunggu Pembayaran').length} Pesanan`}
-              note="Batas transfer 24 jam"
+              note={orders.filter(o => o.status === 'Menunggu Pembayaran').length > 0 ? 'Batas transfer 24 jam' : 'Semua tagihan lunas'}
             />
             <StatCard
               label="Koleksi Favorit"
               value={`${wishlistProducts.length} Perhiasan`}
-              note="Tersimpan di wishlist Anda"
+              note={wishlistProducts.length > 0 ? 'Tersimpan di wishlist Anda' : 'Belum ada mutiara tersimpan'}
             />
           </div>
 
@@ -438,16 +551,28 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 </button>
               </div>
 
-              <Stepper
-                steps={[
-                  { label: 'Dibayar', statusText: 'Selesai', date: '28 Okt, 15:00', completed: true },
-                  { label: 'Dikemas', statusText: 'Selesai', date: '28 Okt, 16:30', completed: true },
-                  { label: 'Dikirim', statusText: 'Sedang berjalan', date: '29 Okt, 09:15', completed: true, current: true },
-                  { label: 'Diterima', statusText: 'Menunggu', date: 'Estimasi 30 Okt', completed: false },
-                ]}
-                trackingNumber={orders[0].trackingNumber}
-                courier={orders[0].courier}
-              />
+              {(() => {
+                const s = orders[0].status;
+                const isPaid = s !== 'Menunggu Pembayaran';
+                const isProcessing = s === 'Dikemas' || s === 'Dikirim' || s === 'Selesai';
+                const isShipped = s === 'Dikirim' || s === 'Selesai';
+                const isDelivered = s === 'Selesai';
+
+                const steps = [
+                  { label: 'Dibayar', statusText: isPaid ? 'Tuntas' : 'Menunggu', completed: isPaid, current: !isPaid },
+                  { label: 'Dikemas', statusText: isProcessing ? 'Tuntas' : (isPaid ? 'Sedang diproses' : 'Menunggu'), completed: isProcessing, current: isPaid && !isProcessing },
+                  { label: 'Dikirim', statusText: isShipped ? 'Tuntas' : (isProcessing ? 'Sedang dikirim' : 'Menunggu'), completed: isShipped, current: isProcessing && !isShipped },
+                  { label: 'Diterima', statusText: isDelivered ? 'Tuntas' : 'Menunggu', completed: isDelivered, current: isShipped && !isDelivered },
+                ];
+
+                return (
+                  <Stepper
+                    steps={steps}
+                    trackingNumber={orders[0].trackingNumber || '-'}
+                    courier={orders[0].courier || 'Kurir Rekanan'}
+                  />
+                );
+              })()}
             </div>
           )}
 
@@ -531,6 +656,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E6DDD0]/60">
+                      {orders.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-xs text-[#4A5666]">
+                            Belum ada riwayat pesanan.
+                          </td>
+                        </tr>
+                      )}
                       {orders.slice(0, 3).map((o) => (
                         <tr
                           key={o.id}
@@ -1053,7 +1185,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       <label className="block text-xs font-semibold text-[#12263A] mb-1">Nama Penerima</label>
                       <input
                         type="text"
-                        placeholder="Siti Rahmawati"
+                        placeholder="Nama Lengkap Penerima"
                         value={newAddress.recipient}
                         onChange={(e) => setNewAddress({ ...newAddress, recipient: e.target.value })}
                         className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
@@ -1114,10 +1246,10 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                               label: newAddress.label || 'Alamat',
                               recipient: newAddress.recipient,
                               phone: newAddress.phone || '+62 812-0000-0000',
-                              province: 'DKI Jakarta',
-                              city: newAddress.city || 'Jakarta',
-                              district: 'Menteng',
-                              postalCode: '10310',
+                              province: '-',
+                              city: newAddress.city || '-',
+                              district: '-',
+                              postalCode: '-',
                               fullAddress: newAddress.fullAddress,
                               isPrimary: addresses.length === 0,
                             },

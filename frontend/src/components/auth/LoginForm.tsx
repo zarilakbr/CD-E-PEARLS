@@ -14,6 +14,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { authApi } from '../../lib/api';
+import { resolveLoginError } from '../../lib/login-errors';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -141,40 +142,23 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, nextPath }) => 
           }
         }
       } else {
-        if (res.error === 'ACCOUNT_UNVERIFIED') {
+        const resolved = resolveLoginError(res);
+        setServerError(resolved.message);
+        if (resolved.retryAfter) {
+          setRetryCountdown(resolved.retryAfter);
+        }
+        if (resolved.isUnverified) {
           setCanResendVerify(true);
-          setServerError(res.message || 'Akun Anda belum diverifikasi. Silakan periksa email Anda atau kirim ulang tautan verifikasi.');
-        } else if (res.error === 'TOO_MANY_REQUESTS') {
-          const retry = res.retryAfter || 60;
-          setRetryCountdown(retry);
-          setServerError(`Terlalu banyak percobaan. Harap tunggu ${retry} detik sebelum mencoba kembali.`);
-        } else if (res.error === 'ACCOUNT_LOCKED') {
-          const retry = (res as any).retry_after_seconds || res.retryAfter || 900;
-          setRetryCountdown(retry);
-          setServerError(res.message || 'Akun Anda terkunci sementara karena terlalu banyak percobaan masuk gagal.');
-        } else if (res.error === 'ACCOUNT_FROZEN') {
-          setServerError(res.message || 'Akun Anda sedang dibekukan oleh Satuan Pengawas Internal (SPI). Hubungi pengawasan butik.');
-        } else {
-          setServerError(res.message || 'Email atau kata sandi tidak valid');
         }
       }
     } catch (err: any) {
-      const responseData = err.response?.data;
-      if (err.response?.status === 429) {
-        const retry = responseData?.retry_after || 60;
-        setRetryCountdown(retry);
-        setServerError(`Terlalu banyak percobaan. Harap tunggu ${retry} detik sebelum mencoba kembali.`);
-      } else if (responseData?.error === 'ACCOUNT_LOCKED' || err.response?.status === 423) {
-        const retry = responseData?.retry_after_seconds || 900;
-        setRetryCountdown(retry);
-        setServerError(responseData?.message || 'Akun Anda terkunci sementara karena terlalu banyak percobaan masuk gagal.');
-      } else if (responseData?.error === 'ACCOUNT_FROZEN') {
-        setServerError(responseData.message || 'Akun Anda sedang dibekukan oleh Satuan Pengawas Internal (SPI). Hubungi pengawasan butik.');
-      } else if (responseData?.error === 'ACCOUNT_UNVERIFIED') {
+      const resolved = resolveLoginError(err);
+      setServerError(resolved.message);
+      if (resolved.retryAfter) {
+        setRetryCountdown(resolved.retryAfter);
+      }
+      if (resolved.isUnverified) {
         setCanResendVerify(true);
-        setServerError(responseData.message || 'Akun Anda belum diverifikasi. Silakan periksa kotak masuk email Anda.');
-      } else {
-        setServerError(responseData?.message || 'Email atau kata sandi tidak valid');
       }
     } finally {
       setIsLoading(false);

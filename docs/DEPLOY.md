@@ -1,6 +1,6 @@
 # Panduan Deploy Produksi CD'E Pearls Lombok
 
-Dokumen ini menjelaskan tata cara deployment aplikasi **CD'E Pearls Lombok** (Laravel 12/13 API + React Vite TypeScript Frontend) ke lingkungan produksi menggunakan arsitektur modern berkinerja tinggi.
+Dokumen ini menjelaskan tata cara deployment aplikasi **CD'E Pearls Lombok** (Laravel API + React 19 Vite SPA Frontend) ke lingkungan produksi **Hostinger** (hPanel / Cloud Hosting / VPS) dan **Cloudflare** dengan arsitektur MySQL / MariaDB yang aman, berkinerja tinggi, dan teruji.
 
 ---
 
@@ -9,50 +9,139 @@ Dokumen ini menjelaskan tata cara deployment aplikasi **CD'E Pearls Lombok** (La
 ```
 [ Klien / Browser Web ]
        │
-       ├─── https://cdepearls.com ────────────► [ Vercel / Cloudflare ]
-       │                                         (React 19 + Vite SPA)
+       ├─── https://cdepearlslombok.id ─────────► [ Cloudflare Workers: "cdepearlslombok" ]
+       │                                            (React 19 + Vite TypeScript SPA)
        │
-       └─── https://api.cdepearls.com/api/v1 ─► [ Railway / VPS Ubuntu ]
-                                                 (Laravel 12/13 + PHP 8.3+)
-                                                             │
-                                                             ▼
-                                                [ Managed PostgreSQL 16 ]
+       └─── https://api.cdepearlslombok.id/api/v1 ─► [ Hostinger hPanel ]
+                                                     (Laravel 12/13 + PHP 8.4 via Alt-PHP)
+                                                                 │
+                                                                 ▼
+                                                    [ MariaDB 10.11+ / MySQL 8.0+ ]
 ```
 
 ---
 
-## 2. Persiapan Database PostgreSQL
+## 2. Struktur Direktori & Keamanan Server (Di Luar `public_html`)
 
-1. **Buat Database PostgreSQL**:
-   ```sql
-   CREATE DATABASE cde_pearls;
-   CREATE USER cde_admin WITH ENCRYPTED PASSWORD 'YOUR_STRONG_DATABASE_PASSWORD';
-   GRANT ALL PRIVILEGES ON DATABASE cde_pearls TO cde_admin;
-   ```
+Demi menjaga keamanan kode sumber dan berkas konfigurasi sensitif (`.env`, log sistem, database credentials, storage internal), repositori aplikasi **wajib diletakkan di luar `public_html`**.
 
-2. **Ekstensi UUID (Opsional / Otomatis)**:
-   Laravel schema generator secara otomatis mengelola UUID tanpa membutuhkan dependensi manual eksternal.
+### Hierarki Folder di Server Hostinger:
+```
+/home/USERNAME/
+├── cdepearls/                         <-- Direktori repositori (DI LUAR public_html)
+│   ├── backend/
+│   │   ├── app/
+│   │   ├── config/
+│   │   ├── public/                    <-- Document root asli backend Laravel
+│   │   │   ├── index.php
+│   │   │   └── storage/               <-- Symlink ke ../storage/app/public
+│   │   ├── storage/
+│   │   │   └── app/public/products/   <-- Berkas asli gambar produk & WebP
+│   │   ├── .env                       <-- Konfigurasi rahasia produksi
+│   │   └── artisan
+│   └── frontend/
+└── public_html/
+    └── api -> /home/USERNAME/cdepearls/backend/public  <-- Symlink publik
+```
+
+### Pembuatan Symlink `public_html/api`:
+Jalankan melalui SSH terminal server:
+```bash
+ln -sfn /home/USERNAME/cdepearls/backend/public /home/USERNAME/public_html/api
+```
+Dengan struktur ini, pengunjung web yang mengakses `https://api.cdepearlslombok.id` hanya dapat menjangkau berkas publik di `backend/public/`, sementara kode sumber dan database terlindung sepenuhnya di luar root web.
 
 ---
 
-## 3. Konfigurasi Backend (`backend/.env`)
+## 3. Persiapan Binary PHP 8.4 & Composer di Hostinger
 
-Salin `backend/.env.example` ke `backend/.env` pada server produksi dan sesuaikan nilai berikut:
+Hostinger menyediakan binary PHP versi terbaru pada path CloudLinux / Alt-PHP:
+
+- **Path Eksekusi PHP 8.4**:
+  ```bash
+  /opt/alt/php84/usr/bin/php
+  ```
+
+- **Menjalankan Composer dengan PHP 8.4**:
+  ```bash
+  /opt/alt/php84/usr/bin/php $(which composer) install --no-dev --optimize-autoloader
+  ```
+
+---
+
+## 4. Konfigurasi DNS & Domain (Cloudflare Nameservers)
+
+1. **Pengelolaan Nameserver**:
+   - Seluruh DNS domain `cdepearlslombok.id` dikelola secara terpusat di **Cloudflare**.
+   - Nameserver domain tetap mengarah ke nameserver Cloudflare (misal: `*.ns.cloudflare.com`).
+2. **Peringatan Integrasi Domain di Hostinger**:
+   > [!WARNING]
+   > **JANGAN menambahkan ulang atau mengatur ulang domain `cdepearlslombok.id` di menu Domain hPanel Hostinger**, karena Hostinger akan mencoba mengambil alih DNS/nameserver secara sepihak. Pengaturan domain cukup dilakukan dengan mengarahkan DNS record (A / CNAME) sub-domain `api.cdepearlslombok.id` dari Cloudflare Dashboard ke alamat IP server Hostinger.
+
+---
+
+## 5. Konfigurasi Record Email Anti-Spam (SPF, DMARC, DKIM)
+
+Demi memastikan seluruh email transaksional (verifikasi akun, notifikasi pesanan) terkirim langsung ke kotak masuk (Inbox) pelanggan tanpa masuk folder Spam, konfigurasikan record DNS berikut pada **Cloudflare DNS Manager**:
+
+### A. SPF (Sender Policy Framework)
+- **Tipe**: `TXT`
+- **Name**: `@`
+- **Content**:
+  ```text
+  v=spf1 include:_spf.mail.hostinger.com ~all
+  ```
+
+### B. DMARC (Domain-based Message Authentication)
+- **Tipe**: `TXT`
+- **Name**: `_dmarc` (atau `_dmarc.cdepearlslombok.id`)
+- **Content**:
+  ```text
+  v=DMARC1; p=none
+  ```
+
+### C. DKIM (DomainKeys Identified Mail)
+Hostinger menyediakan 3 selector DKIM CNAME. Tambahkan ketiga record CNAME tersebut:
+1. **Host**: `hostingermail-a._domainkey`
+2. **Host**: `hostingermail-b._domainkey`
+3. **Host**: `hostingermail-c._domainkey`
+
+> [!IMPORTANT]
+> Seluruh record DKIM CNAME (`hostingermail-a/b/c._domainkey`) **WAJIB berstatus DNS Only** (Proxy disabled / ikon awan abu-abu di Cloudflare). Jika diaktifkan Proxied (awan oranye), verifikasi kriptografis DKIM oleh penyedia email seperti Gmail dan Yahoo akan gagal.
+
+---
+
+## 6. Persiapan Database MariaDB / MySQL
+
+1. Masuk ke **Hostinger hPanel** -> **Databases** -> **Management**.
+2. Buat database baru (misal `u123456789_cde`) dan pengguna database (misal `u123456789_admin`).
+3. Tetapkan kata sandi database yang kuat dan catat nama database, username, dan password untuk konfigurasi `.env`.
+
+---
+
+## 7. Konfigurasi Backend (`backend/.env`)
+
+Salin berkas contoh konfigurasi di folder `backend/`:
+```bash
+cp /home/USERNAME/cdepearls/backend/.env.example /home/USERNAME/cdepearls/backend/.env
+```
+
+Sesuaikan parameter berikut pada berkas `backend/.env` (jangan pernah membagikan atau mengunggah nilai rahasia asli ke repositori publik):
 
 ```env
 APP_NAME="CD'E Pearls Lombok"
 APP_ENV=production
-APP_KEY=base64:vXqVj294/97yHN+FVs2C0WlXjIu0AZWAVzXXDkATZ1E=
+APP_KEY=base64:GENERATE_DENGAN_ARTISAN_KEY_GENERATE
 APP_DEBUG=false
-APP_URL=https://api.cdepearls.com
-FRONTEND_URL=https://cdepearls.com
+APP_URL=https://api.cdepearlslombok.id
+FRONTEND_URL=https://cdepearlslombok.id
 
-# PostgreSQL Connection
-DB_CONNECTION=pgsql
-DB_HOST=containers-us-west-xxx.railway.app
-DB_PORT=5432
-DB_DATABASE=cde_pearls
-DB_USERNAME=postgres
+# Database MariaDB / MySQL (Hostinger hPanel)
+DB_CONNECTION=mariadb
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=u123456789_cde
+DB_USERNAME=u123456789_admin
 DB_PASSWORD=YOUR_STRONG_PASSWORD
 
 # Sanctum Stateful Cookies & Session
@@ -60,328 +149,243 @@ SESSION_DRIVER=database
 SESSION_LIFETIME=120
 SESSION_ENCRYPT=true
 SESSION_PATH=/
-SESSION_DOMAIN=.cdepearls.com
+SESSION_DOMAIN=.cdepearlslombok.id
 SESSION_SECURE_COOKIE=true
-SANCTUM_STATEFUL_DOMAINS="cdepearls.com,www.cdepearls.com"
+SANCTUM_STATEFUL_DOMAINS="cdepearlslombok.id,www.cdepearlslombok.id"
 
-# Bcrypt Cost Security
+# Keamanan Password (Bcrypt Cost 12)
 BCRYPT_ROUNDS=12
 
 # File Storage
 FILESYSTEM_DISK=public
 
-# Mail Notification
+# Konfigurasi Email SMTP Hostinger
 MAIL_MAILER=smtp
-MAIL_HOST=smtp.sendgrid.net
-MAIL_PORT=587
-MAIL_USERNAME=apikey
-MAIL_PASSWORD=YOUR_SENDGRID_KEY
-MAIL_FROM_ADDRESS="info@cdepearls.com"
+MAIL_SCHEME=smtps
+MAIL_HOST=smtp.hostinger.com
+MAIL_PORT=465
+MAIL_USERNAME=owner@cdepearlslombok.id
+MAIL_PASSWORD=YOUR_EMAIL_PASSWORD
+MAIL_FROM_ADDRESS=owner@cdepearlslombok.id
 MAIL_FROM_NAME="CD'E Pearls Lombok"
 
-# Seed Accounts Setup (Force Change Password on First Login)
-SEED_USER_EMAIL="siti.rahma@gmail.com"
-SEED_USER_PASSWORD="[GENERATE_HIGH_ENTROPY_RANDOM_PASSWORD]"
-SEED_ADMIN_EMAIL="admin@cdepearls.com"
-SEED_ADMIN_PASSWORD="[GENERATE_HIGH_ENTROPY_RANDOM_PASSWORD]"
-SEED_SPI_EMAIL="owner.spi@cdepearls.com"
-SEED_SPI_PASSWORD="[GENERATE_HIGH_ENTROPY_RANDOM_PASSWORD]"
+# Cloudflare Turnstile
+TURNSTILE_SECRET_KEY=YOUR_CLOUDFLARE_TURNSTILE_SECRET_KEY
+
+# Google OAuth 2.0
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET
+GOOGLE_REDIRECT_URI="${APP_URL}/api/v1/auth/google/callback"
+
+# Proteksi Katalog Awal Produksi (Tanpa Produk Tiruan)
+SEED_TEST_PRODUCTS=false
 ```
 
-Jalankan perintah inisialisasi Laravel:
+---
+
+## 8. Symlink Storage Manual (`ln -sfn`)
+
+> [!IMPORTANT]
+> Pada paket shared hosting Hostinger, fungsi PHP `exec` dan `shell_exec` dinonaktifkan secara bawaan demi keamanan. Akibatnya, perintah bawaan `php artisan storage:link` akan gagal.
+> 
+> Solusinya adalah membuat symlink storage secara manual melalui SSH terminal:
+
 ```bash
-php artisan key:generate
-php artisan migrate --force
-php artisan db:seed --force
-php artisan storage:link
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+# Masuk ke direktori backend
+cd /home/USERNAME/cdepearls/backend
+
+# Buat symlink dari storage/app/public ke public/storage
+ln -sfn /home/USERNAME/cdepearls/backend/storage/app/public /home/USERNAME/cdepearls/backend/public/storage
+```
+
+Verifikasi pembuatan symlink:
+```bash
+ls -la /home/USERNAME/cdepearls/backend/public/storage
+# Harus menunjuk ke /home/USERNAME/cdepearls/backend/storage/app/public
 ```
 
 ---
 
-## 4. Deploy Backend ke Railway
+## 9. Inisialisasi & Optimasi Laravel (via PHP 8.4)
 
-1. Hubungkan repositori GitHub ke **Railway.app**.
-2. Tambahkan **PostgreSQL Plugin** dari dashboard Railway.
-3. Sambungkan variabel database Railway ke konfigurasi `backend/.env`.
-4. Tambahkan `Nixpacks` build configuration atau `Procfile` di folder `backend/`:
-   ```Procfile
-   web: php artisan serve --host=0.0.0.0 --port=$PORT
-   ```
-   Atau untuk Nginx + PHP-FPM:
-   ```bash
-   php artisan migrate --force && php artisan config:cache && php artisan route:cache
-   ```
-5. Set Healthcheck path ke `/up` atau `/api/v1/settings`.
+Jalankan perintah inisialisasi menggunakan binary PHP 8.4:
 
----
+```bash
+cd /home/USERNAME/cdepearls/backend
 
-## 5. Deploy Frontend ke Vercel
+# 1. Generate App Key (bila pertama kali)
+/opt/alt/php84/usr/bin/php artisan key:generate --force
 
-1. Hubungkan folder `frontend` ke **Vercel**.
-2. Konfigurasi Proyek di Vercel:
-   - **Framework Preset**: Vite
-   - **Root Directory**: `frontend`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-3. Konfigurasi `vercel.json` untuk SPA Rewrite:
-   ```json
-   {
-     "rewrites": [
-       { "source": "/api/(.*)", "destination": "https://api.cdepearls.com/api/$1" },
-       { "source": "/sanctum/(.*)", "destination": "https://api.cdepearls.com/sanctum/$1" },
-       { "source": "/storage/(.*)", "destination": "https://api.cdepearls.com/storage/$1" },
-       { "source": "/(.*)", "destination": "/index.html" }
-     ]
-   }
-   ```
-4. Variabel Lingkungan di Vercel:
-   - `VITE_API_URL`: `https://api.cdepearls.com/api/v1`
+# 2. Migrasi Database Produksi
+/opt/alt/php84/usr/bin/php artisan migrate --force
+
+# 3. Optimasi Cache Konfigurasi, Event, Rute, & Tampilan
+/opt/alt/php84/usr/bin/php artisan optimize
+```
 
 ---
 
-## 5B. Deploy Frontend ke Cloudflare Pages / Workers
+## 10. Seed Akun Resmi (Role-Based Seeding)
 
-Untuk deployment frontend ke Cloudflare (Workers Static Assets / Cloudflare Pages):
+Inisialisasi akun resmi untuk operasional sistem (Admin, Pengawas Internal SPI, dan Pelanggan awal) dilakukan menggunakan variabel lingkungan spesifik:
 
-### A. Build Configuration di Cloudflare Dashboard
-- **Framework Preset**: Vite
-- **Root Directory**: `frontend`
-- **Build Command**: `npm run build`
-- **Output Directory**: `dist`
+```bash
+cd /home/USERNAME/cdepearls/backend
 
-### B. Variabel Lingkungan Build (Cloudflare Build Variables)
-Variabel berikut wajib diisi di dashboard Cloudflare (Settings > Environment variables / Build variables):
-- `VITE_API_URL`: Endpoint basis API backend (contoh: `https://api.cdepearls.com/api/v1`).
-- `VITE_TURNSTILE_SITE_KEY`: Site key widget Cloudflare Turnstile yang terdaftar untuk domain frontend.
+# Atur variabel akun awal di sesi terminal SSH
+export SEED_ADMIN_NAME="Administrator CD'E"
+export SEED_ADMIN_EMAIL="admin@cdepearls.com"
+export SEED_ADMIN_PASSWORD="KATA_SANDI_ADMIN_KUAT_MIN_12_KARAKTER"
 
-> [!NOTE]
-> Variabel berawalan `VITE_*` dibaca saat proses kompilasi (`npm run build`) dan tertanam langsung ke dalam aset statis JavaScript/HTML.
+export SEED_SPI_NAME="Pengawas Internal SPI"
+export SEED_SPI_EMAIL="owner.spi@cdepearls.com"
+export SEED_SPI_PASSWORD="KATA_SANDI_SPI_KUAT_MIN_12_KARAKTER"
 
-### C. Konfigurasi Backend Terkait
-Di sisi backend (`backend/.env`), pastikan variabel berikut diselaraskan:
-- `FRONTEND_URL`: URL publik frontend (misal `https://cdepearlslombok.workers.dev` atau `https://cdepearls.com`).
-- **Origin CORS**: Origin frontend wajib diizinkan di middleware CORS backend (misal via `cors.php` atau `SANCTUM_STATEFUL_DOMAINS` / `CORS_ALLOWED_ORIGINS`).
-- `GOOGLE_REDIRECT_URI`: URI callback OAuth Google (`${APP_URL}/api/v1/auth/google/callback`).
-- **Hostname Turnstile**: Tambahkan domain frontend ke daftar domain yang diizinkan pada dashboard Cloudflare Turnstile.
+export SEED_USER_NAME="Siti Rahma"
+export SEED_USER_EMAIL="siti.rahma@gmail.com"
+export SEED_USER_PASSWORD="KATA_SANDI_USER_KUAT_MIN_12_KARAKTER"
 
-### D. Arsitektur Autentikasi: Bearer Token vs Cookie Sesi
-Aplikasi ini menggunakan autentikasi **Bearer Token (Laravel Sanctum Personal Access Token)**:
-- Token disimpan di `localStorage` peramban klien dan dikirimkan pada setiap panggilan API via header `Authorization: Bearer <token>`.
-- Karena tidak bergantung pada cookie sesi stateful (`Set-Cookie`), **domain frontend dan domain backend API boleh berada pada hostname/domain yang berbeda** (misal: frontend di Cloudflare `cdepearls.workers.dev` dan API di VPS `api.cdepearls.com`).
-- **Persyaratan Wajib**: Backend API harus mengizinkan origin frontend pada response header CORS (`Access-Control-Allow-Origin: <FRONTEND_URL>`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers: Authorization, Content-Type`).
-
----
-
-## 6. Daftar Akun Awal & Kredensial Resmi
-
-Setelah migrasi awal dan seeding dijalankan, 3 akun resmi aktif tersedia untuk login:
-
-| Peran | Email | Kata Sandi | Akses Portal | Ketentuan Keamanan |
-| :--- | :--- | :--- | :--- | :--- |
-| **Pelanggan** | `siti.rahma@gmail.com` | Ditetapkan di `.env` lokal | `/akun` | Wajib ganti sandi pada login perdana |
-| **Admin** | `admin@cdepearls.com` | Ditetapkan di `.env` lokal | `/admin` | Wajib ganti sandi pada login perdana |
-| **SPI** | `owner.spi@cdepearls.com` | Ditetapkan di `.env` lokal | `/spi` & `/admin` | Wajib ganti sandi pada login perdana |
-
----
-
-## 7. Verifikasi Pasca Deploy
-
-1. Jalankan pengujian backend otomatis di server:
-   ```bash
-   php artisan test
-   ```
-   Pastikan seluruh 56 pengujian fitur (Autentikasi, Kunci Akun, RBAC, IDOR, Otorisasi SPI, Google OAuth, Rate Limit, Turnstile, Logout, Role Redirection) berstatus **PASSED**.
-2. Buka URL frontend dan verifikasi cookie `laravel_session` serta token CSRF tersimpan dengan flag `SameSite=Lax` dan `Secure`.
-3. Verifikasi alur otorisasi sensitif: perubahan harga produk di atas 10% wajib masuk ke antrean persetujuan `/spi`.
-
----
-
-## 8. Konfigurasi Google Cloud Console & Cloudflare Turnstile
-
-### A. Google OAuth 2.0 Web Client
-1. Buka [Google Cloud Console](https://console.cloud.google.com/) -> **APIs & Services** -> **Credentials**.
-2. Klik **Create Credentials** -> **OAuth Client ID**.
-3. Pilih Application Type: **Web application**.
-4. Isi Nama Klien: `CD'E Pearls Lombok Web`.
-5. **Authorized JavaScript origins**:
-   - Produksi: `https://cdepearls.com`
-   - Pengembangan: `http://localhost:5173`
-6. **Authorized redirect URIs**:
-   - Produksi: `https://api.cdepearls.com/api/v1/auth/google/callback`
-   - Pengembangan: `http://localhost:8000/api/v1/auth/google/callback`
-7. Simpan nilai Client ID dan Client Secret ke environment variable server (jangan pernah simpan kunci rahasia di kode sumber atau repositori publik):
-   ```env
-   # backend/.env
-   GOOGLE_CLIENT_ID="[ISI_DARI_GOOGLE_CLOUD_CONSOLE]"
-   GOOGLE_CLIENT_SECRET="[ISI_DARI_GOOGLE_CLOUD_CONSOLE]"
-   GOOGLE_REDIRECT_URI="${APP_URL}/api/v1/auth/google/callback"
-   ```
-8. Lingkup akses (Scopes) yang diminta: `openid`, `email`, `profile`.
-
-### B. Cloudflare Turnstile (Anti-Bot / Captcha)
-1. Buka [Cloudflare Dashboard](https://dash.cloudflare.com/) -> **Turnstile**.
-2. Klik **Add Widget**:
-   - Widget name: `CD'E Pearls Atelier Security`
-   - Domain: `cdepearls.com` (dan `localhost` untuk pengujian)
-   - Widget Mode: **Managed**
-3. Konfigurasi variabel lingkungan:
-   ```env
-   # backend/.env
-   TURNSTILE_SECRET_KEY="[ISI_DARI_CLOUDFLARE_DASHBOARD]"
-
-   # frontend/.env
-   VITE_TURNSTILE_SITE_KEY="[ISI_DARI_CLOUDFLARE_DASHBOARD]"
-   ```
-4. Kunci Uji Coba Cloudflare (Testing Mode):
-   - Sitekey Dummy Testing: `1x00000000000000000000AA` (selalu lolos di lingkungan dev/staging)
-   - Secret Key Dummy Testing: `1x0000000000000000000000000000000AA`
-
----
-
-## 9. Manajemen Akun Staf via Artisan CLI
-
-Manajemen kredensial akun staf internal (`admin@cdepearls.com`, `owner.spi@cdepearls.com`, dan `siti.rahma@gmail.com`) dikelola secara aman melalui perintah Artisan tanpa mengekspos kata sandi atau hash di log konsol.
+# Jalankan seeder akun
+/opt/alt/php84/usr/bin/php artisan db:seed --class=UserSeeder --force
+```
 
 > [!CAUTION]
-> **PERINGATAN KEAMANAN PRODUKSI**:
-> DILARANG KERAS menjalankan perintah modifikasi akun atau kata sandi pada database produksi tanpa izin tertulis eksplisit dari pemilik sistem. Seluruh tindakan audit tercatat di log internal.
+> **JANGAN PERNAH menjalankan `php artisan db:seed` secara polos** tanpa menetapkan variabel lingkungan `SEED_ADMIN_*`, `SEED_SPI_*`, `SEED_USER_*`.
+> Pastikan variabel `SEED_TEST_PRODUCTS=false` tetap aktif agar sistem tidak menginjeksi produk dummy ke database produksi.
 
-### A. Memeriksa Status Akun Resmi (`cde:seed-accounts --check`)
+---
 
-Perintah ini memeriksa apakah akun seed dan peran sistem terdaftar di database tanpa membocorkan hash kata sandi:
+## 11. Konfigurasi Cron Job Laravel Scheduler (Tiap Menit)
+
+Laravel Scheduler bertugas menangani pembersihan pesanan kedaluwarsa, pelepasan kuota stok yang tidak diselesaikan, dan rekonsiliasi berkala.
+
+1. Buka **Hostinger hPanel** -> **Advanced** -> **Cron Jobs**.
+2. Pilih jenis jadwal: **Custom**.
+3. Atur frekuensi setiap menit: `* * * * *`.
+4. Masukkan baris perintah berikut:
+   ```bash
+   * * * * * /opt/alt/php84/usr/bin/php /home/USERNAME/cdepearls/backend/artisan schedule:run >> /dev/null 2>&1
+   ```
+5. Simpan pengaturan Cron Job.
+
+---
+
+## 12. Aturan Unggah Gambar Produk & Konversi WebP
+
+Sistem backend mengimplementasikan kebijakan ketat untuk manajemen citra produk:
+- **Otorisasi**: Hanya peran `admin` atau `spi` yang diizinkan mengunggah gambar produk (pelanggan ditolak HTTP 403).
+- **Validasi Dimensi & Format**:
+  - Format didukung: `jpg`, `jpeg`, `png`, `webp`.
+  - Ukuran file maksimum: `5 MB`.
+  - **Dimensi maksimum**: Gambar dengan dimensi melebihi **4000 piksel** pada sisi terpanjang langsung ditolak dengan pesan galat bahasa Indonesia yang jelas: `Dimensi gambar tidak boleh melebihi 4000 piksel pada sisi terpanjang.` (HTTP 422).
+  - Gambar dengan dimensi tepat 4000 piksel atau lebih kecil diterima secara normal.
+- **Pembersihan EXIF & Konversi WebP Otomatis**:
+  - Metadata sensitif (informasi koordinat GPS / data kamera EXIF) dibersihkan secara otomatis.
+  - Setiap berkas JPG atau PNG yang diunggah otomatis dibuatkan berkas pendamping berformat `.webp` berkinerja tinggi pada direktori `storage/products/`.
+  - Menghapus atau mengganti foto produk otomatis membersihkan berkas utama beserta berkas pendamping `.webp`-nya dari disk.
+
+---
+
+## 13. Kebijakan Keamanan Autentikasi (Anti-Enumeration)
+
+1. **Respons Seragam Kredensial**:
+   - Kata sandi salah untuk email terdaftar maupun email belum terdaftar menghasilkan respon **HTTP 401** seragam: `Email atau kata sandi tidak valid. Silakan periksa kembali.` (mencegah penyerang mendeteksi keberadaan akun pengguna).
+   - Status akun belum diverifikasi (**HTTP 403 `ACCOUNT_UNVERIFIED`**) hanya dikembalikan **setelah kata sandi diverifikasi benar**.
+2. **Pencegahan DoS Penguncian Akun**:
+   - Kegagalan kata sandi tidak mengunci akun di level database (`locked_until` tetap `null`).
+   - Rate limiting dikelola secara terisolasi via cache per-IP dan per-kombinasi email+IP (HTTP 429), melindungi pengguna sah dari serangan penolakan layanan (Denial of Service).
+3. **Standar Password**: Pendaftaran dan pembaruan kata sandi mewajibkan minimal 12 karakter dengan kombinasi aman.
+
+---
+
+## 14. Endpoint Health Check Publik
+
+Backend menyediakan endpoint pemantauan ketersediaan sistem:
+- **URL**: `GET https://api.cdepearlslombok.id/api/v1/health`
+- **Autentikasi**: Terbuka publik tanpa otorisasi.
+- **Respon Normal (HTTP 200)**:
+  ```json
+  {"status":"ok"}
+  ```
+- **Respon Gangguan Database (HTTP 503)**:
+  ```json
+  {"status":"degraded"}
+  ```
+- Endpoint ini bersih dan ramping: tidak mengekspos field database internal, latency ms, maupun timestamp ke publik.
+
+---
+
+## 15. Deploy Frontend ke Cloudflare WORKERS
+
+Frontend di-deploy menggunakan platform **Cloudflare Workers** (Static Assets):
+
+1. **Konfigurasi Project di Cloudflare Dashboard**:
+   - **Worker Name**: `cdepearlslombok`
+   - **Branch Produksi**: `main`
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm run build`
+   - **Build Output Directory**: `dist`
+2. **Variabel Lingkungan Build (Cloudflare Environment Variables)**:
+   - `VITE_API_URL`: `https://api.cdepearlslombok.id/api/v1`
+   - `VITE_TURNSTILE_SITE_KEY`: Site key Cloudflare Turnstile resmi untuk domain `cdepearlslombok.id`
+3. **SPA Routing**:
+   Konfigurasi Cloudflare Workers Static Assets otomatis melayani `index.html` untuk semua rute klien (Client-Side Routing React SPA).
+
+---
+
+## 16. Alur Pembaruan Produksi (Production Update Workflow)
+
+Setiap kali ada pembaruan kode baru yang di-merge ke branch `main`, lakukan langkah pembaruan berikut pada server Hostinger via SSH:
 
 ```bash
-# Di lingkungan lokal atau Railway shell:
-php artisan cde:seed-accounts --check
+cd /home/USERNAME/cdepearls
+
+# 1. Tarik pembaruan kode terbaru
+git pull origin main
+
+# 2. Perbarui dependensi backend dengan PHP 8.4
+cd backend
+/opt/alt/php84/usr/bin/php $(which composer) install --no-dev --optimize-autoloader
+
+# 3. Jalankan migrasi database baru
+/opt/alt/php84/usr/bin/php artisan migrate --force
+
+# 4. Bersihkan cache lama dan optimalkan ulang
+/opt/alt/php84/usr/bin/php artisan optimize:clear
+/opt/alt/php84/usr/bin/php artisan optimize
 ```
 
-Perintah akan menampilkan tabel status:
-- Email pengguna
-- Nama
-- Peran (`user`, `admin`, `spi`)
-- Status verifikasi email (`Terverifikasi` / `Belum`)
-- Status kata sandi terkonfigurasi (`Tersedia` / `Kosong`)
+---
 
-### B. Mengubah Kata Sandi Staf Secara Aman (`cde:set-password`)
+## 17. Verifikasi Pasca Deploy
 
-Untuk mengubah atau mereset kata sandi staf secara langsung via shell server (misal Railway CLI / SSH container) tanpa meninggalkan jejak plain text di riwayat terminal:
+> [!CAUTION]
+> **JANGAN jalankan `artisan test` di produksi!**
+> 
+> Seluruh unit testing, integration testing, dan race condition testing (Pest/PHPUnit) telah dijalankan dan diverifikasi 100% lulus di lingkungan pengujian CI/lokal dengan database uji `cde_test`. Menjalankan pengujian otomatis di server produksi berisiko mengotori data transaksi riil dan mengonsumsi memori server secara berlebih.
 
+### A. Verifikasi Status API (Health Check)
+Jalankan perintah berikut melalui terminal atau browser:
 ```bash
-# Sintaks perintah:
-php artisan cde:set-password <email>
-
-# Contoh:
-php artisan cde:set-password admin@cdepearls.com
+curl -i https://api.cdepearlslombok.id/api/v1/health
+```
+**Respon wajib HTTP 200**:
+```json
+{"status":"ok"}
 ```
 
-Mekanisme keamanan:
-1. Input kata sandi baru diminta melalui prompt rahasia yang tersembunyi (`$this->secret()`) tanpa echo karakter di layar.
-2. Input konfirmasi kata sandi wajib cocok persis dengan input pertama.
-3. Panjang kata sandi minimal 8 karakter.
-4. Kata sandi di-hash menggunakan algoritma Bcrypt dengan cost standar tinggi sebelum disimpan ke database.
-5. Tidak ada kredensial yang dicetak ke output terminal, riwayat shell (`~/.bash_history`), maupun log sistem.
-
-
-
-
----
-
-## 9. Konfigurasi Trusted Reverse Proxy & Keamanan IP Klien (U-4 & U-11)
-
-Untuk memastikan bahwa IP klien (`$request->ip()`) yang dideteksi oleh rate limiter, security gate, dan audit log adalah alamat IP pengunjung sebenarnya (anti-IP spoofing), backend menggunakan konfigurasi proxy berlapis yang fleksibel:
-
-- **Sumber Resmi Subnet Cloudflare**:
-  - IPv4: `https://www.cloudflare.com/ips-v4`
-  - IPv6: `https://www.cloudflare.com/ips-v6`
-- **Tanggal Pengambilan Data**: November 2026
-- **Berkas Konfigurasi**: `backend/config/trustedproxy.php`
-- **Integrasi Framework**: Terdaftar di `backend/bootstrap/app.php` melalui `$middleware->trustProxies(at: (require __DIR__.'/../config/trustedproxy.php')['proxies'])`.
-
-### A. Konfigurasi Fleksibel via Environment (`.env`)
-Backend mendukung penambahan proxy host lain (misal: Nginx upstream, AWS ALB, Traefik, Railway Private Network) tanpa mengubah kode:
-```env
-# Aktifkan kepercayaan pada subnet resmi Cloudflare (default: true)
-TRUST_CLOUDFLARE_PROXIES=true
-
-# Tambahkan subnet atau IP proxy privat host backend (dipisahkan koma)
-TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.1
-```
-
-### B. Cara Memeriksa IP Klien di Host Backend
-Untuk memverifikasi bahwa host backend mendeteksi IP klien asli dengan benar:
-1. **Melalui Tinker**:
-   ```bash
-   php artisan tinker --execute="echo request()->ip();"
-   ```
-2. **Melalui Audit Log**:
-   Setiap aksi otentikasi atau perubahan data mencatat kolom `ip_address` pada tabel `audit_logs`. Periksa apakah IP yang tercatat cocok dengan IP publik klien (bukan IP internal reverse proxy).
-3. **Melalui Log Nginx/Apache**:
-   Pastikan format log menyertakan `$http_cf_connecting_ip` atau `$http_x_forwarded_for` bersama dengan `$remote_addr`.
-
-### C. Prosedur Pembaruan Berkala IP Cloudflare
-Jika Cloudflare merilis rentang IP baru:
-1. Unduh daftar IP terbaru:
-   ```bash
-   curl -s https://www.cloudflare.com/ips-v4
-   curl -s https://www.cloudflare.com/ips-v6
-   ```
-2. Perbarui daftar di `backend/config/trustedproxy.php`.
-3. Jalankan tes verifikasi:
-   ```bash
-   php artisan test tests/Feature/TrustCloudflareProxiesTest.php
-   ```
-4. **Penting**: Jangan pernah menyetel `'proxies' => '*'` di lingkungan produksi untuk mencegah serangan header injection (`X-Forwarded-For`).
-
----
-
-## 10. Catatan Operasional & Kebijakan Sistem (U-11)
-
-### A. Masa Reservasi Stok Pesanan (`reservation_hours`)
-- Masa waktu tunggu pembayaran sebelum pesanan kedaluwarsa dan stok dikembalikan otomatis kini dapat dikonfigurasi melalui pengaturan SPI dengan kunci `reservation_hours`.
-- Nilai awal default sistem adalah **24 jam**.
-- Command terjadwal `orders:expire-reservations` membaca nilai ini secara dinamis dari database (fallback ke `payment_timeout_hours` atau 24 jam).
-
-### B. Status Modul Kelola Voucher
-- Basis data tabel `vouchers` dan API validasi server telah aktif penuh (mencegah manipulasi harga/diskon di sisi klien).
-- Antarmuka pengguna (UI) khusus untuk admin/SPI menambah atau mengubah voucher saat ini belum diimplementasikan; pembuatan voucher saat ini dikelola melalui database seeder atau konsol administrasi.
-
-### C. Penjelasan Temuan Status Git Duplikat `ApprovalController.php`
-- Pada sesi sebelumnya, `git status` sempat menampilkan `ApprovalController.php` dua kali karena variasi resolusi case-sensitive vs case-insensitive pada sistem file NTFS Windows (antara `Api/Spi/` dan representasi path relatif).
-- Telah diverifikasi bahwa hanya terdapat tepat satu berkas fisik di disk pada lokasi `backend/app/Http/Controllers/Api/Spi/ApprovalController.php`. Tidak ada controller duplikat di repositori.
-
-
----
-
-## 11. Pengendalian Pengindeksan Mesin Pencari (Search Engine Indexing Control)
-
-Untuk mencegah perayap mesin pencari (Googlebot, Bingbot, dll.) mengindeks situs selama fase pengujian di domain gratisan Cloudflare:
-
-### A. Kebijakan Default (Noindex Terkendali)
-Secara bawaan tanpa variabel environment (`VITE_ALLOW_INDEXING` bernilai `false` atau tidak diatur):
-1. **Meta Tag**: `<meta name="robots" content="noindex, nofollow" />` disematkan pada berkas `index.html`.
-2. **Robots.txt**: Berkas `dist/robots.txt` berisi:
-   ```text
-   User-agent: *
-   Disallow: /
-   ```
-3. **HTTP Header Cloudflare**: Berkas konfigurasi aset `dist/_headers` menyertakan header:
-   ```text
-   /*
-     X-Robots-Tag: noindex, nofollow
-   ```
-
-### B. Prosedur Pencabutan Noindex Saat Peluncuran Resmi (Go-Live)
-Ketika domain utama resmi butik telah siap dan diizinkan untuk diindeks publik:
-1. Masuk ke Cloudflare Dashboard > **Workers & Pages** > Pilih proyek `cdepearlslombok`.
-2. Buka menu **Settings** > **Variables and Secrets** > **Add variable**.
-3. Tambahkan variabel baru:
-   - Nama: `VITE_ALLOW_INDEXING`
-   - Nilai: `true`
-4. Jalankan deploy ulang (melalui push Git atau perintah CLI `npm run build && npx wrangler deploy`).
-5. Skrip otomatis build akan:
-   - Mengubah meta robots menjadi `<meta name="robots" content="index, follow" />`.
-   - Mengubah `robots.txt` menjadi `User-agent: *\nAllow: /`.
-   - Menghapus header `X-Robots-Tag: noindex` dari `_headers`.
+### B. Daftar Uji Manual (Browser Checklist)
+Lakukan tiga pengujian verifikasi manual berikut pada lingkungan produksi:
+1. **Login Administrator**:
+   - Buka `https://cdepearlslombok.id/masuk`.
+   - Masuk menggunakan akun admin resmi (`admin@cdepearls.com`).
+   - Pastikan berhasil diarahkan ke dashboard `/admin` tanpa kendala sesi atau cookie.
+2. **Katalog Awal Bersih**:
+   - Buka halaman katalog publik `https://cdepearlslombok.id/katalog`.
+   - Pastikan halaman menampilkan keadaan kosong yang rapi tanpa produk uji (bebas dari produk mock/dummy).
+3. **Unggah Produk Bergambar Asli**:
+   - Dari dashboard Admin, buka menu Manajemen Produk lalu tambahkan 1 produk baru beserta berkas gambar asli.
+   - Pastikan gambar berhasil diunggah, versi `.webp` terbuat secara otomatis di storage, dan gambar produk tampil sempurna di:
+     - Halaman Katalog Publik (`/katalog`)
+     - Halaman Detail Produk (`/produk/{slug}`)
+     - Tabel Daftar Produk Admin (`/admin/produk`)

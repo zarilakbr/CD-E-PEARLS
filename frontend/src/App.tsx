@@ -44,22 +44,15 @@ import { AccessDeniedPage } from './pages/common/AccessDeniedPage';
 const NotFoundPage = React.lazy(() => import('./pages/common/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 const ServerErrorPage = React.lazy(() => import('./pages/common/ServerErrorPage').then((m) => ({ default: m.ServerErrorPage })));
 
-import {
-  mockProducts,
-  mockOrders,
-  mockStockItems,
-  mockApprovals,
-  mockSpiAuditLogs,
-  mockStaffAccounts,
-  mockSpiFindings,
-  type MockProduct,
-  type MockOrder,
-  type MockStockItem,
-  type MockApprovalItem,
-  type MockSpiAuditLog,
-  type MockStaffAccount,
-  type MockSpiFinding,
-} from './data/mock';
+import type {
+  MockProduct,
+  MockOrder,
+  MockStockItem,
+  MockApprovalItem,
+  MockSpiAuditLog,
+  MockStaffAccount,
+  MockSpiFinding,
+} from './types/models';
 
 // Error Boundary to prevent blank page crashes
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -197,13 +190,13 @@ const AppContent: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Centralized Live Data States (Shared across Admin & SPI)
-  const [products, setProducts] = useState<MockProduct[]>(mockProducts);
-  const [orders, setOrders] = useState<MockOrder[]>(mockOrders);
-  const [stockItems, setStockItems] = useState<MockStockItem[]>(mockStockItems);
-  const [approvals, setApprovals] = useState<MockApprovalItem[]>(mockApprovals);
-  const [auditLogs, setAuditLogs] = useState<MockSpiAuditLog[]>(mockSpiAuditLogs);
-  const [staffAccounts, setStaffAccounts] = useState<MockStaffAccount[]>(mockStaffAccounts);
-  const [findings, setFindings] = useState<MockSpiFinding[]>(mockSpiFindings);
+  const [products, setProducts] = useState<MockProduct[]>([]);
+  const [orders, setOrders] = useState<MockOrder[]>([]);
+  const [stockItems, setStockItems] = useState<MockStockItem[]>([]);
+  const [approvals, setApprovals] = useState<MockApprovalItem[]>([]);
+  const [auditLogs, setAuditLogs] = useState<MockSpiAuditLog[]>([]);
+  const [staffAccounts, setStaffAccounts] = useState<MockStaffAccount[]>([]);
+  const [findings, setFindings] = useState<MockSpiFinding[]>([]);
 
   const handleAddToCart = (productName: string) => {
     setToastMessage(`✓ ${productName} berhasil ditambahkan ke keranjang belanja.`);

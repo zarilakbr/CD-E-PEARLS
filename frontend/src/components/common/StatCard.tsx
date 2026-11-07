@@ -17,22 +17,23 @@ export const StatCard: React.FC<StatCardProps> = ({
   value,
   note,
   icon,
-  trend = 'neutral',
+  trend,
   deltaPercent,
-  sparklineData = [20, 32, 28, 45, 40, 60, 75],
+  sparklineData,
   className = '',
 }) => {
   // Count-up display
-  const [displayValue, setDisplayValue] = useState<string | number>(value);
+  const [displayValue, setDisplayValue] = useState<string | number>(value ?? 0);
 
   useEffect(() => {
-    setDisplayValue(value);
+    setDisplayValue(value ?? 0);
   }, [value]);
 
-  // Generate SVG path from sparklineData points
-  const points = sparklineData.length > 0 ? sparklineData : [10, 25, 20, 38, 30, 50, 65];
-  const minVal = Math.min(...points);
-  const maxVal = Math.max(...points);
+  // Generate SVG path from sparklineData points (hanya bila data riil ada)
+  const hasSparkline = Array.isArray(sparklineData) && sparklineData.length >= 2;
+  const points = hasSparkline ? sparklineData : [];
+  const minVal = points.length > 0 ? Math.min(...points) : 0;
+  const maxVal = points.length > 0 ? Math.max(...points) : 1;
   const range = maxVal - minVal || 1;
   const width = 80;
   const height = 28;
@@ -67,28 +68,30 @@ export const StatCard: React.FC<StatCardProps> = ({
           {displayValue}
         </div>
 
-        {/* Subtle Luxury Sparkline */}
-        <div className="w-20 h-7 opacity-75 group-hover:opacity-100 transition-opacity">
-          <svg width={width} height={height} className="overflow-visible">
-            <path
-              d={pathCoordinates}
-              fill="none"
-              stroke="#D9B877"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            {/* Last dot */}
-            {points.length > 0 && (
-              <circle
-                cx={width}
-                cy={height - ((points[points.length - 1] - minVal) / range) * (height - 6) - 3}
-                r="3"
-                fill="#8A6A2F"
+        {/* Subtle Luxury Sparkline (hanya jika data riil tersedia) */}
+        {hasSparkline && (
+          <div className="w-20 h-7 opacity-75 group-hover:opacity-100 transition-opacity">
+            <svg width={width} height={height} className="overflow-visible">
+              <path
+                d={pathCoordinates}
+                fill="none"
+                stroke="#D9B877"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
-            )}
-          </svg>
-        </div>
+              {/* Last dot */}
+              {points.length > 0 && (
+                <circle
+                  cx={width}
+                  cy={height - ((points[points.length - 1] - minVal) / range) * (height - 6) - 3}
+                  r="3"
+                  fill="#8A6A2F"
+                />
+              )}
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* Delta pill & note */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   ArrowRight,
@@ -11,7 +11,8 @@ import {
 import { ProductCard } from '../../components/common/ProductCard';
 import { PearlVarietiesMarquee } from '../../components/home/PearlVarietiesMarquee';
 import { MobileMarketplaceHome } from '../../components/home/MobileMarketplaceHome';
-import { mockCategories, mockProducts, type MockProduct } from '../../data/mock';
+import type { MockProduct } from '../../types/models';
+import { catalogApi } from '../../lib/api';
 
 interface PublicHomePageProps {
   onNavigate: (tab: string, filter?: string) => void;
@@ -111,7 +112,68 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
   const [varietyFilter, setVarietyFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
-  const [wishlistIds, setWishlistIds] = useState<number[]>([1, 3]);
+  const [wishlistIds, setWishlistIds] = useState<number[]>([]);
+
+  // Live Data States dari API
+  const [liveProducts, setLiveProducts] = useState<MockProduct[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+
+  const fetchCatalogData = () => {
+    setIsLoading(true);
+    setIsError(false);
+    Promise.all([
+      catalogApi.getProducts({ per_page: 50 }).catch((e) => {
+        throw e;
+      }),
+      catalogApi.getCategories().catch(() => []),
+    ])
+      .then(([prodRes, catRes]) => {
+        const pItems = prodRes?.data || prodRes;
+        const cItems = catRes?.data || catRes;
+        if (Array.isArray(pItems)) {
+          const mapped: MockProduct[] = pItems.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            category: item.category?.name || 'Mutiara South Sea',
+            categorySlug: item.category_slug || item.category?.slug || 'kalung-mutiara',
+            variety: item.varietas || 'South Sea',
+            grade: item.grade || 'AAA',
+            pearlSize: item.ukuran_mm ? `${item.ukuran_mm} mm` : '12 mm',
+            metal: item.logam || 'Emas 18K',
+            weight: item.berat || '5.0 gr',
+            bentuk: item.bentuk || 'Bulat',
+            colorGroup: item.kelompok_warna || 'putih',
+            colorVariant: item.varian_warna || 'Silver White',
+            price: Number(item.price) || 0,
+            formattedPrice: `Rp ${Number(item.price).toLocaleString('id-ID')}`,
+            stock: Number(item.stock) || 0,
+            status: item.status === 'published' ? 'Aktif' : 'Nonaktif',
+            description: item.description || '',
+            image: item.image || '/images/placeholder_jewelry.svg',
+            images: item.images,
+          }));
+          setLiveProducts(mapped);
+        } else {
+          setLiveProducts([]);
+        }
+        if (Array.isArray(cItems)) {
+          setCategories(cItems);
+        }
+      })
+      .catch(() => {
+        setIsError(true);
+        setLiveProducts([]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchCatalogData();
+  }, []);
 
   const toggleWishlist = (id: number) => {
     setWishlistIds((prev) =>
@@ -120,7 +182,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
   };
 
   // Filter products
-  const filteredProducts = mockProducts.filter((p) => {
+  const filteredProducts = liveProducts.filter((p) => {
     if (selectedCategorySlug !== 'all' && p.categorySlug !== selectedCategorySlug) {
       return false;
     }
@@ -147,8 +209,8 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
       jpg: '/images/terroir_pearl_plate_left.jpg',
     },
     'cincin-mutiara': {
-      webp: '/images/cat_ring_silk.webp',
-      jpg: '/images/cat_ring_silk.jpg',
+      webp: '/images/placeholder_jewelry.svg',
+      jpg: '/images/placeholder_jewelry.svg',
     },
     'mutiara-lepas': {
       webp: '/images/hero_pearl_dark_luxury.webp',
@@ -161,6 +223,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
       {/* MOBILE VIEW (< lg): TAMPILAN MARKETPLACE (TAHAP Q) */}
       <div className="lg:hidden w-full">
         <MobileMarketplaceHome
+          products={liveProducts}
           onSelectProduct={onSelectProduct || (() => {})}
           onAddToCart={onAddToCart}
         />
@@ -330,7 +393,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-            {mockCategories.map((cat) => {
+            {categories.map((cat) => {
               const isSelected = selectedCategorySlug === cat.slug;
               const imgData = categoryImages[cat.slug] || {
                 webp: '/images/hero_pearl_shell.webp',
@@ -419,9 +482,9 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
                     : 'bg-white border border-[#E6DDD0] text-[#4A5666] hover:bg-[#EDE6DA]'
                 }`}
               >
-                Semua Koleksi ({mockProducts.length})
+                Semua Koleksi ({liveProducts.length})
               </button>
-              {mockCategories.map((c) => (
+              {categories.map((c) => (
                 <button
                   key={c.id}
                   type="button"
@@ -488,8 +551,36 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
             </div>
           </div>
 
-          {/* Product Cards Grid with Real Pearl Photography */}
-          {filteredProducts.length > 0 ? (
+          {/* Product Cards Grid / Loading / Error / Empty State */}
+          {isLoading ? (
+            <div className="p-16 text-center space-y-4">
+              <div className="w-8 h-8 border-2 border-[#8A6A2F] border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-xs text-[#4A5666]">Menyelaraskan koleksi mutiara pilihan...</p>
+            </div>
+          ) : isError ? (
+            <div className="p-12 text-center bg-white rounded-2xl border border-red-200 space-y-3">
+              <p className="text-sm text-red-600 font-medium">
+                Gagal memuat katalog perhiasan. Periksa koneksi internet Anda.
+              </p>
+              <button
+                type="button"
+                onClick={fetchCatalogData}
+                className="px-6 py-2 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652] cursor-pointer"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          ) : liveProducts.length === 0 ? (
+            <div className="p-16 text-center bg-white rounded-2xl border border-[#E6DDD0] space-y-3">
+              <Sparkles className="w-10 h-10 text-[#8A6A2F] mx-auto opacity-70" />
+              <h3 className="font-serif text-2xl font-medium text-[#12263A]">
+                Koleksi Segera Hadir
+              </h3>
+              <p className="text-sm text-[#4A5666] max-w-md mx-auto">
+                Atelier perhiasan mutiara air laut Lombok kami sedang menyiapkan koleksi istimewa untuk Anda.
+              </p>
+            </div>
+          ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredProducts.map((p) => (
                 <ProductCard
@@ -735,8 +826,8 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
                 title: 'Mirror Luster (Kilau Cermin)',
                 label: 'Kualitas Kilau Reflektif',
                 desc: 'Mutiara laut berkualitas tinggi memiliki kilau cermin tajam. Bila Anda mendekatkan wajah, pantulan bayangan terlihat jelas di permukaannya tanpa distorsi buram.',
-                imgWebp: '/images/cat_ring_silk.webp',
-                imgJpg: '/images/cat_ring_silk.jpg',
+                imgWebp: '/images/hero_pearl_shell.webp',
+                imgJpg: '/images/hero_pearl_shell.jpg',
               },
               {
                 title: 'Ketebalan Nacre (>2.0mm)',

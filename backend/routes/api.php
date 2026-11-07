@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CertificateController;
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Api\Spi\AuditLogController;
 use App\Http\Controllers\Api\Spi\SpiControlCenterController;
 use App\Http\Controllers\Api\Spi\SpiStaffController;
 use App\Http\Controllers\Api\Spi\SpiSummaryController;
+use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +34,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->group(function () {
+    // Public Health Check Endpoint
+    Route::get('/health', [HealthController::class, 'check']);
+
     // 1. Public Authentication, OAuth & Password Management
     Route::prefix('auth')->group(function () {
         Route::get('/providers', [AuthController::class, 'providers']);
@@ -103,6 +108,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/orders/{id}/upload-proof', [OrderController::class, 'uploadProof']);
         Route::get('/orders/{id}/payments/{paymentId}/proof', [OrderController::class, 'downloadProof']);
 
+        // Real-Time Dashboard Sync & ETag Polling (Tahap N2)
+        Route::get('/sync/status', [SyncController::class, 'status'])->middleware('throttle:sync-polling');
+
         // 5. Admin & SPI Management Routes (SPI inherits full access)
         Route::middleware('role:admin,spi')->group(function () {
             Route::prefix('admin')->group(function () {
@@ -117,6 +125,7 @@ Route::prefix('v1')->group(function () {
 
                 // S-1 Product Management (under /v1/admin/products)
                 Route::get('/products', [ProductAdminController::class, 'index']);
+                Route::post('/products/upload-image', [ProductAdminController::class, 'uploadImage']);
                 Route::post('/products', [ProductAdminController::class, 'store']);
                 Route::put('/products/{id}', [ProductAdminController::class, 'update']);
                 Route::delete('/products/{id}', [ProductAdminController::class, 'destroy']);
@@ -204,6 +213,7 @@ Route::prefix('v1')->group(function () {
 // S-1 Direct Root Alias /api/admin/products for Admin & SPI
 Route::middleware(['auth:sanctum', 'role:admin,spi'])->prefix('admin')->group(function () {
     Route::get('/products', [ProductAdminController::class, 'index']);
+    Route::post('/products/upload-image', [ProductAdminController::class, 'uploadImage']);
     Route::post('/products', [ProductAdminController::class, 'store']);
     Route::put('/products/{id}', [ProductAdminController::class, 'update']);
     Route::delete('/products/{id}', [ProductAdminController::class, 'destroy']);

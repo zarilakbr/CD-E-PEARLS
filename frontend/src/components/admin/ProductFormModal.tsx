@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Upload, Save, Star, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
-import { type MockProduct } from '../../data/mock';
+import type { MockProduct } from '../../types/models';
 
 interface PhotoItem {
   id: string;
@@ -236,7 +236,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         formattedPrice: `Rp ${price.toLocaleString('id-ID')}`,
         stock,
         status,
-        image: primaryPhoto ? primaryPhoto.previewUrl : product?.image || '/images/cat_ring_silk.jpg',
+        image: primaryPhoto ? primaryPhoto.previewUrl : product?.image || '/images/placeholder_jewelry.svg',
         images: photos.map((p, idx) => ({
           url: p.previewUrl,
           order: idx + 1,
@@ -291,7 +291,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             <input
               type="text"
               required
-              name="name" placeholder="Contoh: Kalung Mutiara South Sea Princess AAA"
+              name="name" placeholder="Contoh: Kalung Mutiara South Sea 18K"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none focus:border-[#12263A]"

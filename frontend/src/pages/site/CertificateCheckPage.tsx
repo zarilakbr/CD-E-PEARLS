@@ -30,40 +30,10 @@ export const CertificateCheckPage: React.FC = () => {
       if (data && (data.certificate || data.data)) {
         setResult(data.certificate || data.data);
       } else {
-        // Fallback demo certificate if not yet in remote DB
-        setResult({
-          certificate_number: certCode.toUpperCase(),
-          lab_name: "Lombok Gemological Institute & CD'E Pearls Atelier Bureau",
-          grade: 'AAA Collector Grade',
-          variety: 'Gold South Sea Pearl (Pinctada Maxima)',
-          origin: 'Sekotong & Medana, Lombok',
-          diameter_mm: '12.4 mm',
-          luster: 'Excellent (Cermin Alami)',
-          surface: 'Clean (95%+ Murni Bebas Cacat)',
-          shape: 'Perfect Round',
-          issued_date: '2026-03-15',
-          status: 'verified',
-        });
-      }
-    } catch {
-      // If 404 from backend, fallback to demo verified sample if matches format, else show not found
-      if (certCode.toUpperCase().startsWith('CDE')) {
-        setResult({
-          certificate_number: certCode.toUpperCase(),
-          lab_name: "Lombok Gemological Institute & CD'E Pearls Bureau",
-          grade: 'AAA High Lustre',
-          variety: 'White South Sea Pearl (Pinctada Maxima)',
-          origin: 'Sekotong & Medana, Lombok',
-          diameter_mm: '11.8 mm',
-          luster: 'Deep Mirror Luster',
-          surface: 'Very Light Blemish (Grade AAA)',
-          shape: 'Round',
-          issued_date: '2026-02-20',
-          status: 'verified',
-        });
-      } else {
         setError('Nomor sertifikat tidak ditemukan dalam arsip gemologi resmi CD\'E Pearls Lombok.');
       }
+    } catch {
+      setError('Nomor sertifikat tidak ditemukan dalam arsip gemologi resmi CD\'E Pearls Lombok.');
     } finally {
       setIsLoading(false);
     }

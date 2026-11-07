@@ -12,11 +12,21 @@ try {
   console.warn('Could not determine git commit hash, using fallback:', e.message);
 }
 
+let pkgVersion = '1.0.0';
+try {
+  const pkgJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8'));
+  if (pkgJson.version && pkgJson.version !== '0.0.0') {
+    pkgVersion = pkgJson.version;
+  }
+} catch (e) {
+  console.warn('Could not read package.json version:', e.message);
+}
+
 const buildTime = new Date().toISOString();
 const versionData = {
   commit: commitHash,
   buildTime: buildTime,
-  version: '1.0.0-tahap-s'
+  version: `${pkgVersion}-${commitHash}`
 };
 
 const publicDir = path.resolve(__dirname, '../public');

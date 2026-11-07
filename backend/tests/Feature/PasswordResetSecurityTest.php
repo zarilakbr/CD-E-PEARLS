@@ -30,8 +30,8 @@ test('U-6: token reset kata sandi yang lebih tua dari 60 menit ditolak (kedaluwa
     $response = $this->postJson('/api/v1/auth/reset-password', [
         'email' => $this->user->email,
         'token' => $token,
-        'password' => 'Baru12345!',
-        'password_confirmation' => 'Baru12345!',
+        'password' => 'Baru12345678!',
+        'password_confirmation' => 'Baru12345678!',
     ]);
 
     $response->assertStatus(422);
@@ -51,8 +51,8 @@ test('U-6: token reset kata sandi bersifat single-use dan langsung hangus setela
     $res1 = $this->postJson('/api/v1/auth/reset-password', [
         'email' => $this->user->email,
         'token' => $token,
-        'password' => 'Baru12345!',
-        'password_confirmation' => 'Baru12345!',
+        'password' => 'Baru12345678!',
+        'password_confirmation' => 'Baru12345678!',
     ]);
     $res1->assertStatus(200);
 

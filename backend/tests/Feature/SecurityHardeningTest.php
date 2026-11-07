@@ -145,8 +145,8 @@ test('failed login returns HTTP 401 with identical message for wrong password an
     // Responses must be completely identical
     expect($resWrongPass->json())->toEqual($resUnknownEmail->json());
 
-    // 3. 5 failed logins locks user account
-    for ($i = 0; $i < 5; $i++) {
+    // 3. 5 failed logins triggers rate limiting on IP without locking user account in DB (Anti-DoS)
+    for ($i = 0; $i < 4; $i++) {
         $this->postJson('/api/v1/auth/login', [
             'email' => 'security.victim@cdepearls.com',
             'password' => 'WrongPassword999!',
@@ -154,8 +154,15 @@ test('failed login returns HTTP 401 with identical message for wrong password an
         ]);
     }
 
+    $resBlocked = $this->postJson('/api/v1/auth/login', [
+        'email' => 'security.victim@cdepearls.com',
+        'password' => 'WrongPassword999!',
+        'turnstile_token' => 'valid_turnstile_token',
+    ]);
+    $resBlocked->assertStatus(429);
+
     $victim->refresh();
-    expect($victim->locked_until)->not->toBeNull();
+    expect($victim->locked_until)->toBeNull();
 });
 
 /*

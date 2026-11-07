@@ -206,7 +206,7 @@ class AuthController extends Controller
                 return response()->json([
                     'success' => false,
                     'error' => 'ACCOUNT_LOCKED',
-                    'message' => "Akun Anda terkunci sementara karena 5 kali percobaan masuk gagal. Silakan coba lagi dalam {$minutesRemaining} menit.",
+                    'message' => "Akun Anda terkunci sementara. Silakan coba lagi dalam {$minutesRemaining} menit atau hubungi administrator.",
                     'locked_until' => $user->locked_until->toIso8601String(),
                     'retry_after_seconds' => $secondsRemaining,
                 ], Response::HTTP_LOCKED);
@@ -238,40 +238,7 @@ class AuthController extends Controller
             RateLimiter::hit($emailKey, $decay);
             RateLimiter::hit($ipKey, 3600);
 
-            // Increment failed_logins and lock if threshold (5) reached
-            if ($user) {
-                $newFailed = ($user->failed_logins ?? 0) + 1;
-                if ($newFailed >= 5) {
-                    $lockedUntil = now()->addMinutes(15);
-                    $user->update([
-                        'failed_logins' => $newFailed,
-                        'locked_until' => $lockedUntil,
-                    ]);
-
-                    AuditLog::create([
-                        'actor_id' => $user->id,
-                        'actor_name' => $user->name,
-                        'actor_role' => $user->role,
-                        'action' => 'ACCOUNT_LOCKED',
-                        'target_type' => 'user',
-                        'target_id' => (string) $user->id,
-                        'ip_address' => $request->ip(),
-                        'user_agent' => $request->userAgent(),
-                        'created_at' => now(),
-                    ]);
-
-                    return response()->json([
-                        'success' => false,
-                        'error' => 'ACCOUNT_LOCKED',
-                        'message' => 'Akun Anda terkunci selama 15 menit karena 5 kali percobaan login gagal.',
-                        'locked_until' => $lockedUntil->toIso8601String(),
-                        'retry_after_seconds' => 900,
-                    ], Response::HTTP_LOCKED);
-                }
-
-                $user->update(['failed_logins' => $newFailed]);
-            }
-
+            // Audit login failure without locking user row in DB to prevent Account Lockout DoS
             AuditLog::create([
                 'action' => 'LOGIN_FAILED',
                 'target_type' => 'auth',

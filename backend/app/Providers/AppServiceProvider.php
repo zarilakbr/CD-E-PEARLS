@@ -37,5 +37,12 @@ class AppServiceProvider extends ServiceProvider
             $key = $user ? 'user_'.$user->id : 'ip_'.$request->ip();
             return Limit::perMinutes(10, 5)->by($key);
         });
+
+        // Dedicated rate limit for real-time dashboard polling (Tahap N2)
+        RateLimiter::for('sync-polling', function (Request $request) {
+            $user = $request->user();
+            $key = $user ? 'sync_user_'.$user->id : 'sync_ip_'.$request->ip();
+            return Limit::perMinute(60)->by($key);
+        });
     }
 }

@@ -10,7 +10,7 @@ import {
   CommandSeparator,
 } from '../ui/command';
 import { History, Sparkles, ArrowRight, Trash2 } from 'lucide-react';
-import { mockCategories } from '../../data/mock';
+import { catalogApi } from '../../lib/api';
 
 interface SearchOverlayProps {
   open: boolean;
@@ -20,6 +20,22 @@ interface SearchOverlayProps {
 export const SearchOverlay: React.FC<SearchOverlayProps> = ({ open, onOpenChange }) => {
   const navigate = useNavigate();
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Array<{ id: number; name: string; slug: string }>>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    catalogApi.getCategories()
+      .then((res: any) => {
+        const list = res?.data || res;
+        if (mounted && Array.isArray(list)) {
+          setCategories(list);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -105,21 +121,23 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ open, onOpenChange
         {recentSearches.length > 0 && <CommandSeparator />}
 
         {/* Saran Kategori Mutiara */}
-        <CommandGroup heading="Kategori Pilihan">
-          {mockCategories.map((cat) => (
-            <CommandItem
-              key={cat.id}
-              onSelect={() => handleSelectCategory(cat.slug)}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-[#8A6A2F] dark:text-[#D9B877]" />
-                <span className="font-medium">{cat.name}</span>
-              </div>
-              <span className="text-[10px] text-[var(--text-2)]">Koleksi Mutiara</span>
-            </CommandItem>
-          ))}
-        </CommandGroup>
+        {categories.length > 0 && (
+          <CommandGroup heading="Kategori Pilihan">
+            {categories.map((cat) => (
+              <CommandItem
+                key={cat.id}
+                onSelect={() => handleSelectCategory(cat.slug)}
+                className="flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-[#8A6A2F] dark:text-[#D9B877]" />
+                  <span className="font-medium">{cat.name}</span>
+                </div>
+                <span className="text-[10px] text-[var(--text-2)]">Koleksi Mutiara</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
 
         <CommandSeparator />
 

@@ -216,8 +216,11 @@ class DatabaseSeeder extends Seeder
             $certIds[$cert['nomor']] = $createdCert->id;
         }
 
-        // 6. Products
-        $products = [
+        // 6. Products (Hanya dijalankan di lingkungan non-produksi atau jika SEED_TEST_PRODUCTS=true secara eksplisit)
+        $shouldSeedProducts = !app()->isProduction() || env('SEED_TEST_PRODUCTS', false);
+
+        if ($shouldSeedProducts) {
+            $products = [
             [
                 'code' => 'PRD-LMB-001',
                 'category_slug' => 'kalung-mutiara',
@@ -342,6 +345,7 @@ class DatabaseSeeder extends Seeder
                 ]
             );
         }
+        } // End if ($shouldSeedProducts)
 
         // 8. Sample SPI Approvals (Pending, Approved, Rejected)
         Approval::updateOrCreate(

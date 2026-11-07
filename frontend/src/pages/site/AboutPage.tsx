@@ -131,7 +131,7 @@ export const AboutPage: React.FC = () => {
 
           <div className="relative h-[280px] rounded-2xl overflow-hidden border border-[#E6DDD0] shadow-sm group">
             <img
-              src="/images/cat_ring_silk.jpg"
+              src="/images/hero_pearl_shell.jpg"
               alt="Rangkaian Cincin Emas 18K"
               width={380}
               height={280}

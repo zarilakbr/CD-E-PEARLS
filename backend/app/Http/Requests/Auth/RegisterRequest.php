@@ -33,7 +33,7 @@ class RegisterRequest extends FormRequest
             'password' => [
                 'required',
                 'string',
-                'min:8',
+                'min:12',
                 'regex:/[a-z]/',      // at least one lowercase letter
                 'regex:/[A-Z]/',      // at least one uppercase letter
                 'regex:/[0-9]/',      // at least one number
@@ -51,7 +51,7 @@ class RegisterRequest extends FormRequest
             'email.email' => 'Format email tidak valid.',
             'email.unique' => 'Alamat email ini sudah terdaftar.',
             'password.required' => 'Kata sandi wajib diisi.',
-            'password.min' => 'Kata sandi minimal 8 karakter.',
+            'password.min' => 'Kata sandi minimal 12 karakter.',
             'password.regex' => 'Kata sandi harus mengandung kombinasi huruf besar, huruf kecil, dan angka.',
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
         ];

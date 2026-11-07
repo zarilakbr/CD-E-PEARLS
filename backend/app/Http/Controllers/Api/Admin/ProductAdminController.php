@@ -61,6 +61,115 @@ class ProductAdminController extends Controller
     }
 
     /**
+     * Upload standalone product image with EXIF stripping, dimension validation (max 4000px), WebP conversion, and randomized filename.
+     */
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => [
+                'required',
+                'file',
+                'mimes:jpeg,jpg,png,webp',
+                'mimetypes:image/jpeg,image/png,image/webp',
+                'max:5120',
+                'dimensions:max_width=4000,max_height=4000',
+            ],
+        ], [
+            'image.dimensions' => 'Dimensi gambar tidak boleh melebihi 4000 piksel pada sisi terpanjang.',
+        ]);
+
+        $url = $this->processAndStoreImage($request->file('image'));
+        $webpUrl = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $url);
+
+        return response()->json([
+            'success' => true,
+            'url' => $url,
+            'webp_url' => $webpUrl,
+            'message' => 'Gambar produk berhasil diunggah.',
+        ], Response::HTTP_CREATED);
+    }
+
+    /**
+     * Process and store uploaded image with EXIF stripping, WebP version, and randomized filename.
+     */
+    protected function processAndStoreImage($file): string
+    {
+        $extension = strtolower($file->guessExtension() ?: 'jpg');
+        if (! in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            $extension = 'jpg';
+        }
+        $cleanExt = ($extension === 'jpeg') ? 'jpg' : $extension;
+        $randomBase = Str::random(40);
+        $randomFilename = 'products/' . $randomBase . '.' . $cleanExt;
+        $webpFilename = 'products/' . $randomBase . '.webp';
+
+        $realPath = $file->getRealPath();
+        if (function_exists('imagecreatefromstring')) {
+            $content = file_get_contents($realPath);
+            $gd = @imagecreatefromstring($content);
+            if ($gd !== false) {
+                $origWidth = imagesx($gd);
+                $origHeight = imagesy($gd);
+                if (max($origWidth, $origHeight) > 4000) {
+                    imagedestroy($gd);
+                    abort(422, 'Dimensi gambar tidak boleh melebihi 4000 piksel pada sisi terpanjang.');
+                }
+
+                // 1. Simpan berkas utama (jpg/png/webp) tanpa EXIF
+                ob_start();
+                if ($cleanExt === 'png') {
+                    imagepng($gd, null, 8);
+                } elseif ($cleanExt === 'webp') {
+                    imagewebp($gd, null, 85);
+                } else {
+                    imagejpeg($gd, null, 85);
+                }
+                $cleanData = ob_get_clean();
+                Storage::disk('public')->put($randomFilename, $cleanData);
+
+                // 2. Simpan juga versi WebP bila berkas asli bukan WebP
+                if ($cleanExt !== 'webp') {
+                    ob_start();
+                    imagewebp($gd, null, 85);
+                    $webpData = ob_get_clean();
+                    Storage::disk('public')->put($webpFilename, $webpData);
+                }
+
+                imagedestroy($gd);
+
+                return '/storage/' . $randomFilename;
+            }
+        }
+
+        $path = $file->storeAs('products', basename($randomFilename), 'public');
+        return '/storage/' . $path;
+    }
+
+    /**
+     * Delete stored image file and associated WebP if exists in public storage.
+     */
+    protected function deleteStoredImage(?string $url): void
+    {
+        if (empty($url) || ! str_starts_with($url, '/storage/products/')) {
+            return;
+        }
+
+        $relativePath = str_replace('/storage/', '', $url);
+        if (Storage::disk('public')->exists($relativePath)) {
+            Storage::disk('public')->delete($relativePath);
+        }
+
+        // Hapus juga file WebP pendamping bila format asli adalah jpg atau png
+        $info = pathinfo($relativePath);
+        if (($info['extension'] ?? '') !== 'webp') {
+            $webpPath = ($info['dirname'] !== '.' ? $info['dirname'] . '/' : '') . $info['filename'] . '.webp';
+            if (Storage::disk('public')->exists($webpPath)) {
+                Storage::disk('public')->delete($webpPath);
+            }
+        }
+    }
+
+    /**
      * Store a newly created product.
      */
     public function store(AdminProductRequest $request): JsonResponse
@@ -68,28 +177,40 @@ class ProductAdminController extends Controller
         $user = $request->user();
         $validated = $request->validated();
 
-        // 1. Process multiple photo uploads with randomized filenames & true MIME
-        // U-8.c: Disallow raw string images from JSON payload; only multipart files allowed
-        unset($validated['image'], $validated['images']);
+        // 1. Process multiple photo uploads with randomized filenames, true MIME & EXIF stripping
+        unset($validated['images']);
         $uploadedImages = [];
-        $primaryImageUrl = null;
+        $primaryImageUrl = $request->input('image_url') ?? null;
         $primaryIndex = (int) ($validated['primary_photo_index'] ?? 0);
         $photoAlts = $request->input('photo_alts', []);
+
+        if ($request->hasFile('image')) {
+            $primaryImageUrl = $this->processAndStoreImage($request->file('image'));
+            $uploadedImages[] = [
+                'url' => $primaryImageUrl,
+                'order' => 1,
+                'is_primary' => true,
+                'alt' => $validated['name'].' - Foto Utama',
+            ];
+        } elseif (! empty($primaryImageUrl)) {
+            $uploadedImages[] = [
+                'url' => $primaryImageUrl,
+                'order' => 1,
+                'is_primary' => true,
+                'alt' => $validated['name'].' - Foto Utama',
+            ];
+        }
 
         if ($request->hasFile('photos')) {
             foreach ($request->file('photos') as $idx => $photo) {
                 if ($photo->isValid()) {
-                    $extension = $photo->guessExtension() ?: 'jpg';
-                    $randomFilename = Str::random(40).'.'.$extension;
-                    $path = $photo->storeAs('products', $randomFilename, 'public');
-                    $url = '/storage/'.$path;
-
-                    $isPrimary = ($idx === $primaryIndex);
+                    $url = $this->processAndStoreImage($photo);
+                    $isPrimary = ($idx === $primaryIndex) && empty($primaryImageUrl);
                     $altText = $photoAlts[$idx] ?? ($validated['name'].' - Foto '.($idx + 1));
 
                     $uploadedImages[] = [
                         'url' => $url,
-                        'order' => $idx + 1,
+                        'order' => count($uploadedImages) + 1,
                         'is_primary' => $isPrimary,
                         'alt' => $altText,
                     ];
@@ -103,6 +224,8 @@ class ProductAdminController extends Controller
 
         if (! empty($uploadedImages)) {
             $validated['images'] = $uploadedImages;
+        }
+        if (! empty($primaryImageUrl)) {
             $validated['image'] = $primaryImageUrl;
         }
 
@@ -243,28 +366,42 @@ class ProductAdminController extends Controller
             }
         }
 
+        // Handle image replacement with old file deletion
+        if ($request->hasFile('image')) {
+            $this->deleteStoredImage($product->image);
+            $primaryImageUrl = $this->processAndStoreImage($request->file('image'));
+            $validated['image'] = $primaryImageUrl;
+        }
+
         // Handle additional photos if present
         if ($request->hasFile('photos')) {
             $uploadedImages = $product->images ?: [];
             $primaryIndex = (int) ($validated['primary_photo_index'] ?? 0);
             $photoAlts = $request->input('photo_alts', []);
 
+            // If replacing, remove previous photos from storage
+            if (! empty($uploadedImages)) {
+                foreach ($uploadedImages as $oldImg) {
+                    $this->deleteStoredImage(is_array($oldImg) ? ($oldImg['url'] ?? null) : $oldImg);
+                }
+                $uploadedImages = [];
+            }
+
             foreach ($request->file('photos') as $idx => $photo) {
                 if ($photo->isValid()) {
-                    $extension = $photo->guessExtension() ?: 'jpg';
-                    $randomFilename = Str::random(40).'.'.$extension;
-                    $path = $photo->storeAs('products', $randomFilename, 'public');
-                    $url = '/storage/'.$path;
-
+                    $url = $this->processAndStoreImage($photo);
                     $uploadedImages[] = [
                         'url' => $url,
                         'order' => count($uploadedImages) + 1,
-                        'is_primary' => (count($uploadedImages) === 0),
-                        'alt' => $photoAlts[$idx] ?? ($product->name.' - Foto'),
+                        'is_primary' => ($idx === $primaryIndex),
+                        'alt' => $photoAlts[$idx] ?? ($product->name.' - Foto '.($idx + 1)),
                     ];
                 }
             }
             $validated['images'] = $uploadedImages;
+            if (! empty($uploadedImages[0]['url']) && empty($validated['image'])) {
+                $validated['image'] = $uploadedImages[0]['url'];
+            }
         }
 
         $oldValues = $product->only(['name', 'price', 'stock', 'status', 'grade', 'varietas']);

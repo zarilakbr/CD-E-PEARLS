@@ -23,8 +23,6 @@ export const CheckoutPage: React.FC = () => {
   const [phone, setPhone] = useState(user?.phone || '');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
-  const [voucherCode, setVoucherCode] = useState('');
-  const [voucherError, setVoucherError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [orderCreated, setOrderCreated] = useState<any | null>(null);
@@ -45,7 +43,6 @@ export const CheckoutPage: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
-    setVoucherError(null);
 
     try {
       const itemsPayload = items.map((i) => ({
@@ -59,7 +56,6 @@ export const CheckoutPage: React.FC = () => {
         customer_address: address,
         notes: notes || undefined,
         payment_method: 'TRANSFER_BANK',
-        voucher_code: voucherCode.trim() || undefined,
         turnstile_token: user ? undefined : (turnstileToken || undefined),
         items: itemsPayload,
       };
@@ -73,26 +69,14 @@ export const CheckoutPage: React.FC = () => {
         }
         clearCart();
       } else {
-        const demoOrder = {
-          order_number: `CDE-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
-          total: total,
-          order_status: 'PENDING',
-        };
-        setOrderCreated(demoOrder);
-        clearCart();
+        throw new Error('Gagal memproses pesanan di server.');
       }
     } catch (err: any) {
       const respData = err.response?.data;
-      if (respData?.errors?.voucher_code) {
-        setVoucherError(respData.errors.voucher_code[0]);
-      } else if (respData?.errors?.turnstile_token) {
+      if (respData?.errors?.turnstile_token) {
         setError(respData.errors.turnstile_token[0]);
       } else if (respData?.message) {
-        if (respData.message.includes('voucher') || respData.message.includes('Voucher')) {
-          setVoucherError(respData.message);
-        } else {
-          setError(respData.message);
-        }
+        setError(respData.message);
       } else {
         setError('Gagal membuat pesanan. Harap periksa kembali isian formulir.');
       }
@@ -116,7 +100,17 @@ export const CheckoutPage: React.FC = () => {
         </p>
       </div>
 
-      {orderCreated ? (
+      {items.length === 0 && !orderCreated ? (
+        <div className="max-w-md mx-auto text-center p-8 bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 rounded-3xl space-y-4">
+          <p className="text-sm text-[#4A5666] dark:text-[#D9B877]">Keranjang belanja Anda saat ini masih kosong.</p>
+          <Link
+            to="/katalog"
+            className="inline-flex min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold items-center justify-center cursor-pointer shadow-xs"
+          >
+            Jelajahi Katalog Perhiasan
+          </Link>
+        </div>
+      ) : orderCreated ? (
         <div className="max-w-2xl mx-auto bg-white dark:bg-[#12263A] border-2 border-[#D9B877] rounded-3xl p-6 sm:p-10 shadow-xl space-y-6 text-center animate-in fade-in zoom-in-95 duration-200">
           <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
             <CheckCircle2 className="w-8 h-8" />
@@ -305,25 +299,7 @@ export const CheckoutPage: React.FC = () => {
               ))}
             </div>
 
-            {/* Voucher Code Input */}
-            <div className="space-y-1.5 pt-3 border-t border-[#E6DDD0] dark:border-white/10">
-              <label className="text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3]">
-                Kode Voucher Diskon (Opsional)
-              </label>
-              <input
-                type="text"
-                value={voucherCode}
-                onChange={(e) => {
-                  setVoucherCode(e.target.value.toUpperCase());
-                  setVoucherError(null);
-                }}
-                placeholder="Contoh: MUTIARABERCAHAYA"
-                className="w-full min-h-[40px] px-3.5 rounded-xl border border-[#E6DDD0] dark:border-white/10 bg-white dark:bg-[#12263A] font-mono text-xs uppercase focus:outline-hidden focus:ring-2 focus:ring-[#8A6A2F]"
-              />
-              {voucherError && (
-                <p className="text-[11px] text-red-600 dark:text-red-400">{voucherError}</p>
-              )}
-            </div>
+            {/* Kolom voucher ditangguhkan sampai integrasi backend selesai (Tahap voucher-UI) */}
 
             <div className="pt-4 border-t border-[#E6DDD0] dark:border-white/10 space-y-2 text-xs">
               <div className="flex justify-between text-[#4A5666] dark:text-[#D9B877]">

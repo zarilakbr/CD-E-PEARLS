@@ -44,7 +44,7 @@ export const Stepper: React.FC<StepperProps> = ({
           if (isCompleted && !isCurrent) {
             circleBg = 'bg-[#12263A] text-white border-[#12263A]';
             badgeBg = 'bg-[#E2F1E0] text-[#2B6330]';
-            statusLabel = step.statusText || 'Selesai';
+            statusLabel = step.statusText || 'Tuntas';
           } else if (isCurrent) {
             circleBg = 'bg-[#D9B877] text-[#12263A] border-[#8A6A2F] ring-4 ring-[#D9B877]/20';
             badgeBg = 'bg-[#E1ECF7] text-[#1D4E7A]';
