@@ -58,6 +58,7 @@ test('1. otorisasi upload gambar produk: admin dan spi diizinkan, pelanggan dito
             'success' => true,
         ]);
     expect($resAdmin->json('url'))->toStartWith('/storage/products/');
+    expect($resAdmin->json('webp_url'))->toEndWith('.webp');
 
     // SPI diizinkan (201)
     $imageSpi = UploadedFile::fake()->image('pearl-ring.png', 500, 500)->size(500);
@@ -67,7 +68,7 @@ test('1. otorisasi upload gambar produk: admin dan spi diizinkan, pelanggan dito
     $resSpi->assertStatus(201);
 });
 
-test('2. validasi tipe file gambar (hanya jpg, png, webp) dan batas ukuran maks 5MB', function () {
+test('2. validasi tipe file, batas ukuran 5MB, dan batas dimensi maksimum 4000px', function () {
     // 2a. File bukan gambar (PDF / TXT) ditolak 422
     $invalidDoc = UploadedFile::fake()->create('document.pdf', 500, 'application/pdf');
     $resDoc = $this->actingAs($this->admin)->postJson('/api/v1/admin/products/upload-image', [
@@ -84,7 +85,15 @@ test('2. validasi tipe file gambar (hanya jpg, png, webp) dan batas ukuran maks 
     $resOversized->assertStatus(422)
         ->assertJsonValidationErrors(['image']);
 
-    // 2c. File gambar valid (WebP 2MB) diterima sukses 201
+    // 2c. File gambar melebihi dimensi 4000px ditolak 422
+    $oversizedDim = UploadedFile::fake()->image('huge-dim.jpg', 4001, 1000)->size(1000);
+    $resDim = $this->actingAs($this->admin)->postJson('/api/v1/admin/products/upload-image', [
+        'image' => $oversizedDim,
+    ]);
+    $resDim->assertStatus(422)
+        ->assertJsonValidationErrors(['image']);
+
+    // 2d. File gambar valid (WebP 2MB, 300x300) diterima sukses 201
     $validWebp = UploadedFile::fake()->image('authentic-pearl.webp', 300, 300)->size(2048);
     $resWebp = $this->actingAs($this->admin)->postJson('/api/v1/admin/products/upload-image', [
         'image' => $validWebp,
@@ -92,7 +101,7 @@ test('2. validasi tipe file gambar (hanya jpg, png, webp) dan batas ukuran maks 
     $resWebp->assertStatus(201);
 });
 
-test('3. upload saat tambah produk menghasilkan url acak dan tersimpan di storage publik', function () {
+test('3. upload saat tambah produk menyimpan file utama dan juga versi WebP', function () {
     $photo = UploadedFile::fake()->image('kalung-exclusive.jpg', 800, 800)->size(1500);
 
     $res = $this->actingAs($this->admin)->postJson('/api/v1/admin/products', [
@@ -112,12 +121,16 @@ test('3. upload saat tambah produk menghasilkan url acak dan tersimpan di storag
     expect($product)->not->toBeNull();
     expect($product->image)->toStartWith('/storage/products/');
 
-    // Bukti tersimpan di storage publik dengan nama acak
+    // Bukti berkas utama (jpg) tersimpan di storage publik
     $storagePath = str_replace('/storage/', '', $product->image);
     Storage::disk('public')->assertExists($storagePath);
+
+    // Bukti berkas versi WebP juga otomatis tersimpan di storage publik
+    $webpPath = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $storagePath);
+    Storage::disk('public')->assertExists($webpPath);
 });
 
-test('4. ganti gambar produk menghapus file gambar lama dari storage', function () {
+test('4. ganti gambar produk menghapus file gambar lama beserta versi WebP dari storage', function () {
     $photo1 = UploadedFile::fake()->image('initial-pearl.jpg', 600, 600)->size(800);
 
     $createRes = $this->actingAs($this->admin)->postJson('/api/v1/admin/products', [
@@ -135,7 +148,10 @@ test('4. ganti gambar produk menghapus file gambar lama dari storage', function 
     $productId = $createRes->json('data.id');
     $oldImageUrl = $createRes->json('data.image');
     $oldStoragePath = str_replace('/storage/', '', $oldImageUrl);
+    $oldWebpPath = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $oldStoragePath);
+
     Storage::disk('public')->assertExists($oldStoragePath);
+    Storage::disk('public')->assertExists($oldWebpPath);
 
     // Ganti dengan gambar baru
     $photo2 = UploadedFile::fake()->image('updated-pearl.png', 800, 800)->size(900);
@@ -146,10 +162,13 @@ test('4. ganti gambar produk menghapus file gambar lama dari storage', function 
 
     $newImageUrl = $updateRes->json('data.image');
     $newStoragePath = str_replace('/storage/', '', $newImageUrl);
+    $newWebpPath = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $newStoragePath);
 
-    // Gambar baru harus ada
+    // Gambar baru (png & webp) harus ada
     Storage::disk('public')->assertExists($newStoragePath);
+    Storage::disk('public')->assertExists($newWebpPath);
 
-    // File gambar lama harus TERHAPUS dari storage publik
+    // File gambar lama BESERTA versi WebP-nya harus TERHAPUS dari storage publik
     Storage::disk('public')->assertMissing($oldStoragePath);
+    Storage::disk('public')->assertMissing($oldWebpPath);
 });

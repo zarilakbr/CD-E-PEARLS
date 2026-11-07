@@ -155,6 +155,39 @@ test('unverified account login returns HTTP 403 and ACCOUNT_UNVERIFIED error', f
         ]);
 });
 
+test('unverified account login with WRONG password returns HTTP 401 INVALID_CREDENTIALS without revealing verification status', function () {
+    RateLimiter::clear('login:unverified@cdepearls.com|127.0.0.1');
+    RateLimiter::clear('login:ip:127.0.0.1');
+
+    $password = 'UnverifiedPass123!';
+    User::updateOrCreate(
+        ['email' => 'unverified@cdepearls.com'],
+        [
+            'name' => 'Unverified User',
+            'phone' => '081299990004',
+            'password' => Hash::make($password),
+            'role' => 'user',
+            'status' => 'active',
+            'email_verified_at' => null, // Unverified
+        ]
+    );
+
+    // Try logging in with WRONG password
+    $response = $this->postJson('/api/v1/auth/login', [
+        'email' => 'unverified@cdepearls.com',
+        'password' => 'CompletelyWrongPassword123!',
+        'turnstile_token' => '1x00000000000000000000AA',
+    ]);
+
+    // Must return 401 (INVALID_CREDENTIALS) and NOT 403 (ACCOUNT_UNVERIFIED)
+    $response->assertStatus(401)
+        ->assertJson([
+            'success' => false,
+            'error' => 'INVALID_CREDENTIALS',
+            'message' => 'Email atau kata sandi tidak valid',
+        ]);
+});
+
 test('seeder fails hard when env password variable is missing outside testing', function () {
     $validateEnv = function ($userPass, $adminPass, $spiPass, $isTesting) {
         if (! $isTesting) {

@@ -61,25 +61,36 @@ class ProductAdminController extends Controller
     }
 
     /**
-     * Upload standalone product image with EXIF stripping and randomized filename.
+     * Upload standalone product image with EXIF stripping, dimension cap, WebP conversion, and randomized filename.
      */
     public function uploadImage(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => ['required', 'file', 'mimes:jpeg,jpg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120'],
+            'image' => [
+                'required',
+                'file',
+                'mimes:jpeg,jpg,png,webp',
+                'mimetypes:image/jpeg,image/png,image/webp',
+                'max:5120',
+                'dimensions:max_width=4000,max_height=4000',
+            ],
+        ], [
+            'image.dimensions' => 'Dimensi gambar melebihi batas maksimum 4000 piksel pada sisi terpanjang.',
         ]);
 
         $url = $this->processAndStoreImage($request->file('image'));
+        $webpUrl = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $url);
 
         return response()->json([
             'success' => true,
             'url' => $url,
+            'webp_url' => $webpUrl,
             'message' => 'Gambar produk berhasil diunggah.',
         ], Response::HTTP_CREATED);
     }
 
     /**
-     * Process and store uploaded image with EXIF stripping and randomized filename.
+     * Process and store uploaded image with EXIF stripping, dimension cap, WebP version, and randomized filename.
      */
     protected function processAndStoreImage($file): string
     {
@@ -88,13 +99,32 @@ class ProductAdminController extends Controller
             $extension = 'jpg';
         }
         $cleanExt = ($extension === 'jpeg') ? 'jpg' : $extension;
-        $randomFilename = 'products/' . Str::random(40) . '.' . $cleanExt;
+        $randomBase = Str::random(40);
+        $randomFilename = 'products/' . $randomBase . '.' . $cleanExt;
+        $webpFilename = 'products/' . $randomBase . '.webp';
 
         $realPath = $file->getRealPath();
         if (function_exists('imagecreatefromstring')) {
             $content = file_get_contents($realPath);
             $gd = @imagecreatefromstring($content);
             if ($gd !== false) {
+                // Batasi dimensi maksimum: jika salah satu sisi > 4000 px, perkecil proporsional
+                $origWidth = imagesx($gd);
+                $origHeight = imagesy($gd);
+                $maxSide = max($origWidth, $origHeight);
+
+                if ($maxSide > 4000) {
+                    $ratio = 4000 / $maxSide;
+                    $newWidth = (int) round($origWidth * $ratio);
+                    $newHeight = (int) round($origHeight * $ratio);
+                    $scaledGd = imagescale($gd, $newWidth, $newHeight);
+                    if ($scaledGd !== false) {
+                        imagedestroy($gd);
+                        $gd = $scaledGd;
+                    }
+                }
+
+                // 1. Simpan berkas utama (jpg/png/webp) tanpa EXIF
                 ob_start();
                 if ($cleanExt === 'png') {
                     imagepng($gd, null, 8);
@@ -104,9 +134,18 @@ class ProductAdminController extends Controller
                     imagejpeg($gd, null, 85);
                 }
                 $cleanData = ob_get_clean();
+                Storage::disk('public')->put($randomFilename, $cleanData);
+
+                // 2. Simpan juga versi WebP bila berkas asli bukan WebP
+                if ($cleanExt !== 'webp') {
+                    ob_start();
+                    imagewebp($gd, null, 85);
+                    $webpData = ob_get_clean();
+                    Storage::disk('public')->put($webpFilename, $webpData);
+                }
+
                 imagedestroy($gd);
 
-                Storage::disk('public')->put($randomFilename, $cleanData);
                 return '/storage/' . $randomFilename;
             }
         }
@@ -116,7 +155,7 @@ class ProductAdminController extends Controller
     }
 
     /**
-     * Delete stored image file if exists in public storage.
+     * Delete stored image file and associated WebP if exists in public storage.
      */
     protected function deleteStoredImage(?string $url): void
     {
@@ -127,6 +166,15 @@ class ProductAdminController extends Controller
         $relativePath = str_replace('/storage/', '', $url);
         if (Storage::disk('public')->exists($relativePath)) {
             Storage::disk('public')->delete($relativePath);
+        }
+
+        // Hapus juga file WebP pendamping bila format asli adalah jpg atau png
+        $info = pathinfo($relativePath);
+        if (($info['extension'] ?? '') !== 'webp') {
+            $webpPath = ($info['dirname'] !== '.' ? $info['dirname'] . '/' : '') . $info['filename'] . '.webp';
+            if (Storage::disk('public')->exists($webpPath)) {
+                Storage::disk('public')->delete($webpPath);
+            }
         }
     }
 

@@ -2,28 +2,23 @@
 
 use Illuminate\Support\Facades\DB;
 
-test('1. GET /api/v1/health publik dapat diakses tanpa autentikasi dan mengembalikan status ok dengan ms', function () {
+test('1. GET /api/v1/health publik dapat diakses tanpa autentikasi dan hanya menyisakan field status', function () {
     $response = $this->getJson('/api/v1/health');
 
     $response->assertStatus(200)
-        ->assertJsonStructure([
-            'status',
-            'ms',
+        ->assertExactJson([
+            'status' => 'ok',
+        ])
+        ->assertJsonMissing([
             'database',
             'timestamp',
-        ])
-        ->assertJson([
-            'status' => 'ok',
-            'database' => 'ok',
+            'ms',
         ]);
 
-    $data = $response->json();
-    expect($data['ms'])->toBeNumeric();
-    expect($data['ms'])->toBeGreaterThanOrEqual(0);
-    expect($data['status'])->toBe('ok');
+    expect($response->json())->toBe(['status' => 'ok']);
 });
 
-test('2. GET /api/v1/health menangani degradasi database dengan mengembalikan status degraded dan 503', function () {
+test('2. GET /api/v1/health menangani degradasi database dengan mengembalikan status degraded 503 tanpa membocorkan field internal', function () {
     DB::shouldReceive('select')
         ->once()
         ->with('SELECT 1')
@@ -32,10 +27,12 @@ test('2. GET /api/v1/health menangani degradasi database dengan mengembalikan st
     $response = $this->getJson('/api/v1/health');
 
     $response->assertStatus(503)
-        ->assertJson([
+        ->assertExactJson([
             'status' => 'degraded',
-            'database' => 'disconnected',
+        ])
+        ->assertJsonMissing([
+            'database',
+            'timestamp',
+            'ms',
         ]);
-
-    expect($response->json('ms'))->toBeNumeric();
 });

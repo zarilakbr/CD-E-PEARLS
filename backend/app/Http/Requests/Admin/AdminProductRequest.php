@@ -54,7 +54,7 @@ class AdminProductRequest extends FormRequest
             'is_featured' => ['nullable', 'boolean'],
             'is_bestseller' => ['nullable', 'boolean'],
             'photos' => ['nullable', 'array', 'max:10'],
-            'photos.*' => ['file', 'mimes:jpeg,jpg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120'],
+            'photos.*' => ['file', 'mimes:jpeg,jpg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120', 'dimensions:max_width=4000,max_height=4000'],
             'photo_alts' => ['nullable', 'array'],
             'photo_alts.*' => ['nullable', 'string', 'max:255'],
             'primary_photo_index' => ['nullable', 'integer', 'min:0'],
