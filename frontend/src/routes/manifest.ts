@@ -49,6 +49,7 @@ export const routesManifest: RouteManifestItem[] = [
   // 1. Rute Publik
   { path: '/', component: PublicHomePage, allowedRoles: ['public'], titleKey: 'Beranda' },
   { path: '/katalog', component: CatalogPage, allowedRoles: ['public'], titleKey: 'Koleksi Produk' },
+  { path: '/koleksi', component: CatalogPage, allowedRoles: ['public'], titleKey: 'Koleksi Produk' },
   { path: '/studio', component: Studio3DPage, allowedRoles: ['public'], titleKey: 'Studio 3D Atelier' },
   { path: '/edukasi', component: EducationPage, allowedRoles: ['public'], titleKey: 'Edukasi Mutiara' },
   { path: '/tentang', component: AboutPage, allowedRoles: ['public'], titleKey: 'Tentang Kami' },

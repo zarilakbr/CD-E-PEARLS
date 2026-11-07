@@ -467,6 +467,16 @@ const AppContent: React.FC = () => {
               />
             }
           />
+          <Route
+            path="/koleksi"
+            element={
+              <CatalogPage
+                products={products}
+                onAddToCart={handleAddToCart}
+                onSelectProduct={handleSelectProduct}
+              />
+            }
+          />
           <Route path="/studio" element={<Studio3DPage onAddToCart={handleAddToCart} />} />
           <Route path="/edukasi" element={<EducationPage />} />
           <Route path="/tentang" element={<AboutPage />} />

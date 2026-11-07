@@ -19,14 +19,32 @@ class CategoryController extends Controller
     {
         $query = Category::withCount(['products' => fn ($q) => $q->where('status', '!=', 'archived')]);
 
-        if (! $request->user() || $request->user()->isUser()) {
+        $isPublic = ! $request->user() || $request->user()->isUser();
+        if ($isPublic) {
             $query->where('is_active', true);
         }
 
-        return response()->json([
+        $categories = $query->get();
+        $payload = [
             'success' => true,
-            'data' => $query->get(),
-        ]);
+            'data' => $categories,
+        ];
+
+        if ($isPublic) {
+            $etag = '"'.md5(json_encode($payload)).'"';
+            if ($request->header('If-None-Match') === $etag) {
+                return response()->json(null, Response::HTTP_NOT_MODIFIED, [
+                    'ETag' => $etag,
+                    'Cache-Control' => 'public, max-age=30, s-maxage=60',
+                ]);
+            }
+
+            return response()->json($payload)
+                ->header('Cache-Control', 'public, max-age=30, s-maxage=60')
+                ->header('ETag', $etag);
+        }
+
+        return response()->json($payload);
     }
 
     /**

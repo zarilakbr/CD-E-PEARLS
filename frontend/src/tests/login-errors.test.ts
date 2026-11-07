@@ -77,6 +77,28 @@ describe('Tahap V2 - Butir 6: Pesan Galat Login Tanpa Membocorkan Akun (Anti-Enu
     expect(resRateLimit.message).toContain('Terlalu banyak percobaan masuk');
   });
 
+  it('3b. 429 Batas dengan respons kosong: pesan jelas "Terlalu banyak permintaan. Mohon tunggu beberapa saat."', () => {
+    const errEmpty429 = {
+      response: {
+        status: 429,
+        data: '',
+      },
+    };
+    const res = resolveLoginError(errEmpty429);
+    expect(res.code).toBe('RATE_LIMITED');
+    expect(res.message).toBe('Terlalu banyak permintaan. Mohon tunggu beberapa saat.');
+  });
+
+  it('3c. Galat CORS atau Network Error saat sebelumnya terhubung: dikenali sebagai 429 pembatas lalu lintas', () => {
+    const errCorsDrop = {
+      code: 'ERR_NETWORK',
+      message: 'Network Error',
+    };
+    const res = resolveLoginError(errCorsDrop, { wasPreviouslyConnected: true });
+    expect(res.code).toBe('RATE_LIMITED');
+    expect(res.message).toBe('Terlalu banyak permintaan. Mohon tunggu beberapa saat.');
+  });
+
   // 4. Kasus 403: Status akun khusus (Dibekukan SPI / Nonaktif / Belum Terverifikasi)
   it('4. 403 Akun Dibekukan: pesan pencegahan akses oleh Satuan Pengawas Internal (SPI)', () => {
     const errFrozen = {

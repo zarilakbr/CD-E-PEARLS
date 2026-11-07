@@ -1,5 +1,11 @@
 import axios from 'axios';
 import { queryClient } from './queryClient';
+import {
+  fetchWithClientCache,
+  invalidateCacheKey,
+  clearAllClientCache,
+} from './clientCache';
+import { markConnectionSuccessful } from './login-errors';
 
 // Cross-tab synchronization channel for authentication events
 export const authChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window
@@ -34,7 +40,25 @@ apiClient.interceptors.request.use((config) => {
 
 // Interceptor for handling auth errors & rate limits
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.status >= 200 && response.status < 400) {
+      markConnectionSuccessful();
+    }
+    const method = response.config?.method?.toLowerCase();
+    if (method && ['post', 'put', 'patch', 'delete'].includes(method)) {
+      const url = response.config?.url || '';
+      if (url.includes('/products')) {
+        invalidateCacheKey('products');
+      }
+      if (url.includes('/categories')) {
+        invalidateCacheKey('categories');
+      }
+      if (url.includes('/auth')) {
+        invalidateCacheKey('auth:me');
+      }
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       // If unauthorized on protected route, clean stored token & notify
@@ -44,6 +68,7 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('cde_user_role');
         queryClient.cancelQueries();
         queryClient.clear();
+        clearAllClientCache();
         authChannel?.postMessage({ type: 'SESSION_EXPIRED' });
       }
     }
@@ -87,12 +112,14 @@ export interface UserResponse {
 
 export const authApi = {
   async getProviders(): Promise<{ google: boolean }> {
-    try {
-      const res = await apiClient.get<{ success: boolean; data: { google: boolean } }>('/auth/providers');
-      return res.data.data;
-    } catch {
-      return { google: false };
-    }
+    return fetchWithClientCache('auth:providers', async () => {
+      try {
+        const res = await apiClient.get<{ success: boolean; data: { google: boolean } }>('/auth/providers');
+        return res.data.data;
+      } catch {
+        return { google: false };
+      }
+    }, 1000 * 60 * 10);
   },
 
   getGoogleLoginUrl(): string {
@@ -108,12 +135,16 @@ export const authApi = {
   },
 
   async getMe(): Promise<UserResponse> {
-    const res = await apiClient.get<{ success: boolean; user: UserResponse }>('/auth/me');
-    return res.data.user;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('cde_auth_token') || 'session' : 'server';
+    return fetchWithClientCache(`auth:me:${token}`, async () => {
+      const res = await apiClient.get<{ success: boolean; user: UserResponse }>('/auth/me');
+      return res.data.user;
+    }, 1000 * 60 * 5);
   },
 
   async login(credentials: { email: string; password: string; remember?: boolean; turnstile_token?: string }) {
     await getCsrfCookie();
+    invalidateCacheKey('auth:me');
     const res = await apiClient.post<{
       success: boolean;
       message: string;
@@ -124,6 +155,7 @@ export const authApi = {
     if (res.data.token) {
       localStorage.setItem('cde_auth_token', res.data.token);
     }
+    invalidateCacheKey('auth:me');
     return res.data;
   },
 
@@ -137,6 +169,7 @@ export const authApi = {
     turnstile_token?: string;
   }) {
     await getCsrfCookie();
+    invalidateCacheKey('auth:me');
     const res = await apiClient.post<{
       success: boolean;
       message: string;
@@ -146,6 +179,7 @@ export const authApi = {
     if (res.data.token) {
       localStorage.setItem('cde_auth_token', res.data.token);
     }
+    invalidateCacheKey('auth:me');
     return res.data;
   },
 
@@ -158,6 +192,7 @@ export const authApi = {
       localStorage.removeItem('cde_auth_token');
       localStorage.removeItem('cde_user_role');
       localStorage.removeItem('cde_auth');
+      clearAllClientCache();
       authChannel?.postMessage({ type: 'LOGOUT' });
     }
   },
@@ -208,8 +243,10 @@ export const authApi = {
 
 export const catalogApi = {
   async getCategories() {
-    const res = await apiClient.get('/categories');
-    return res.data.data;
+    return fetchWithClientCache('categories', async () => {
+      const res = await apiClient.get('/categories');
+      return res.data.data;
+    }, 1000 * 60 * 5);
   },
 
   async getProducts(params?: {
@@ -221,8 +258,11 @@ export const catalogApi = {
     page?: number;
     per_page?: number;
   }) {
-    const res = await apiClient.get('/products', { params });
-    return res.data;
+    const key = `products:${JSON.stringify(params || {})}`;
+    return fetchWithClientCache(key, async () => {
+      const res = await apiClient.get('/products', { params });
+      return res.data;
+    }, 1000 * 60 * 3);
   },
 
   async getProduct(id: string | number) {

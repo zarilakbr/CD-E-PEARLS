@@ -42,7 +42,7 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { ProductFormModal } from '../../components/admin/ProductFormModal';
 import { APPROVAL_RULES } from '../../config/approvalRules';
-import { reportApi, apiClient } from '../../lib/api';
+import { reportApi, apiClient, catalogApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboardSync } from '../../hooks/useDashboardSync';
 import type {
@@ -358,10 +358,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       })
       .catch(() => {});
 
-    // 5. Kategori Produk
-    apiClient.get('/categories')
-      .then((res) => {
-        const cats = res.data?.data || res.data;
+    // 5. Kategori Produk (Cached via catalogApi)
+    catalogApi.getCategories()
+      .then((cats) => {
         if (isMounted && Array.isArray(cats)) {
           const mappedCats: MockCategory[] = cats.map((cat: any) => ({
             id: cat.id,
@@ -402,9 +401,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     };
   }, []);
 
-  // Real-time synchronization layer with 10s ETag polling (Tahap N2)
+  // Real-time synchronization layer with 30s ETag polling (Tahap V2c)
   const { lastSyncLabel } = useDashboardSync({
     enabled: true,
+    role: 'admin',
+    intervalMs: 30000,
     onDataUpdated: (data) => {
       if (data.total_orders !== undefined && data.total_orders !== orders.length) {
         apiClient.get('/orders?per_page=100').then((res) => {
