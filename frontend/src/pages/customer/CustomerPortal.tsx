@@ -32,6 +32,7 @@ import { authApi, apiClient } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { GuestAccountHub } from './GuestAccountHub';
 import { SiteLayout } from '../../layouts/SiteLayout';
+import { useDashboardSync } from '../../hooks/useDashboardSync';
 
 const getItemImage = (_name?: string) => {
   return '/images/placeholder_jewelry.svg';
@@ -107,6 +108,63 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     birthDate: '',
   });
   const [profileSaveMessage, setProfileSaveMessage] = useState<string | null>(null);
+
+  // Real-time synchronization layer with 10s ETag polling (Tahap N2)
+  const { lastSyncLabel } = useDashboardSync({
+    enabled: !!user,
+    onStatusChange: (_newStatus, _oldStatus, latestOrder) => {
+      if (latestOrder) {
+        setOrders((prev) =>
+          prev.map((o) => {
+            if (o.id === latestOrder.order_number || o.id === latestOrder.id) {
+              const s = (latestOrder.order_status || '').toUpperCase();
+              return {
+                ...o,
+                status:
+                  s === 'DELIVERED'
+                    ? 'Selesai'
+                    : s === 'SHIPPED'
+                    ? 'Dikirim'
+                    : s === 'PROCESSING'
+                    ? 'Dikemas'
+                    : s === 'CANCELLED'
+                    ? 'Dibatalkan'
+                    : 'Menunggu Pembayaran',
+                trackingNumber: latestOrder.tracking_number || o.trackingNumber,
+              };
+            }
+            return o;
+          })
+        );
+      }
+    },
+    onDataUpdated: (data) => {
+      if (data.latest_order) {
+        setOrders((prev) =>
+          prev.map((o) => {
+            if (o.id === data.latest_order?.order_number || o.id === data.latest_order?.id) {
+              const s = (data.latest_order.order_status || '').toUpperCase();
+              return {
+                ...o,
+                status:
+                  s === 'DELIVERED'
+                    ? 'Selesai'
+                    : s === 'SHIPPED'
+                    ? 'Dikirim'
+                    : s === 'PROCESSING'
+                    ? 'Dikemas'
+                    : s === 'CANCELLED'
+                    ? 'Dibatalkan'
+                    : 'Menunggu Pembayaran',
+                trackingNumber: data.latest_order.tracking_number || o.trackingNumber,
+              };
+            }
+            return o;
+          })
+        );
+      }
+    },
+  });
 
   // Load live customer data from API
   useEffect(() => {
@@ -291,6 +349,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               </span>
             </div>
 
+            <div className="flex items-center justify-between px-2 text-[11px] text-[var(--text-2)]">
+              <span className="flex items-center gap-1.5 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                {lastSyncLabel}
+              </span>
+            </div>
+
             {/* Lima status pesanan ala marketplace: Belum bayar, Dikemas, Dikirim, Selesai, Retur */}
             <div className="bg-white dark:bg-[#12263A] border border-[var(--border)] rounded-2xl p-3 shadow-2xs">
               <div className="text-[12px] font-semibold text-[var(--text)] mb-2 px-1">
@@ -434,10 +499,16 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
           {/* DESKTOP SUMMARY (lg:block) */}
           <div className="hidden lg:block space-y-8 animate-in fade-in duration-300">
-            <PageHeader
-              title={`Halo, ${profileData.name}`}
-              description="Selamat datang di akun pribadi perhiasan CD'E Pearls. Pantau pesanan aktif Anda dan koleksi mutiara favorit."
-            />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <PageHeader
+                title={`Halo, ${profileData.name}`}
+                description="Selamat datang di akun pribadi perhiasan CD'E Pearls. Pantau pesanan aktif Anda dan koleksi mutiara favorit."
+              />
+              <span className="text-[11px] font-medium text-[#4A5666] bg-[#F4F1EB] px-3 py-1.5 rounded-full border border-[#E6DDD0] inline-flex items-center gap-1.5 self-start sm:self-auto shrink-0 shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{lastSyncLabel}</span>
+              </span>
+            </div>
 
           {/* 3 Kartu Ringkasan Pelanggan */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">

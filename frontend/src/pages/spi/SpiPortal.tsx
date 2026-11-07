@@ -18,6 +18,7 @@ import { StatCard } from '../../components/common/StatCard';
 import { DataTable } from '../../components/common/DataTable';
 import { spiApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { useDashboardSync } from '../../hooks/useDashboardSync';
 
 interface SpiPortalProps {
   onNavigateHome: () => void;
@@ -112,6 +113,16 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
     recent_customers: Array<{ id: number; name: string; email: string; phone?: string; status: string; created_at: string }>;
   } | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
+
+  // Real-time synchronization layer with 10s ETag polling (Tahap N2)
+  const { lastSyncLabel } = useDashboardSync({
+    enabled: true,
+    onDataUpdated: (data) => {
+      if (data.today_revenue !== undefined || data.pending_approvals_count !== undefined) {
+        fetchSummary();
+      }
+    },
+  });
 
   const fetchSummary = async () => {
     setLoadingSummary(true);
@@ -470,6 +481,10 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               description="Data metrik integritas transaksi, omzet database riil, produk terlaris, dan stok menipis CD'E Pearls Lombok."
             />
             <div className="flex items-center gap-2">
+              <span className="text-[11px] font-medium text-[#4A5666] bg-[#F4F1EB] px-3 py-1.5 rounded-full border border-[#E6DDD0] inline-flex items-center gap-1.5 shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{lastSyncLabel}</span>
+              </span>
               <button
                 type="button"
                 onClick={fetchSummary}

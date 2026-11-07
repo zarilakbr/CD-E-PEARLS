@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Spi\AuditLogController;
 use App\Http\Controllers\Api\Spi\SpiControlCenterController;
 use App\Http\Controllers\Api\Spi\SpiStaffController;
 use App\Http\Controllers\Api\Spi\SpiSummaryController;
+use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -102,6 +103,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
         Route::post('/orders/{id}/upload-proof', [OrderController::class, 'uploadProof']);
         Route::get('/orders/{id}/payments/{paymentId}/proof', [OrderController::class, 'downloadProof']);
+
+        // Real-Time Dashboard Sync & ETag Polling (Tahap N2)
+        Route::get('/sync/status', [SyncController::class, 'status'])->middleware('throttle:sync-polling');
 
         // 5. Admin & SPI Management Routes (SPI inherits full access)
         Route::middleware('role:admin,spi')->group(function () {

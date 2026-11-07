@@ -44,6 +44,7 @@ import { ProductFormModal } from '../../components/admin/ProductFormModal';
 import { APPROVAL_RULES } from '../../config/approvalRules';
 import { reportApi, apiClient } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { useDashboardSync } from '../../hooks/useDashboardSync';
 import type {
   MockProduct,
   MockOrder,
@@ -400,6 +401,54 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       isMounted = false;
     };
   }, []);
+
+  // Real-time synchronization layer with 10s ETag polling (Tahap N2)
+  const { lastSyncLabel } = useDashboardSync({
+    enabled: true,
+    onDataUpdated: (data) => {
+      if (data.total_orders !== undefined && data.total_orders !== orders.length) {
+        apiClient.get('/orders?per_page=100').then((res) => {
+          const ords = res.data?.data || res.data;
+          if (Array.isArray(ords)) {
+            const mappedOrders: MockOrder[] = ords.map((o: any) => ({
+              id: o.order_number || `#ORD-${o.id}`,
+              date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+              customerName: o.customer_name || 'Pelanggan Butik',
+              customerEmail: o.customer_email || o.user?.email || '',
+              customerPhone: o.customer_phone || '',
+              shippingAddress: o.customer_address || '',
+              city: o.city || 'Indonesia',
+              productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
+              items: (o.items || []).map((it: any) => ({
+                productId: it.product_id,
+                name: it.product?.name || it.product_name || 'Mutiara Lombok',
+                pearlSize: it.pearl_size || '12 mm',
+                metal: it.metal || 'Emas 18K',
+                price: Number(it.price) || 0,
+                quantity: Number(it.quantity) || 1,
+              })),
+              subtotal: Number(o.subtotal || o.total) || 0,
+              shippingCost: Number(o.shipping_cost) || 0,
+              insuranceCost: Number(o.insurance_cost) || 0,
+              total: Number(o.total) || 0,
+              paymentMethod: o.payment_method || 'TRANSFER_BANK',
+              status: o.order_status === 'DELIVERED' ? 'Selesai' : o.order_status === 'SHIPPED' ? 'Dikirim' : o.order_status === 'PROCESSING' ? 'Dikemas' : o.order_status === 'CANCELLED' ? 'Dibatalkan' : 'Menunggu Pembayaran',
+              trackingNumber: o.tracking_number,
+              courier: o.courier || 'JNE Express (Berasuransi)',
+              timeline: (o.status_histories || []).map((h: any) => ({
+                status: h.status,
+                date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
+                description: h.notes || '',
+                completed: true,
+              })),
+            }));
+            setOrders(mappedOrders);
+          }
+        }).catch(() => {});
+      }
+    },
+  });
+
 
   // Reports state
   const [reportPeriod, setReportPeriod] = useState('30 hari');
@@ -931,7 +980,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             description="Pantau metrik penjualan utama, pesanan terkini, dan stok atelier mutiara secara real-time."
 
             actions={
-              <button
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-[11px] font-medium text-[#4A5666] bg-[#F4F1EB] px-3 py-1.5 rounded-full border border-[#E6DDD0] inline-flex items-center gap-1.5 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>{lastSyncLabel}</span>
+                </span>
+                <button
                 type="button"
                 onClick={() => {
                   setEditingProduct({
@@ -952,6 +1006,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 <Plus className="w-4 h-4" />
                 <span>Tambah Produk</span>
               </button>
+              </div>
             }
           />
 
