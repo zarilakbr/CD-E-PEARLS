@@ -77,7 +77,7 @@ test('2. validasi tipe file gambar (hanya jpg, png, webp) dan batas ukuran maks 
         ->assertJsonValidationErrors(['image']);
 
     // 2b. File lebih dari 5MB (5120 KB) ditolak 422
-    $oversizedImage = UploadedFile::fake()->image('huge-pearl.jpg', 4000, 4000)->size(6000); // 6MB
+    $oversizedImage = UploadedFile::fake()->image('huge-pearl.jpg', 200, 200)->size(6000); // 6MB
     $resOversized = $this->actingAs($this->admin)->postJson('/api/v1/admin/products/upload-image', [
         'image' => $oversizedImage,
     ]);
@@ -85,7 +85,7 @@ test('2. validasi tipe file gambar (hanya jpg, png, webp) dan batas ukuran maks 
         ->assertJsonValidationErrors(['image']);
 
     // 2c. File gambar valid (WebP 2MB) diterima sukses 201
-    $validWebp = UploadedFile::fake()->image('authentic-pearl.webp', 1200, 1200)->size(2048);
+    $validWebp = UploadedFile::fake()->image('authentic-pearl.webp', 300, 300)->size(2048);
     $resWebp = $this->actingAs($this->admin)->postJson('/api/v1/admin/products/upload-image', [
         'image' => $validWebp,
     ]);

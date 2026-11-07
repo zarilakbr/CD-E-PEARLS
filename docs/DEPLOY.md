@@ -47,12 +47,12 @@ APP_DEBUG=false
 APP_URL=https://api.cdepearls.com
 FRONTEND_URL=https://cdepearls.com
 
-# PostgreSQL Connection
-DB_CONNECTION=pgsql
-DB_HOST=containers-us-west-xxx.railway.app
-DB_PORT=5432
-DB_DATABASE=cde_pearls
-DB_USERNAME=postgres
+# MySQL / MariaDB Connection (Hostinger hPanel)
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=u123456789_cde
+DB_USERNAME=u123456789_admin
 DB_PASSWORD=YOUR_STRONG_PASSWORD
 
 # Sanctum Stateful Cookies & Session
