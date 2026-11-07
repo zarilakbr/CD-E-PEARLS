@@ -154,9 +154,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch { }
         return { success: true, message: res.message, user: res.user };
       } catch (err: any) {
-        const error = err.response?.data?.error || 'LOGIN_FAILED';
+        const error = err.response?.data?.error || (err.code === 'ERR_NETWORK' || !err.response ? 'NETWORK_ERROR' : 'LOGIN_FAILED');
+        const status = err.response?.status;
+        const retryAfter = err.response?.data?.retry_after || err.response?.data?.retry_after_seconds;
         const message = err.response?.data?.message || 'Login gagal, periksa email dan kata sandi Anda.';
-        return { success: false, message, error };
+        return { success: false, message, error, status, retryAfter, response: err.response, code: err.code };
       }
     },
     []
