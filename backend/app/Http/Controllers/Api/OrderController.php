@@ -62,7 +62,7 @@ class OrderController extends Controller
      */
     public function userOrders(Request $request): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
 
         $orders = Order::with(['items', 'statusHistories'])
             ->where('user_id', $user->id)
@@ -80,7 +80,7 @@ class OrderController extends Controller
      */
     public function show(Request $request, $id): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
 
         $order = Order::where('id', $id)
             ->orWhere('order_number', $id)
@@ -129,7 +129,7 @@ class OrderController extends Controller
             'items.*.custom_specs' => 'nullable|array',
         ]);
 
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
 
         // U-3: Guest checkout must have valid Turnstile token (fail-closed)
         if (! $user) {
@@ -161,7 +161,7 @@ class OrderController extends Controller
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        return DB::transaction(function () use ($validated, $request) {
+        return DB::transaction(function () use ($validated, $request, $user) {
             $count = Order::whereYear('created_at', date('Y'))->count() + 1;
             $orderNumber = sprintf('CDE-%s-%04d', date('Y'), $count);
 
@@ -273,7 +273,7 @@ class OrderController extends Controller
 
             $order = Order::create([
                 'order_number' => $orderNumber,
-                'user_id' => $request->user()?->id,
+                'user_id' => $user?->id,
                 'customer_name' => $validated['customer_name'],
                 'customer_phone' => $validated['customer_phone'],
                 'customer_address' => $validated['customer_address'],
@@ -352,7 +352,7 @@ class OrderController extends Controller
      */
     public function cancel(Request $request, $id): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
         $order = Order::where('id', $id)
             ->orWhere('order_number', $id)
             ->with('items')
@@ -441,7 +441,7 @@ class OrderController extends Controller
      */
     public function uploadProof(Request $request, $id): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
         $order = Order::where('id', $id)
             ->orWhere('order_number', $id)
             ->firstOrFail();
@@ -514,7 +514,7 @@ class OrderController extends Controller
      */
     public function downloadProof(Request $request, $id, $paymentId)
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
         $order = Order::where('id', $id)
             ->orWhere('order_number', $id)
             ->firstOrFail();
@@ -644,7 +644,7 @@ class OrderController extends Controller
      */
     public function requestPaymentConfirmation(Request $request, $id): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
         $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
 
         $request->validate([
@@ -703,7 +703,7 @@ class OrderController extends Controller
      */
     public function updatePaymentStatus(Request $request, $id): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
         $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
 
         $request->validate([
@@ -760,7 +760,7 @@ class OrderController extends Controller
      */
     public function updateOrderStatus(Request $request, $id): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
         $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
 
         $request->validate([
@@ -842,7 +842,7 @@ class OrderController extends Controller
      */
     public function updateTracking(Request $request, $id): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
         $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
 
         $request->validate([

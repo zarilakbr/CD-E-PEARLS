@@ -54,8 +54,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const computeFallbackImage = () => {
     if (hasCustomImage && resolvedCustomImage) return resolvedCustomImage;
-    const n = name.toLowerCase();
-    const c = (category || '').toLowerCase();
+    const n = (name || '').toLowerCase();
+    const catStr = typeof category === 'string' 
+      ? category 
+      : (typeof category === 'object' && category ? (category as any).name || (category as any).slug || '' : '');
+    const c = catStr.toLowerCase();
     if (n.includes('cincin') || c.includes('cincin')) return '/images/placeholder_jewelry.svg';
     if (n.includes('gelang') || c.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
     if (n.includes('anting') || c.includes('anting')) return '/images/terroir_pearl_plate_left.jpg';

@@ -1039,6 +1039,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                       price={p.price}
                       formattedPrice={p.formattedPrice}
                       image={resolveMediaUrl(p.image)}
+                      isSoldOut={p.stock !== undefined && p.stock <= 0}
                       isWishlisted={isInWishlist(p.id)}
                       onToggleWishlist={() => toggleWishlist(p)}
                       onAddToCart={() => {

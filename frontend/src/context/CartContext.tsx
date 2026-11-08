@@ -57,9 +57,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
 
-  // Save guest items locally (only when items exist)
+  // Save guest items locally (only when guest and not transitioning from logout)
   useEffect(() => {
     if (!user) {
+      if (prevUserRef.current) {
+        setItems([]);
+        try {
+          localStorage.removeItem('cde_cart_v3');
+        } catch { }
+        return;
+      }
       try {
         if (items.length > 0) {
           localStorage.setItem('cde_cart_v3', JSON.stringify(items));
