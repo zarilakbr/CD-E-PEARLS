@@ -7,6 +7,8 @@ export interface MockCategory {
   order: number;
   status: 'Aktif' | 'Nonaktif';
   image?: string;
+  webp_url?: string;
+  description?: string;
 }
 
 export interface MockProduct {

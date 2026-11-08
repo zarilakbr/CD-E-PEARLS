@@ -54,6 +54,7 @@ Route::prefix('v1')->group(function () {
 
     // 2. Public Catalog & Content
     Route::get('/categories', [CategoryController::class, 'index']);
+    Route::get('/categories/{id}', [CategoryController::class, 'show']);
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{id}', [ProductController::class, 'show']);
     Route::get('/certificates/lookup/{code}', [CertificateController::class, 'lookup']);
@@ -135,6 +136,12 @@ Route::prefix('v1')->group(function () {
                 Route::post('/certificates', [CertificateController::class, 'store']);
                 Route::put('/certificates/{id}', [CertificateController::class, 'update']);
                 Route::delete('/certificates/{id}', [CertificateController::class, 'destroy']);
+
+                // Categories under /admin
+                Route::get('/categories', [CategoryController::class, 'index']);
+                Route::post('/categories', [CategoryController::class, 'store']);
+                Route::put('/categories/{id}', [CategoryController::class, 'update']);
+                Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
             });
 
             // Category Management

@@ -202,29 +202,6 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
     return true;
   });
 
-  const categoryImages: Record<string, { webp: string; jpg: string }> = {
-    'kalung-mutiara': {
-      webp: '/images/hero_pearl_shell.webp',
-      jpg: '/images/hero_pearl_shell.jpg',
-    },
-    'gelang-mutiara': {
-      webp: '/images/featured_pearl_dark_luxury.webp',
-      jpg: '/images/featured_pearl_dark_luxury.jpg',
-    },
-    'anting-mutiara': {
-      webp: '/images/terroir_pearl_plate_left.webp',
-      jpg: '/images/terroir_pearl_plate_left.jpg',
-    },
-    'cincin-mutiara': {
-      webp: '/images/placeholder_jewelry.svg',
-      jpg: '/images/placeholder_jewelry.svg',
-    },
-    'mutiara-lepas': {
-      webp: '/images/hero_pearl_dark_luxury.webp',
-      jpg: '/images/hero_pearl_dark_luxury.jpg',
-    },
-  };
-
   return (
     <div className="w-full flex flex-col font-sans">
       {/* MOBILE VIEW (< lg): TAMPILAN MARKETPLACE (TAHAP Q) */}
@@ -402,49 +379,58 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
             {categories.map((cat) => {
               const isSelected = selectedCategorySlug === cat.slug;
-              const imgData = categoryImages[cat.slug] || {
-                webp: '/images/hero_pearl_shell.webp',
-                jpg: '/images/hero_pearl_shell.jpg',
-              };
+              const hasImage = Boolean(cat.image);
 
               return (
                 <div
                   key={cat.id}
                   onClick={() => onNavigate('catalog', cat.slug)}
-                  className={`group relative rounded-2xl overflow-hidden border cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-xl bg-[#FBF8F3] flex flex-col ${
+                  className={`group relative rounded-2xl overflow-hidden border cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-xl bg-[#FBF8F3] flex flex-col justify-between ${
                     isSelected ? 'border-[#8A6A2F] ring-2 ring-[#8A6A2F]/30' : 'border-[#E6DDD0]'
                   }`}
                 >
-                  {/* Visual Image Container with WebP Picture */}
-                  <div className="relative w-full h-[180px] sm:h-[190px] overflow-hidden bg-[#EDE6DA]">
-                    <picture className="w-full h-full block">
-                      <source type="image/webp" srcSet={imgData.webp} />
-                      <img
-                        src={imgData.jpg}
-                        alt={`Kategori Perhiasan ${cat.name}`}
-                        width={240}
-                        height={190}
-                        className="w-full h-full object-cover aspect-[4/3] transition-transform duration-700 ease-out group-hover:scale-108"
-                        loading="lazy"
-                        decoding="async"
-                        style={{ contentVisibility: 'auto' }}
-                      />
-                    </picture>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                  {hasImage ? (
+                    /* Visual Image Container with WebP Picture */
+                    <div className="relative w-full h-[180px] sm:h-[190px] overflow-hidden bg-[#EDE6DA]">
+                      <picture className="w-full h-full block">
+                        {cat.webp_url && <source type="image/webp" srcSet={resolveMediaUrl(cat.webp_url)} />}
+                        <img
+                          src={resolveMediaUrl(cat.image!)}
+                          alt={`Kategori Perhiasan ${cat.name}`}
+                          width={240}
+                          height={190}
+                          className="w-full h-full object-cover aspect-[4/3] transition-transform duration-700 ease-out group-hover:scale-108"
+                          loading="lazy"
+                          decoding="async"
+                          style={{ contentVisibility: 'auto' }}
+                        />
+                      </picture>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
-                    <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#12263A]/85 text-[#D9B877] backdrop-blur-xs">
-                      {cat.productsCount} Koleksi
-                    </span>
-                  </div>
+                      <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#12263A]/85 text-[#D9B877] backdrop-blur-xs">
+                        {cat.productsCount} Koleksi
+                      </span>
+                    </div>
+                  ) : null}
 
                   {/* Card Text Info */}
-                  <div className="p-4 flex-1 flex flex-col justify-between text-left">
+                  <div className={`p-4 flex-1 flex flex-col justify-between text-left ${!hasImage ? 'min-h-[160px]' : ''}`}>
                     <div>
+                      {!hasImage && (
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="text-[10px] uppercase tracking-wider font-semibold text-[#8A6A2F]">
+                            Koleksi Mutiara
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#12263A]/10 text-[#12263A]">
+                            {cat.productsCount} Koleksi
+                          </span>
+                        </div>
+                      )}
                       <h3 className="font-serif text-xl font-medium text-[#12263A] group-hover:text-[#8A6A2F] transition-colors leading-snug">
                         {cat.name}
                       </h3>
-                      <p className="text-[12px] text-[#4A5666] mt-1 line-clamp-1">
-                        {cat.subtitle}
+                      <p className="text-[12px] text-[#4A5666] mt-1 line-clamp-2">
+                        {cat.subtitle || 'Koleksi perhiasan mutiara air laut lombok bersertifikat.'}
                       </p>
                     </div>
 
