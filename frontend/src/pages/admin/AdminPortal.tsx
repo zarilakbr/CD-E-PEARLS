@@ -42,7 +42,7 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { ProductFormModal } from '../../components/admin/ProductFormModal';
 import { APPROVAL_RULES } from '../../config/approvalRules';
-import { reportApi, apiClient } from '../../lib/api';
+import { reportApi, apiClient, catalogApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboardSync } from '../../hooks/useDashboardSync';
 import type {
@@ -174,7 +174,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [dashboardStats, setDashboardStats] = useState<{
     total_revenue: number;
     total_orders: number;
+    pending_orders?: number;
     total_products: number;
+    total_customers?: number;
     total_pearl_stock: number;
     pending_approvals: number;
     revenue_trend: Array<{ date: string; label: string; revenue: number; orders_count: number }>;
@@ -241,15 +243,23 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [selectedCertPreview, setSelectedCertPreview] = useState<MockCertificate | null>(null);
   const [certToDelete, setCertToDelete] = useState<MockCertificate | null>(null);
 
-  // Load live data from backend on mount
-  React.useEffect(() => {
-    let isMounted = true;
+  const loadedTabs = React.useRef<Set<string>>(new Set());
 
-    // 1. Produk Admin & Stok
+  const loadDashboardStats = React.useCallback(() => {
+    apiClient.get('/admin/dashboard')
+      .then((res) => {
+        if (res.data?.data) {
+          setDashboardStats(res.data.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const loadProducts = React.useCallback(() => {
     apiClient.get('/admin/products?per_page=100')
       .then((res) => {
         const items = res.data?.data || res.data;
-        if (isMounted && Array.isArray(items)) {
+        if (Array.isArray(items)) {
           const mapped: MockProduct[] = items.map((item: any) => ({
             id: item.id,
             name: item.name,
@@ -285,21 +295,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         }
       })
       .catch(() => {});
+  }, []);
 
-    // 2. Ringkasan Dasbor Admin
-    apiClient.get('/admin/dashboard')
-      .then((res) => {
-        if (isMounted && res.data?.data) {
-          setDashboardStats(res.data.data);
-        }
-      })
-      .catch(() => {});
-
-    // 3. Pesanan Toko
+  const loadOrders = React.useCallback(() => {
     apiClient.get('/orders?per_page=100')
       .then((res) => {
         const ords = res.data?.data || res.data;
-        if (isMounted && Array.isArray(ords)) {
+        if (Array.isArray(ords)) {
           const mappedOrders: MockOrder[] = ords.map((o: any) => ({
             id: o.order_number || `#ORD-${o.id}`,
             date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
@@ -336,12 +338,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         }
       })
       .catch(() => {});
+  }, []);
 
-    // 4. Pelanggan Toko
+  const loadCustomers = React.useCallback(() => {
     apiClient.get('/admin/customers?per_page=100')
       .then((res) => {
         const custs = res.data?.data || res.data;
-        if (isMounted && Array.isArray(custs)) {
+        if (Array.isArray(custs)) {
           const mappedCustomers: MockCustomer[] = custs.map((c: any) => ({
             id: c.id,
             name: c.name || 'Pelanggan',
@@ -357,12 +360,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         }
       })
       .catch(() => {});
+  }, []);
 
-    // 5. Kategori Produk
-    apiClient.get('/categories')
-      .then((res) => {
-        const cats = res.data?.data || res.data;
-        if (isMounted && Array.isArray(cats)) {
+  const loadCategories = React.useCallback(() => {
+    catalogApi.getCategories()
+      .then((cats) => {
+        if (Array.isArray(cats)) {
           const mappedCats: MockCategory[] = cats.map((cat: any) => ({
             id: cat.id,
             name: cat.name,
@@ -376,12 +379,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         }
       })
       .catch(() => {});
+  }, []);
 
-    // 6. Sertifikat Gemologi
+  const loadCertificates = React.useCallback(() => {
     apiClient.get('/admin/certificates?per_page=100')
       .then((res) => {
         const certs = res.data?.data || res.data;
-        if (isMounted && Array.isArray(certs)) {
+        if (Array.isArray(certs)) {
           const mappedCerts: MockCertificate[] = certs.map((c: any) => ({
             id: c.id,
             certNumber: c.nomor || c.cert_number,
@@ -396,55 +400,63 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         }
       })
       .catch(() => {});
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
-  // Real-time synchronization layer with 10s ETag polling (Tahap N2)
+  // Lazy tab loader: Muat data setiap tab HANYA saat tab dibuka
+  React.useEffect(() => {
+    if (activeMenu === 'dashboard') {
+      if (!loadedTabs.current.has('dashboard')) {
+        loadedTabs.current.add('dashboard');
+        loadDashboardStats();
+      }
+    } else if (activeMenu === 'products' || activeMenu === 'stock') {
+      if (!loadedTabs.current.has('products')) {
+        loadedTabs.current.add('products');
+        loadProducts();
+        loadCategories();
+      }
+    } else if (activeMenu === 'orders') {
+      if (!loadedTabs.current.has('orders')) {
+        loadedTabs.current.add('orders');
+        loadOrders();
+      }
+    } else if (activeMenu === 'customers') {
+      if (!loadedTabs.current.has('customers')) {
+        loadedTabs.current.add('customers');
+        loadCustomers();
+      }
+    } else if (activeMenu === 'categories') {
+      if (!loadedTabs.current.has('categories')) {
+        loadedTabs.current.add('categories');
+        loadCategories();
+      }
+    } else if (activeMenu === 'certificates') {
+      if (!loadedTabs.current.has('certificates')) {
+        loadedTabs.current.add('certificates');
+        loadCertificates();
+      }
+    }
+  }, [activeMenu, loadDashboardStats, loadProducts, loadOrders, loadCustomers, loadCategories, loadCertificates]);
+
+  // Real-time synchronization layer with 30s ETag polling (Tahap V2c)
   const { lastSyncLabel } = useDashboardSync({
     enabled: true,
+    role: 'admin',
+    intervalMs: 30000,
     onDataUpdated: (data) => {
-      if (data.total_orders !== undefined && data.total_orders !== orders.length) {
-        apiClient.get('/orders?per_page=100').then((res) => {
-          const ords = res.data?.data || res.data;
-          if (Array.isArray(ords)) {
-            const mappedOrders: MockOrder[] = ords.map((o: any) => ({
-              id: o.order_number || `#ORD-${o.id}`,
-              date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
-              customerName: o.customer_name || 'Pelanggan Butik',
-              customerEmail: o.customer_email || o.user?.email || '',
-              customerPhone: o.customer_phone || '',
-              shippingAddress: o.customer_address || '',
-              city: o.city || 'Indonesia',
-              productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
-              items: (o.items || []).map((it: any) => ({
-                productId: it.product_id,
-                name: it.product?.name || it.product_name || 'Mutiara Lombok',
-                pearlSize: it.pearl_size || '12 mm',
-                metal: it.metal || 'Emas 18K',
-                price: Number(it.price) || 0,
-                quantity: Number(it.quantity) || 1,
-              })),
-              subtotal: Number(o.subtotal || o.total) || 0,
-              shippingCost: Number(o.shipping_cost) || 0,
-              insuranceCost: Number(o.insurance_cost) || 0,
-              total: Number(o.total) || 0,
-              paymentMethod: o.payment_method || 'TRANSFER_BANK',
-              status: o.order_status === 'DELIVERED' ? 'Selesai' : o.order_status === 'SHIPPED' ? 'Dikirim' : o.order_status === 'PROCESSING' ? 'Dikemas' : o.order_status === 'CANCELLED' ? 'Dibatalkan' : 'Menunggu Pembayaran',
-              trackingNumber: o.tracking_number,
-              courier: o.courier || 'JNE Express (Berasuransi)',
-              timeline: (o.status_histories || []).map((h: any) => ({
-                status: h.status,
-                date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
-                description: h.notes || '',
-                completed: true,
-              })),
-            }));
-            setOrders(mappedOrders);
-          }
-        }).catch(() => {});
+      if (data.total_orders !== undefined) {
+        if (loadedTabs.current.has('orders')) {
+          loadOrders();
+        }
+        if (loadedTabs.current.has('dashboard')) {
+          loadDashboardStats();
+        }
+      }
+      if (data.low_stock_count !== undefined && loadedTabs.current.has('products')) {
+        loadProducts();
+      }
+      if (data.accounts_count !== undefined && loadedTabs.current.has('customers')) {
+        loadCustomers();
       }
     },
   });
@@ -1019,18 +1031,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             />
             <StatCard
               label="Pesanan Baru"
-              value={`${orders.filter(o => o.status === 'Menunggu Pembayaran' || o.status === 'Dikemas').length} Pesanan`}
-              note={orders.length > 0 ? `${orders.length} total pesanan masuk` : 'Belum ada pesanan'}
+              value={`${dashboardStats?.pending_orders ?? orders.filter(o => o.status === 'Menunggu Pembayaran' || o.status === 'Dikemas').length} Pesanan`}
+              note={`${dashboardStats?.total_orders ?? orders.length} total pesanan masuk`}
             />
             <StatCard
               label="Produk Aktif"
-              value={`${products.filter(p => p.status === 'Aktif').length} Item`}
+              value={`${dashboardStats?.total_products ?? products.filter(p => p.status === 'Aktif').length} Item`}
               note="Semua grade bersertifikat resmi"
             />
             <StatCard
               label="Pelanggan"
-              value={`${customers.length} Akun`}
-              note={customers.length > 0 ? `${customers.length} pelanggan terdaftar` : 'Belum ada pelanggan'}
+              value={`${dashboardStats?.total_customers ?? customers.length} Akun`}
+              note={(dashboardStats?.total_customers ?? customers.length) > 0 ? `${dashboardStats?.total_customers ?? customers.length} pelanggan terdaftar` : 'Belum ada pelanggan'}
             />
           </div>
 

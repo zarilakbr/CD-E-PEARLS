@@ -49,6 +49,7 @@ export const routesManifest: RouteManifestItem[] = [
   // 1. Rute Publik
   { path: '/', component: PublicHomePage, allowedRoles: ['public'], titleKey: 'Beranda' },
   { path: '/katalog', component: CatalogPage, allowedRoles: ['public'], titleKey: 'Koleksi Produk' },
+  { path: '/koleksi', component: CatalogPage, allowedRoles: ['public'], titleKey: 'Koleksi Produk' },
   { path: '/studio', component: Studio3DPage, allowedRoles: ['public'], titleKey: 'Studio 3D Atelier' },
   { path: '/edukasi', component: EducationPage, allowedRoles: ['public'], titleKey: 'Edukasi Mutiara' },
   { path: '/tentang', component: AboutPage, allowedRoles: ['public'], titleKey: 'Tentang Kami' },
@@ -92,10 +93,14 @@ export const routesManifest: RouteManifestItem[] = [
 
   // 5. Rute SPI Terproteksi (/spi/*)
   { path: '/spi', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'SPI Ringkasan', initialMenu: 'ringkasan' },
-  { path: '/spi/log-aktivitas', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'Log Aktivitas SPI', initialMenu: 'log-aktivitas' },
-  { path: '/spi/persetujuan', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'Persetujuan SPI', initialMenu: 'persetujuan' },
-  { path: '/spi/akun-role', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'Akun & Role SPI', initialMenu: 'akun-role' },
-  { path: '/spi/laporan-audit', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'Laporan Audit SPI', initialMenu: 'laporan-audit' },
+  { path: '/spi/pesanan', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'SPI Pesanan', initialMenu: 'pesanan' },
+  { path: '/spi/produk-stok', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'SPI Produk & Stok', initialMenu: 'produk-stok' },
+  { path: '/spi/pengguna', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'SPI Pengguna', initialMenu: 'pengguna' },
+  { path: '/spi/pengaturan-toko', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'SPI Pengaturan Toko', initialMenu: 'pengaturan-toko' },
+  { path: '/spi/log-aktivitas', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'Log Aktivitas SPI', initialMenu: 'ringkasan' },
+  { path: '/spi/persetujuan', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'Persetujuan SPI', initialMenu: 'ringkasan' },
+  { path: '/spi/akun-role', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'Akun & Role SPI', initialMenu: 'pengguna' },
+  { path: '/spi/laporan-audit', component: SpiPortal, allowedRoles: ['spi'], titleKey: 'Laporan Audit SPI', initialMenu: 'ringkasan' },
 
   // 6. Rute Sistem & Error
   { path: '/403', component: AccessDeniedPage, allowedRoles: ['public', 'user', 'admin', 'spi'], titleKey: 'Akses Ditolak' },

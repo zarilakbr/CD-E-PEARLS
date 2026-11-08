@@ -109,9 +109,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   });
   const [profileSaveMessage, setProfileSaveMessage] = useState<string | null>(null);
 
-  // Real-time synchronization layer with 10s ETag polling (Tahap N2)
+  // Real-time synchronization layer with 60s ETag polling (Tahap V2c)
   const { lastSyncLabel } = useDashboardSync({
     enabled: !!user,
+    role: 'customer',
+    intervalMs: 60000,
     onStatusChange: (_newStatus, _oldStatus, latestOrder) => {
       if (latestOrder) {
         setOrders((prev) =>

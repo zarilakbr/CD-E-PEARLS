@@ -67,13 +67,35 @@ class ProductController extends Controller
         $perPage = min(max((int) $request->input('per_page', 24), 1), 100);
         $products = $query->paginate($perPage);
 
-        return response()->json([
+        $payload = [
             'success' => true,
             'total' => $products->total(),
             'current_page' => $products->currentPage(),
             'last_page' => $products->lastPage(),
             'data' => $products->items(),
-        ]);
+        ];
+
+        $hasAuth = (bool) $request->user() || $request->hasHeader('Authorization');
+        $isPublic = ! $hasAuth;
+        if ($isPublic) {
+            $etag = '"'.md5(json_encode($payload)).'"';
+            if ($request->header('If-None-Match') === $etag) {
+                return response()->json(null, Response::HTTP_NOT_MODIFIED, [
+                    'ETag' => $etag,
+                    'Cache-Control' => 'public, max-age=30, s-maxage=60',
+                    'Vary' => 'Authorization',
+                ]);
+            }
+
+            return response()->json($payload)
+                ->header('Cache-Control', 'public, max-age=30, s-maxage=60')
+                ->header('ETag', $etag)
+                ->header('Vary', 'Authorization');
+        }
+
+        return response()->json($payload)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Vary', 'Authorization');
     }
 
     /**

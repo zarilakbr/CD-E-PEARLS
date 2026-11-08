@@ -146,8 +146,12 @@ class SpiControlCenterController extends Controller
         $user = $request->user();
         $order = Order::findOrFail($id);
 
+        if (! $request->has('order_status') && $request->has('status')) {
+            $request->merge(['order_status' => $request->input('status')]);
+        }
+
         $validated = $request->validate([
-            'order_status' => ['required', 'string', Rule::in(['PENDING_PAYMENT', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'Menunggu Pembayaran', 'Dikemas', 'Dikirim', 'Selesai', 'Dibatalkan'])],
+            'order_status' => ['required', 'string', Rule::in(['PENDING_PAYMENT', 'PENDING', 'PROCESSING', 'READY_TO_SHIP', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'Menunggu Pembayaran', 'Dikemas', 'Dikirim', 'Selesai', 'Dibatalkan'])],
             'notes' => ['nullable', 'string'],
         ]);
 

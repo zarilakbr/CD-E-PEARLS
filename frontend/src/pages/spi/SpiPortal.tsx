@@ -60,7 +60,11 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
     return 'metrics';
   });
   const [activeMenu, setActiveMenu] = useState<string>(() => {
-    if (initialMenu) return initialMenu;
+    let resolved = initialMenu;
+    if (resolved === 'akun-role') resolved = 'pengguna';
+    if (resolved === 'log-aktivitas' || resolved === 'laporan-audit' || resolved === 'persetujuan') resolved = 'ringkasan';
+    if (resolved) return resolved;
+
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       if (path === '/spi/pesanan') return 'pesanan';
@@ -72,7 +76,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
       const params = new URLSearchParams(window.location.search);
       const m = params.get('menu');
       if (m && ['ringkasan', 'pesanan', 'produk-stok', 'pengguna', 'audit-log', 'pengaturan-toko'].includes(m)) {
-        return m;
+        return m === 'akun-role' ? 'pengguna' : m;
       }
     }
     return 'ringkasan';
@@ -114,12 +118,20 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
   } | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
 
-  // Real-time synchronization layer with 10s ETag polling (Tahap N2)
+  // Real-time synchronization layer with 30s ETag polling (Tahap V2c)
   const { lastSyncLabel } = useDashboardSync({
     enabled: true,
+    role: 'spi',
+    intervalMs: 30000,
     onDataUpdated: (data) => {
       if (data.today_revenue !== undefined || data.pending_approvals_count !== undefined) {
         fetchSummary();
+      }
+      if (data.accounts_count !== undefined) {
+        fetchUsers();
+      }
+      if (data.orders_count !== undefined) {
+        fetchOrders();
       }
     },
   });
@@ -618,17 +630,17 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <StatCard
               label="Omzet Hari Ini"
-              value={`Rp ${(summaryData?.revenue.today || 0).toLocaleString('id-ID')}`}
+              value={`Rp ${(summaryData?.revenue?.today || 0).toLocaleString('id-ID')}`}
               note="Transaksi Sah Database"
             />
             <StatCard
               label="Omzet 7 Hari Terakhir"
-              value={`Rp ${(summaryData?.revenue.days_7 || 0).toLocaleString('id-ID')}`}
+              value={`Rp ${(summaryData?.revenue?.days_7 || 0).toLocaleString('id-ID')}`}
               note="Akumulasi Mingguan"
             />
             <StatCard
               label="Omzet 30 Hari Terakhir"
-              value={`Rp ${(summaryData?.revenue.days_30 || 0).toLocaleString('id-ID')}`}
+              value={`Rp ${(summaryData?.revenue?.days_30 || 0).toLocaleString('id-ID')}`}
               note="Akumulasi Bulanan"
             />
             <StatCard

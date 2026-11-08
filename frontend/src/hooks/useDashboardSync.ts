@@ -20,6 +20,11 @@ export interface SyncData {
     updated_at?: string;
   } | null;
   unread_notifications?: number;
+  accounts_count?: number;
+  customers_count?: number;
+  accounts_version?: string;
+  orders_version?: string;
+  profile_version?: string;
   total_orders?: number;
   pending_orders?: number;
   processing_orders?: number;
@@ -33,19 +38,31 @@ export interface SyncData {
 export interface UseDashboardSyncOptions {
   enabled?: boolean;
   intervalMs?: number;
+  role?: 'admin' | 'spi' | 'customer' | 'user';
   onStatusChange?: (newStatus: string, oldStatus?: string, latestOrder?: any) => void;
   onDataUpdated?: (data: SyncData) => void;
 }
 
-const DEFAULT_POLL_INTERVAL_MS = 10000; // 10 seconds
+const MIN_INTERVAL_ADMIN_SPI_MS = 30000; // 30 seconds
+const MIN_INTERVAL_CUSTOMER_MS = 60000;  // 60 seconds
+const MAX_BACKOFF_MS = 300000;           // 5 minutes
 
 export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
   const {
     enabled = true,
-    intervalMs = Number(import.meta.env.VITE_SYNC_INTERVAL_MS) || DEFAULT_POLL_INTERVAL_MS,
+    intervalMs,
+    role = 'admin',
     onStatusChange,
     onDataUpdated,
   } = options;
+
+  // Enforce minimum polling interval: 30s (SPI/admin), 60s (customer/user)
+  const isCustomerRole = role === 'customer' || role === 'user';
+  const minInterval = isCustomerRole ? MIN_INTERVAL_CUSTOMER_MS : MIN_INTERVAL_ADMIN_SPI_MS;
+  const envInterval = Number(import.meta.env.VITE_SYNC_INTERVAL_MS);
+  const effectiveBaseInterval = envInterval > 0
+    ? envInterval
+    : Math.max(intervalMs || minInterval, minInterval);
 
   const [syncData, setSyncData] = useState<SyncData | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
@@ -55,8 +72,10 @@ export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
   const etagRef = useRef<string | null>(null);
   const prevOrderRef = useRef<{ orderNumber?: string; status?: string } | null>(null);
   const backoffCountRef = useRef<number>(0);
+  const retryAfterRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef<boolean>(true);
+  const isExecutingRef = useRef<boolean>(false);
 
   // Second ticker to update "diperbarui X detik lalu"
   useEffect(() => {
@@ -67,12 +86,15 @@ export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
   }, [lastSyncTime]);
 
   const executeSync = useCallback(async () => {
-    if (!enabled || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) {
-      return;
-    }
+    // 1. Guard against disabled sync, hidden tab, or concurrent in-flight requests
+    if (!enabled) return;
+    if (typeof document !== 'undefined' && document.hidden) return;
+    if (isExecutingRef.current) return;
 
     try {
+      isExecutingRef.current = true;
       setIsSyncing(true);
+
       const headers: Record<string, string> = {};
       if (etagRef.current) {
         headers['If-None-Match'] = etagRef.current;
@@ -85,13 +107,14 @@ export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
 
       if (!isMountedRef.current) return;
 
-      // Reset backoff on successful server response
+      // Reset exponential backoff on successful server response
       backoffCountRef.current = 0;
+      retryAfterRef.current = null;
       setLastSyncTime(Date.now());
       setSecondsAgo(0);
 
       if (res.status === 304) {
-        // Not modified (0 payload transferred)
+        // Not modified (0 payload transferred, ETag matched)
         return;
       }
 
@@ -129,28 +152,50 @@ export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
       }
     } catch (err: any) {
       if (!isMountedRef.current) return;
-      // Exponential backoff up to 60 seconds on rate limit (429) or network failure
+
       const isRateLimited = err?.response?.status === 429;
-      backoffCountRef.current = Math.min(backoffCountRef.current + 1, 5);
+      const retryHeader = err?.response?.headers?.['retry-after'] || err?.response?.headers?.['Retry-After'];
+
+      if (retryHeader) {
+        const retrySec = parseInt(retryHeader, 10);
+        if (!isNaN(retrySec) && retrySec > 0) {
+          retryAfterRef.current = Math.min(retrySec * 1000, MAX_BACKOFF_MS);
+        }
+      }
+
+      // Exponential backoff capped at 5 minutes
+      backoffCountRef.current = Math.min(backoffCountRef.current + 1, 6);
       if (isRateLimited) {
-        console.warn('[Sync] Rate limited, applying backoff multiplier.');
+        console.warn('[Sync] Rate limited (429), applying backoff/retry-after.');
       }
     } finally {
+      isExecutingRef.current = false;
       if (isMountedRef.current) {
         setIsSyncing(false);
       }
     }
   }, [enabled, onStatusChange, onDataUpdated]);
 
-  // Polling loop with visibility checking and backoff
+  // Polling loop with visibility checking, tab pause, and exponential backoff
   useEffect(() => {
     isMountedRef.current = true;
     let isActive = true;
 
     const scheduleNext = () => {
       if (!isActive) return;
-      const backoffMultiplier = Math.pow(1.5, backoffCountRef.current);
-      const computedInterval = Math.min(intervalMs * backoffMultiplier, 60000);
+      // Stop scheduling while tab is hidden
+      if (typeof document !== 'undefined' && document.hidden) return;
+
+      let computedInterval: number;
+      if (retryAfterRef.current !== null) {
+        computedInterval = retryAfterRef.current;
+        retryAfterRef.current = null;
+      } else if (backoffCountRef.current > 0) {
+        const backoffMultiplier = Math.pow(2, backoffCountRef.current);
+        computedInterval = Math.min(effectiveBaseInterval * backoffMultiplier, MAX_BACKOFF_MS);
+      } else {
+        computedInterval = effectiveBaseInterval;
+      }
 
       timerRef.current = setTimeout(async () => {
         await executeSync();
@@ -158,14 +203,28 @@ export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
       }, computedInterval);
     };
 
-    // Run initial sync
-    executeSync();
-    scheduleNext();
+    // Run initial sync and then schedule subsequent poll
+    const runInitialSync = async () => {
+      await executeSync();
+      scheduleNext();
+    };
+
+    if (typeof document === 'undefined' || !document.hidden) {
+      runInitialSync();
+    }
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // Tab brought to foreground: immediately trigger fresh sync
-        executeSync();
+      if (typeof document === 'undefined') return;
+
+      if (document.hidden) {
+        // Tab went to background: cancel any pending timer
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+      } else {
+        // Tab brought to foreground: immediately trigger fresh sync and restart schedule
+        runInitialSync();
       }
     };
 
@@ -176,12 +235,15 @@ export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
     return () => {
       isActive = false;
       isMountedRef.current = false;
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
     };
-  }, [executeSync, intervalMs]);
+  }, [executeSync, effectiveBaseInterval]);
 
   const lastSyncLabel = secondsAgo <= 2 ? 'Baru saja' : `Diperbarui ${secondsAgo} detik lalu`;
 
@@ -194,4 +256,3 @@ export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
     refetch: executeSync,
   };
 }
-

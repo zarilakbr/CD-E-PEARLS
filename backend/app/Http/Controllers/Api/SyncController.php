@@ -55,6 +55,8 @@ class SyncController extends Controller
                 ->count();
 
             $payload['orders_count'] = (clone $ordersQuery)->count();
+            $payload['orders_version'] = $latestOrder?->updated_at?->toISOString() ?: '0';
+            $payload['profile_version'] = $user->updated_at?->toISOString() ?: '0';
             $payload['active_orders_count'] = $activeCount;
             $payload['pending_payment_count'] = $pendingCount;
             $payload['latest_order'] = $latestOrder ? [
@@ -77,8 +79,15 @@ class SyncController extends Controller
             $processingOrders = Order::whereIn('order_status', ['PROCESSING', 'Dikemas'])->count();
             $lowStockCount = Product::where('stock', '<=', 2)->count();
             $pendingApprovals = Approval::where('status', 'pending')->count();
+            $customersCount = \App\Models\User::where('role', 'user')->count();
+            $customersVersion = \App\Models\User::where('role', 'user')->max('updated_at') ?: '0';
 
             $payload['total_orders'] = $totalOrders;
+            $payload['orders_count'] = $totalOrders;
+            $payload['orders_version'] = $latestOrder?->updated_at?->toISOString() ?: '0';
+            $payload['accounts_count'] = $customersCount;
+            $payload['customers_count'] = $customersCount;
+            $payload['accounts_version'] = (string) $customersVersion;
             $payload['pending_orders'] = $pendingOrders;
             $payload['processing_orders'] = $processingOrders;
             $payload['low_stock_count'] = $lowStockCount;
@@ -91,9 +100,12 @@ class SyncController extends Controller
                 ->where('order_status', '!=', 'CANCELLED')
                 ->sum('total');
 
+            $totalOrders = Order::count();
             $pendingApprovals = Approval::where('status', 'pending')->count();
             $latestOrder = Order::latest('updated_at')->first(['updated_at']);
             $latestAudit = AuditLog::latest('id')->first(['id', 'created_at']);
+            $accountsCount = \App\Models\User::count();
+            $accountsVersion = \App\Models\User::max('updated_at') ?: '0';
 
             $ordersByStatus = Order::selectRaw('order_status, count(*) as count')
                 ->groupBy('order_status')
@@ -101,6 +113,11 @@ class SyncController extends Controller
                 ->toArray();
 
             $payload['today_revenue'] = (float) $todayRevenue;
+            $payload['total_orders'] = $totalOrders;
+            $payload['orders_count'] = $totalOrders;
+            $payload['orders_version'] = $latestOrder?->updated_at?->toISOString() ?: '0';
+            $payload['accounts_count'] = $accountsCount;
+            $payload['accounts_version'] = (string) $accountsVersion;
             $payload['pending_approvals_count'] = $pendingApprovals;
             $payload['orders_by_status'] = $ordersByStatus;
             $payload['latest_audit_id'] = $latestAudit?->id;
