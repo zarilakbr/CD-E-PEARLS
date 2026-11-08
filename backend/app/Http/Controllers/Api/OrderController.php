@@ -82,18 +82,31 @@ class OrderController extends Controller
     {
         $user = $request->user('sanctum') ?? $request->user();
 
-        $order = Order::where('id', $id)
-            ->orWhere('order_number', $id)
-            ->with(['items', 'statusHistories', 'payments'])
-            ->firstOrFail();
+        $query = Order::where(function ($q) use ($id) {
+            $q->where('id', $id)->orWhere('order_number', $id);
+        });
+
+        if ($user && $user->isUser()) {
+            $query->where('user_id', $user->id);
+        }
+
+        $order = $query->with(['items', 'statusHistories', 'payments'])->first();
 
         // IDOR Prevention: If regular user, they can ONLY view their own order
-        if ($user && $user->isUser() && $order->user_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki hak akses untuk melihat pesanan ini.',
-                'error' => 'FORBIDDEN',
-            ], Response::HTTP_FORBIDDEN);
+        if (! $order) {
+            $existsOther = Order::where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('order_number', $id);
+            })->exists();
+
+            if ($existsOther && $user && $user->isUser()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki hak akses untuk melihat pesanan ini.',
+                    'error' => 'FORBIDDEN',
+                ], Response::HTTP_FORBIDDEN);
+            }
+
+            abort(Response::HTTP_NOT_FOUND, 'Pesanan tidak ditemukan.');
         }
 
         return response()->json([
@@ -353,17 +366,31 @@ class OrderController extends Controller
     public function cancel(Request $request, $id): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user();
-        $order = Order::where('id', $id)
-            ->orWhere('order_number', $id)
-            ->with('items')
-            ->firstOrFail();
+
+        $query = Order::where(function ($q) use ($id) {
+            $q->where('id', $id)->orWhere('order_number', $id);
+        });
+
+        if ($user && $user->isUser()) {
+            $query->where('user_id', $user->id);
+        }
+
+        $order = $query->with('items')->first();
 
         // Must be own order if regular customer
-        if ($user && $user->isUser() && $order->user_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki hak akses untuk membatalkan pesanan ini.',
-            ], Response::HTTP_FORBIDDEN);
+        if (! $order) {
+            $existsOther = Order::where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('order_number', $id);
+            })->exists();
+
+            if ($existsOther && $user && $user->isUser()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki hak akses untuk membatalkan pesanan ini.',
+                ], Response::HTTP_FORBIDDEN);
+            }
+
+            abort(Response::HTTP_NOT_FOUND, 'Pesanan tidak ditemukan.');
         }
 
         if (in_array($order->order_status, ['SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'])) {
@@ -442,15 +469,30 @@ class OrderController extends Controller
     public function uploadProof(Request $request, $id): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user();
-        $order = Order::where('id', $id)
-            ->orWhere('order_number', $id)
-            ->firstOrFail();
 
-        if ($user && $user->isUser() && $order->user_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki hak akses untuk pesanan ini.',
-            ], Response::HTTP_FORBIDDEN);
+        $query = Order::where(function ($q) use ($id) {
+            $q->where('id', $id)->orWhere('order_number', $id);
+        });
+
+        if ($user && $user->isUser()) {
+            $query->where('user_id', $user->id);
+        }
+
+        $order = $query->first();
+
+        if (! $order) {
+            $existsOther = Order::where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('order_number', $id);
+            })->exists();
+
+            if ($existsOther && $user && $user->isUser()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki hak akses untuk pesanan ini.',
+                ], Response::HTTP_FORBIDDEN);
+            }
+
+            abort(Response::HTTP_NOT_FOUND, 'Pesanan tidak ditemukan.');
         }
 
         $validated = $request->validate([
@@ -515,9 +557,9 @@ class OrderController extends Controller
     public function downloadProof(Request $request, $id, $paymentId)
     {
         $user = $request->user('sanctum') ?? $request->user();
-        $order = Order::where('id', $id)
-            ->orWhere('order_number', $id)
-            ->firstOrFail();
+        $order = Order::where(function ($q) use ($id) {
+            $q->where('id', $id)->orWhere('order_number', $id);
+        })->firstOrFail();
 
         $isOwner = $user && $order->user_id && (int) $user->id === (int) $order->user_id;
         $isPrivileged = $user && method_exists($user, 'isAdmin') && ($user->isAdmin() || $user->isSpi());
@@ -645,7 +687,9 @@ class OrderController extends Controller
     public function requestPaymentConfirmation(Request $request, $id): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user();
-        $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
+        $order = Order::where(function ($q) use ($id) {
+            $q->where('id', $id)->orWhere('order_number', $id);
+        })->firstOrFail();
 
         $request->validate([
             'notes' => 'required|string|min:5|max:1000',
@@ -704,7 +748,9 @@ class OrderController extends Controller
     public function updatePaymentStatus(Request $request, $id): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user();
-        $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
+        $order = Order::where(function ($q) use ($id) {
+            $q->where('id', $id)->orWhere('order_number', $id);
+        })->firstOrFail();
 
         $request->validate([
             'payment_status' => 'required|in:WAITING_PAYMENT,PAYMENT_REVIEW,PAID,FAILED,REFUNDED',
@@ -761,7 +807,9 @@ class OrderController extends Controller
     public function updateOrderStatus(Request $request, $id): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user();
-        $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
+        $order = Order::where(function ($q) use ($id) {
+            $q->where('id', $id)->orWhere('order_number', $id);
+        })->firstOrFail();
 
         $request->validate([
             'order_status' => 'required|in:PENDING,PROCESSING,READY_TO_SHIP,SHIPPED,DELIVERED,COMPLETED,CANCELLED',
@@ -843,7 +891,9 @@ class OrderController extends Controller
     public function updateTracking(Request $request, $id): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user();
-        $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
+        $order = Order::where(function ($q) use ($id) {
+            $q->where('id', $id)->orWhere('order_number', $id);
+        })->firstOrFail();
 
         $request->validate([
             'tracking_number' => 'required|string|max:100',

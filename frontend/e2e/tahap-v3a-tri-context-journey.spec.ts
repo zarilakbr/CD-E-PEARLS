@@ -15,9 +15,9 @@ test.describe('Tahap V3a: Tri-Context Journey (Admin, SPI, Pelanggan) & Session 
   test.beforeAll(() => {
     const backendDir = path.resolve(__dirname, '../../backend');
     // Generate real access tokens directly from local backend connected to MySQL cde_test
-    const adminOut = execSync('php create-test-token.php admin', { cwd: backendDir, encoding: 'utf-8' });
-    const spiOut = execSync('php create-test-token.php spi', { cwd: backendDir, encoding: 'utf-8' });
-    const userOut = execSync('php create-test-token.php user', { cwd: backendDir, encoding: 'utf-8' });
+    const adminOut = execSync('php artisan cde:create-test-token admin', { cwd: backendDir, encoding: 'utf-8' });
+    const spiOut = execSync('php artisan cde:create-test-token spi', { cwd: backendDir, encoding: 'utf-8' });
+    const userOut = execSync('php artisan cde:create-test-token user', { cwd: backendDir, encoding: 'utf-8' });
 
     const adminMatch = adminOut.match(/TOKEN=([^\r\n]+)/);
     const spiMatch = spiOut.match(/TOKEN=([^\r\n]+)/);

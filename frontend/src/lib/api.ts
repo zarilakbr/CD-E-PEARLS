@@ -29,8 +29,10 @@ export const apiClient = axios.create({
 
 // Attach Bearer token fallback if present in storage
 apiClient.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined' && (window as any).__CDE_API_URL__) {
-    config.baseURL = (window as any).__CDE_API_URL__;
+  if (import.meta.env.DEV || import.meta.env.MODE === 'test' || import.meta.env.VITE_E2E === 'true') {
+    if (typeof window !== 'undefined' && (window as any).__CDE_API_URL__) {
+      config.baseURL = (window as any).__CDE_API_URL__;
+    }
   }
   const token = localStorage.getItem('cde_auth_token');
   if (token && config.headers) {

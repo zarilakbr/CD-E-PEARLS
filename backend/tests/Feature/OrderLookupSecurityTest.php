@@ -128,3 +128,50 @@ test('U-2: pemilik pesanan dan admin berhak melihat rincian pesanan', function (
     $adminResponse->assertStatus(200);
     $adminResponse->assertJsonPath('data.order_number', 'CDE-2026-0001');
 });
+
+test('pelanggan A tidak bisa melihat, membatalkan, atau mengunggah bukti bayar pesanan pelanggan B, baik lewat id maupun order_number (403 atau 404)', function () {
+    // Pesanan milik Customer B
+    $orderB = Order::create([
+        'order_number' => 'CDE-2026-9999',
+        'user_id' => $this->customerB->id,
+        'customer_name' => 'Customer B Rahasia',
+        'customer_phone' => '081211112222',
+        'customer_address' => 'Jl. Melati No. 99, Mataram',
+        'subtotal' => 10000000,
+        'discount' => 0,
+        'shipping_cost' => 50000,
+        'insurance_cost' => 25000,
+        'total' => 10075000,
+        'payment_method' => 'TRANSFER_BANK',
+        'payment_status' => 'WAITING_PAYMENT',
+        'order_status' => 'PENDING',
+        'tracking_token' => bin2hex(random_bytes(32)),
+    ]);
+
+    $file = \Illuminate\Http\UploadedFile::fake()->image('bukti.jpg');
+
+    // 1. Melihat pesanan (GET /orders/{id} & GET /orders/{order_number})
+    $resShowId = $this->actingAs($this->customerA)->getJson("/api/v1/orders/{$orderB->id}");
+    expect(in_array($resShowId->status(), [403, 404]))->toBeTrue();
+
+    $resShowNum = $this->actingAs($this->customerA)->getJson("/api/v1/orders/{$orderB->order_number}");
+    expect(in_array($resShowNum->status(), [403, 404]))->toBeTrue();
+
+    // 2. Membatalkan pesanan (POST /orders/{id}/cancel & POST /orders/{order_number}/cancel)
+    $resCancelId = $this->actingAs($this->customerA)->postJson("/api/v1/orders/{$orderB->id}/cancel");
+    expect(in_array($resCancelId->status(), [403, 404]))->toBeTrue();
+
+    $resCancelNum = $this->actingAs($this->customerA)->postJson("/api/v1/orders/{$orderB->order_number}/cancel");
+    expect(in_array($resCancelNum->status(), [403, 404]))->toBeTrue();
+
+    // 3. Mengunggah bukti bayar (POST /orders/{id}/payment-proof & POST /orders/{order_number}/payment-proof)
+    $resProofId = $this->actingAs($this->customerA)->postJson("/api/v1/orders/{$orderB->id}/payment-proof", [
+        'proof_image' => $file,
+    ]);
+    expect(in_array($resProofId->status(), [403, 404]))->toBeTrue();
+
+    $resProofNum = $this->actingAs($this->customerA)->postJson("/api/v1/orders/{$orderB->order_number}/payment-proof", [
+        'proof_image' => $file,
+    ]);
+    expect(in_array($resProofNum->status(), [403, 404]))->toBeTrue();
+});
