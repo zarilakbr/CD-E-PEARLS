@@ -29,6 +29,8 @@ export interface Product {
   is_featured: boolean;
   is_bestseller: boolean;
   image: string;
+  webp_url?: string;
+  images?: Array<{ url: string; order?: number; is_primary?: boolean; alt?: string } | string>;
   description?: string;
   certificate?: string;
   created_at?: string;

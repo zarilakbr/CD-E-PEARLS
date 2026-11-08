@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { catalogApi } from '../../lib/api';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
-import { resolveMediaUrl, resolveWebpUrl } from '../../lib/media';
+import { resolveMediaUrl } from '../../lib/media';
 import {
   ShieldCheck,
   Heart,
