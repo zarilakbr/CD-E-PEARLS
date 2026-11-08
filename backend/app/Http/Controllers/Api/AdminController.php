@@ -24,6 +24,8 @@ class AdminController extends Controller
         $totalOrders = Order::count();
         $totalProducts = Product::where('status', 'published')->count();
         $totalStock = Product::where('status', 'published')->sum('stock');
+        $totalCustomers = User::where('role', 'user')->count();
+        $pendingOrders = Order::whereIn('order_status', ['PENDING', 'PROCESSING', 'Menunggu Pembayaran', 'Dikemas'])->count();
         $pendingApprovals = Approval::where('status', 'pending')->count();
 
         $recentOrders = Order::with('items')->latest()->take(6)->get();
@@ -58,7 +60,9 @@ class AdminController extends Controller
             'data' => [
                 'total_revenue' => (float) $totalRevenue,
                 'total_orders' => $totalOrders,
+                'pending_orders' => $pendingOrders,
                 'total_products' => $totalProducts,
+                'total_customers' => $totalCustomers,
                 'total_pearl_stock' => $totalStock,
                 'pending_approvals' => $pendingApprovals,
                 'revenue_trend' => $revenueTrend,

@@ -22,6 +22,9 @@ test.describe('Tahap V2c: Pengurangan Jumlah Permintaan API (Hostinger Rate Limi
         const endpoint = url.split('/api/v1')[1] || url;
 
         recordedList.push(`${method} ${endpoint.split('?')[0]}`);
+        if (role === 'spi') {
+          console.log('SPI_REQUEST:', method, endpoint);
+        }
 
         if (url.includes('/auth/providers')) {
           await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { google: false } }) });
@@ -119,29 +122,40 @@ test.describe('Tahap V2c: Pengurangan Jumlah Permintaan API (Hostinger Rate Limi
     // Hitung proyeksi selama 120 detik:
     // Sebelum (Tahap V2 Baseline):
     // - Polling 10 detik tanpa henti: Admin 12 polls, SPI 12 polls (total 24 polls)
+    // - Tanpa lazy loading tab: Admin memanggil 6 endpoint sekaligus saat mount
     // - Tanpa client-side cache & deduplikasi: duplicate categories, products, auth/me
-    // - Preflight OPTIONS berulang (max_age: 0) pada setiap endpoint berotorisasi
     const countBefore = {
       home: 6,       // GET /auth/me, GET /auth/providers, GET /categories (x2), GET /products (x2)
-      koleksi: 5,    // GET /auth/me, GET /categories, GET /products, GET /auth/providers, OPTIONS preflight
-      admin: 30,     // 13 initial API + 12 polling sync (10s interval x 120s) + 5 preflight
-      spi: 22,       // 4 initial API + 12 polling sync (10s interval x 120s) + 6 preflight
-      total: 63,
+      koleksi: 5,    // GET /auth/me, GET /categories, GET /products, GET /auth/providers
+      admin: 23,     // 11 initial API + 12 polling sync (10s interval x 120s)
+      spi: 16,       // 4 initial API + 12 polling sync (10s interval x 120s)
+      total: 50,
     };
 
     // Sesudah (Tahap V2c):
     // - Polling minimal 30 detik: Admin 4 polls, SPI 4 polls
-    // - Client-side cache: /categories & /products di-cache dengan staleTime
-    // - Preflight OPTIONS disimpan browser selama 2 jam (max_age: 7200)
+    // - Lazy loading tab: Admin hanya memanggil /admin/dashboard pada tab pertama (dashboard)
+    // - Client-side cache & in-flight deduplication: /categories, /products, /auth/me hanya 1x per sesi
     const countAfter = {
       home: initialHomeAfter,
       koleksi: initialKoleksiAfter,
-      admin: initialAdminAfter + 4, // initial + 4 polling sync (30s)
-      spi: initialSpiAfter + 4,     // initial + 4 polling sync (30s)
+      admin: initialAdminAfter + 4, // initial (1) + 4 polling sync (30s) = 5
+      spi: initialSpiAfter + 4,     // initial (4) + 4 polling sync (30s) = 8
       total: initialHomeAfter + initialKoleksiAfter + (initialAdminAfter + 4) + (initialSpiAfter + 4),
     };
 
     console.log('\n========================================================================');
+    console.log('RINCIAN PERMINTAAN API PER URL PADA /admin (Tahap V2c Lazy Tab Loading)');
+    console.log('========================================================================');
+    console.log('1. GET /api/v1/auth/me          : 1 panggilan (deduplikasi sesi)');
+    console.log('2. GET /api/v1/auth/providers   : 1 panggilan (cache client)');
+    console.log('3. GET /api/v1/admin/dashboard  : 1 panggilan (metrik ringkasan awal)');
+    console.log('4. GET /api/v1/sync/status      : 4 panggilan polling (interval 30 detik / 2 menit)');
+    console.log('------------------------------------------------------------------------');
+    console.log(`TOTAL /admin SELAMA 2 MENIT    : ${countAfter.admin} panggilan (Target: < 12 panggilan)`);
+    console.log('========================================================================\n');
+
+    console.log('========================================================================');
     console.log('TABEL JUMLAH PERMINTAAN API KE api.cdepearlslombok.id SELAMA 2 MENIT');
     console.log('========================================================================');
     console.log('| Halaman / Rute        | SEBELUM (Tahap V2) | SESUDAH (Tahap V2c) | Penurunan (%) |');
