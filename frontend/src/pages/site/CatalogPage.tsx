@@ -66,12 +66,30 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
   const [mobileVisibleCount, setMobileVisibleCount] = useState(8);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [retryCooldown, setRetryCooldown] = useState(0);
   const [liveProducts, setLiveProducts] = useState<MockProduct[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
 
+  useEffect(() => {
+    if (retryCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setRetryCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [retryCooldown]);
+
   const fetchCatalog = () => {
+    if (retryCooldown > 0) return;
     setIsLoading(true);
     setIsError(false);
+    setErrorMessage('');
     Promise.all([
       catalogApi.getProducts({ per_page: 100 }),
       catalogApi.getCategories().catch(() => []),
@@ -109,9 +127,18 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
           setCategories(catList);
         }
       })
-      .catch(() => {
+      .catch((err: any) => {
         setIsError(true);
         setLiveProducts([]);
+        const status = err?.response?.status || err?.status;
+        const isRateLimited = status === 429 || err?.message?.includes('429');
+        if (isRateLimited) {
+          setErrorMessage('Terlalu banyak permintaan. Mohon tunggu beberapa saat.');
+          setRetryCooldown(30);
+        } else {
+          setErrorMessage('Gagal memuat katalog perhiasan. Periksa koneksi internet Anda.');
+          setRetryCooldown(10);
+        }
       })
       .finally(() => {
         setIsLoading(false);
@@ -404,13 +431,20 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
             </div>
           ) : isError ? (
             <div className="text-center py-12 px-4 space-y-3">
-              <p className="text-xs text-red-600 font-semibold">Gagal memuat katalog perhiasan. Periksa koneksi internet Anda.</p>
+              <p className="text-xs text-red-600 font-semibold" data-testid="catalog-error-msg">
+                {errorMessage || 'Gagal memuat katalog perhiasan. Periksa koneksi internet Anda.'}
+              </p>
               <button
                 type="button"
                 onClick={fetchCatalog}
-                className="min-h-[44px] px-5 rounded-full bg-[#12263A] text-white dark:bg-[#D9B877] dark:text-[#12263A] text-xs font-semibold touch-feedback cursor-pointer"
+                disabled={retryCooldown > 0}
+                className={`min-h-[44px] px-5 rounded-full text-xs font-semibold touch-feedback transition-all ${
+                  retryCooldown > 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                    : 'bg-[#12263A] text-white dark:bg-[#D9B877] dark:text-[#12263A] cursor-pointer'
+                }`}
               >
-                Coba Lagi
+                {retryCooldown > 0 ? `Coba Lagi (${retryCooldown}s)` : 'Coba Lagi'}
               </button>
             </div>
           ) : rawProducts.length === 0 ? (
@@ -955,11 +989,16 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                 </div>
               ) : isError ? (
                 <Card className="p-12 text-center max-w-md mx-auto space-y-4 border-red-200">
-                  <p className="text-sm text-red-600 font-medium">
-                    Gagal memuat katalog perhiasan. Periksa koneksi internet Anda.
+                  <p className="text-sm text-red-600 font-medium" data-testid="catalog-error-msg-desktop">
+                    {errorMessage || 'Gagal memuat katalog perhiasan. Periksa koneksi internet Anda.'}
                   </p>
-                  <Button variant="default" onClick={fetchCatalog}>
-                    Coba Lagi
+                  <Button
+                    variant="default"
+                    onClick={fetchCatalog}
+                    disabled={retryCooldown > 0}
+                    className={retryCooldown > 0 ? 'opacity-60 cursor-not-allowed' : ''}
+                  >
+                    {retryCooldown > 0 ? `Coba Lagi (${retryCooldown}s)` : 'Coba Lagi'}
                   </Button>
                 </Card>
               ) : rawProducts.length === 0 ? (
