@@ -60,7 +60,11 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
     return 'metrics';
   });
   const [activeMenu, setActiveMenu] = useState<string>(() => {
-    if (initialMenu) return initialMenu;
+    let resolved = initialMenu;
+    if (resolved === 'akun-role') resolved = 'pengguna';
+    if (resolved === 'log-aktivitas' || resolved === 'laporan-audit' || resolved === 'persetujuan') resolved = 'ringkasan';
+    if (resolved) return resolved;
+
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       if (path === '/spi/pesanan') return 'pesanan';
@@ -72,7 +76,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
       const params = new URLSearchParams(window.location.search);
       const m = params.get('menu');
       if (m && ['ringkasan', 'pesanan', 'produk-stok', 'pengguna', 'audit-log', 'pengaturan-toko'].includes(m)) {
-        return m;
+        return m === 'akun-role' ? 'pengguna' : m;
       }
     }
     return 'ringkasan';
@@ -122,6 +126,12 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
     onDataUpdated: (data) => {
       if (data.today_revenue !== undefined || data.pending_approvals_count !== undefined) {
         fetchSummary();
+      }
+      if (data.accounts_count !== undefined) {
+        fetchUsers();
+      }
+      if (data.orders_count !== undefined) {
+        fetchOrders();
       }
     },
   });

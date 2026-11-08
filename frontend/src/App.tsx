@@ -639,10 +639,14 @@ const AppContent: React.FC = () => {
            ======================================================== */}
         {[
           { path: '/spi', menu: 'ringkasan' },
-          { path: '/spi/log-aktivitas', menu: 'log-aktivitas' },
-          { path: '/spi/persetujuan', menu: 'persetujuan' },
-          { path: '/spi/akun-role', menu: 'akun-role' },
-          { path: '/spi/laporan-audit', menu: 'laporan-audit' },
+          { path: '/spi/pesanan', menu: 'pesanan' },
+          { path: '/spi/produk-stok', menu: 'produk-stok' },
+          { path: '/spi/pengguna', menu: 'pengguna' },
+          { path: '/spi/pengaturan-toko', menu: 'pengaturan-toko' },
+          { path: '/spi/log-aktivitas', menu: 'ringkasan' },
+          { path: '/spi/persetujuan', menu: 'ringkasan' },
+          { path: '/spi/akun-role', menu: 'pengguna' },
+          { path: '/spi/laporan-audit', menu: 'ringkasan' },
         ].map(({ path, menu }) => (
           <Route
             key={path}

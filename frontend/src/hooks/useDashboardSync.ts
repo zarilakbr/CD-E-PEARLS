@@ -20,6 +20,11 @@ export interface SyncData {
     updated_at?: string;
   } | null;
   unread_notifications?: number;
+  accounts_count?: number;
+  customers_count?: number;
+  accounts_version?: string;
+  orders_version?: string;
+  profile_version?: string;
   total_orders?: number;
   pending_orders?: number;
   processing_orders?: number;
