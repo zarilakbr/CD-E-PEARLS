@@ -19,7 +19,8 @@ class CategoryController extends Controller
     {
         $query = Category::withCount(['products' => fn ($q) => $q->where('status', '!=', 'archived')]);
 
-        $isPublic = ! $request->user() || $request->user()->isUser();
+        $hasAuth = (bool) $request->user() || $request->hasHeader('Authorization');
+        $isPublic = ! $hasAuth;
         if ($isPublic) {
             $query->where('is_active', true);
         }
@@ -36,15 +37,19 @@ class CategoryController extends Controller
                 return response()->json(null, Response::HTTP_NOT_MODIFIED, [
                     'ETag' => $etag,
                     'Cache-Control' => 'public, max-age=30, s-maxage=60',
+                    'Vary' => 'Authorization',
                 ]);
             }
 
             return response()->json($payload)
                 ->header('Cache-Control', 'public, max-age=30, s-maxage=60')
-                ->header('ETag', $etag);
+                ->header('ETag', $etag)
+                ->header('Vary', 'Authorization');
         }
 
-        return response()->json($payload);
+        return response()->json($payload)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Vary', 'Authorization');
     }
 
     /**

@@ -22,8 +22,10 @@ class SecurityHeaders
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
         // Prevent caching of sensitive API and authenticated responses.
-        // Public endpoints (GET products and categories) are permitted to send public Cache-Control.
-        $isPublicCacheable = ! $request->user() && (
+        // Public endpoints (GET products and categories) are permitted to send public Cache-Control
+        // ONLY if the request contains NO Authorization header and no authenticated user.
+        $hasAuth = (bool) $request->user() || $request->hasHeader('Authorization');
+        $isPublicCacheable = ! $hasAuth && (
             $request->is('api/v1/products') ||
             $request->is('api/v1/categories')
         ) && $request->isMethod('GET');
@@ -32,6 +34,11 @@ class SecurityHeaders
             $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
             $response->headers->set('Pragma', 'no-cache');
             $response->headers->set('Expires', '0');
+        }
+
+        if ($request->is('api/v1/products') || $request->is('api/v1/categories')) {
+            $existingVary = $response->headers->get('Vary');
+            $response->headers->set('Vary', $existingVary ? "{$existingVary}, Authorization" : 'Authorization');
         }
 
         return $response;

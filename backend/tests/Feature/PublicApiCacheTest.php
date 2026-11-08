@@ -57,3 +57,32 @@ test('4. CORS preflight OPTIONS request mengembalikan header Access-Control-Max-
     $response->assertHeader('Access-Control-Max-Age', '7200');
     $response->assertHeader('Access-Control-Allow-Origin', 'https://cdepearlslombok.id');
 });
+
+test('5. GET /api/v1/products dan categories dengan header Authorization mematikan cache publik', function () {
+    $resProducts = $this->withHeaders([
+        'Authorization' => 'Bearer dummy-token-test',
+    ])->get('/api/v1/products');
+
+    $resProducts->assertStatus(200);
+    $cacheProducts = $resProducts->headers->get('Cache-Control', '');
+    expect($cacheProducts)->not->toContain('public');
+    expect($cacheProducts)->toContain('no-store');
+    expect($resProducts->headers->get('Vary', ''))->toContain('Authorization');
+
+    $resCategories = $this->withHeaders([
+        'Authorization' => 'Bearer dummy-token-test',
+    ])->get('/api/v1/categories');
+
+    $resCategories->assertStatus(200);
+    $cacheCategories = $resCategories->headers->get('Cache-Control', '');
+    expect($cacheCategories)->not->toContain('public');
+    expect($cacheCategories)->toContain('no-store');
+    expect($resCategories->headers->get('Vary', ''))->toContain('Authorization');
+});
+
+test('6. GET /api/v1/products publik menyertakan Vary Authorization', function () {
+    $res = $this->get('/api/v1/products');
+    $res->assertStatus(200);
+    expect($res->headers->get('Vary', ''))->toContain('Authorization');
+});
+
