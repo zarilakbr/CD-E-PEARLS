@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, ShieldCheck, Star, ShoppingBag } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { resolveMediaUrl } from '../../lib/media';
 
 export interface ProductCardProps {
   id?: number;
@@ -48,18 +49,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       : parseInt(String(price).replace(/\D/g, ''), 10) || 0;
   const displayPrice = formattedPrice || (numericPrice > 0 ? `Rp ${numericPrice.toLocaleString('id-ID')}` : 'Hubungi Kami');
 
-  const hasCustomImage = Boolean(image && image.trim() && !image.includes('placeholder'));
+  const resolvedCustomImage = image ? resolveMediaUrl(image) : '';
+  const hasCustomImage = Boolean(resolvedCustomImage && resolvedCustomImage.trim() && !resolvedCustomImage.includes('placeholder'));
 
-  const [imgSrc, setImgSrc] = useState<string>(() => {
-    if (hasCustomImage && image) return image;
+  const computeFallbackImage = () => {
+    if (hasCustomImage && resolvedCustomImage) return resolvedCustomImage;
     const n = name.toLowerCase();
-    const c = category.toLowerCase();
+    const c = (category || '').toLowerCase();
     if (n.includes('cincin') || c.includes('cincin')) return '/images/placeholder_jewelry.svg';
     if (n.includes('gelang') || c.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
     if (n.includes('anting') || c.includes('anting')) return '/images/terroir_pearl_plate_left.jpg';
     if (n.includes('lepas') || c.includes('lepas')) return '/images/hero_pearl_dark_luxury.jpg';
     return '/images/hero_pearl_shell.jpg';
-  });
+  };
+
+  const [imgSrc, setImgSrc] = useState<string>(computeFallbackImage);
+
+  useEffect(() => {
+    setImgSrc(computeFallbackImage());
+  }, [image, name, category]);
 
   return (
     <div

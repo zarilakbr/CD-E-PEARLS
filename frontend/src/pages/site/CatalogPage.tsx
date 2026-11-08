@@ -23,6 +23,7 @@ import { ProductCard } from '../../components/common/ProductCard';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../components/ui/sheet';
 import { Slider } from '../../components/ui/slider';
 import { catalogApi } from '../../lib/api';
+import { resolveMediaUrl } from '../../lib/media';
 import type { MockProduct } from '../../types/models';
 
 interface CatalogPageProps {
@@ -116,8 +117,14 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
             stock: Number(item.stock) || 0,
             status: (item.status === 'published' ? 'Aktif' : 'Nonaktif') as 'Aktif' | 'Nonaktif',
             description: item.description || '',
-            image: item.image || '/images/placeholder_jewelry.svg',
-            images: item.images,
+            image: resolveMediaUrl(item.image, '/images/placeholder_jewelry.svg'),
+            images: Array.isArray(item.images)
+              ? item.images.map((img: any) =>
+                  typeof img === 'string'
+                    ? resolveMediaUrl(img)
+                    : { ...img, url: resolveMediaUrl(img.url) }
+                )
+              : item.images,
           }));
           setLiveProducts(mapped);
         } else {
@@ -468,7 +475,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                     grade={p.grade}
                     price={p.price}
                     formattedPrice={p.formattedPrice}
-                    image={p.image}
+                    image={resolveMediaUrl(p.image)}
                     isWishlisted={wishlistIds.includes(p.id)}
                     onToggleWishlist={() => toggleWishlist(p.id)}
                     onAddToCart={() => onAddToCart(p.name)}
@@ -1031,7 +1038,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                       metal={p.metal}
                       price={p.price}
                       formattedPrice={p.formattedPrice}
-                      image={p.image}
+                      image={resolveMediaUrl(p.image)}
                       isWishlisted={wishlistIds.includes(p.id)}
                       onToggleWishlist={() => toggleWishlist(p.id)}
                       onAddToCart={() => onAddToCart(p.name)}

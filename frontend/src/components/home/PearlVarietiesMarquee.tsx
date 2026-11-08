@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, ArrowRight, Layers, SlidersHorizontal } from 'lucide-react';
+import { resolveMediaUrl } from '../../lib/media';
 
 export interface PearlVariety {
   id: string;
@@ -201,7 +202,7 @@ export const PearlVarietiesMarquee: React.FC<PearlVarietiesMarqueeProps> = ({
                   <div className="flex items-center justify-between gap-3 mb-3.5">
                     <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
                       <img
-                        src={item.image || '/images/hero_pearl_shell.jpg'}
+                        src={resolveMediaUrl(item.image, '/images/hero_pearl_shell.jpg')}
                         alt={`Mutiara ${item.name}`}
                         width={48}
                         height={48}
@@ -283,7 +284,7 @@ export const PearlVarietiesMarquee: React.FC<PearlVarietiesMarqueeProps> = ({
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <div className="w-14 h-14 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
                       <img
-                        src={item.image || '/images/hero_pearl_shell.jpg'}
+                        src={resolveMediaUrl(item.image, '/images/hero_pearl_shell.jpg')}
                         alt={`Mutiara ${item.name}`}
                         width={56}
                         height={56}

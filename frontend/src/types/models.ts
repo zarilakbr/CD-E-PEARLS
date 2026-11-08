@@ -32,6 +32,7 @@ export interface MockProduct {
   images?: Array<{ url: string; order: number; is_primary: boolean; alt?: string }>;
   isBestseller?: boolean;
   image?: string;
+  webp_url?: string;
 }
 
 export interface MockOrderItem {

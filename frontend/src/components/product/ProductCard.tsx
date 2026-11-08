@@ -3,6 +3,7 @@ import { Heart, ShoppingBag, Sparkles, Star } from 'lucide-react';
 import type { Product } from '../../types';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
+import { resolveMediaUrl, resolveWebpUrl } from '../../lib/media';
 
 interface ProductCardProps {
   product: Product;
@@ -58,12 +59,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenDetail 
 
       {/* Product Image on Ceramic Pedestal */}
       <div className="relative w-full aspect-square rounded-[16px] sm:rounded-[18px] overflow-hidden bg-gradient-to-b from-[#1F1815] to-[#0D0B0A] mb-3 sm:mb-3.5 flex items-center justify-center border border-[#2D231E]">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
-          loading="lazy"
-        />
+        <picture className="w-full h-full">
+          <source srcSet={resolveWebpUrl(product.webp_url || product.image)} type="image/webp" />
+          <img
+            src={resolveMediaUrl(product.image, '/images/placeholder_jewelry.svg')}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
+            loading="lazy"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = '/images/placeholder_jewelry.svg';
+            }}
+          />
+        </picture>
         {/* Subtle pearl luster overlay highlight on hover */}
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-amber-200/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       </div>

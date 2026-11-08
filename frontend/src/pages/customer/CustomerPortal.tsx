@@ -33,8 +33,13 @@ import { useAuth } from '../../context/AuthContext';
 import { GuestAccountHub } from './GuestAccountHub';
 import { SiteLayout } from '../../layouts/SiteLayout';
 import { useDashboardSync } from '../../hooks/useDashboardSync';
+import { resolveMediaUrl } from '../../lib/media';
 
-const getItemImage = (_name?: string) => {
+const getItemImage = (itemOrName?: any) => {
+  if (typeof itemOrName === 'object' && itemOrName !== null) {
+    if (itemOrName.image) return resolveMediaUrl(itemOrName.image, '/images/placeholder_jewelry.svg');
+    if (itemOrName.product?.image) return resolveMediaUrl(itemOrName.product.image, '/images/placeholder_jewelry.svg');
+  }
   return '/images/placeholder_jewelry.svg';
 };
 
@@ -426,7 +431,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   </div>
                   <div className="flex gap-3 items-center">
                     <img
-                      src={getItemImage(ord.items[0]?.name || '')}
+                      src={getItemImage(ord.items[0])}
                       alt={ord.items[0]?.name || ''}
                       className="w-12 h-12 rounded-lg object-cover border border-[var(--border)] shrink-0"
                     />
@@ -773,7 +778,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     <div className="flex items-center gap-3">
                       <div className="w-13 h-13 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
                         <img
-                          src={getItemImage(it.name)}
+                          src={getItemImage(it)}
                           alt={it.name}
                           className="w-full h-full object-cover"
                         />

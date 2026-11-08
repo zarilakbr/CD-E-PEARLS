@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Stepper } from '../../components/common/Stepper';
 import type { MockOrder } from '../../types/models';
+import { resolveMediaUrl } from '../../lib/media';
 
 interface CartItem {
   id: number;
@@ -20,10 +21,12 @@ interface CartItem {
   metal: string;
   price: number;
   quantity: number;
+  image?: string;
 }
 
-const getItemImage = (category: string) => {
-  const cat = category.toLowerCase();
+const getItemImage = (category: string, image?: string) => {
+  if (image) return resolveMediaUrl(image);
+  const cat = (category || '').toLowerCase();
   if (cat.includes('cincin')) return '/images/placeholder_jewelry.svg';
   if (cat.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
   if (cat.includes('anting')) return '/images/terroir_pearl_plate_left.jpg';
@@ -145,7 +148,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                   {/* Foto 64px - 72px persegi */}
                   <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl overflow-hidden bg-[var(--surface-2)] border border-[var(--border)] shrink-0">
                     <img
-                      src={getItemImage(item.category)}
+                      src={getItemImage(item.category, item.image)}
                       alt={item.name}
                       className="w-full h-full object-cover"
                     />
@@ -302,7 +305,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                       {/* Foto Perhiasan Mewah */}
                       <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
                         <img
-                          src={getItemImage(item.category)}
+                          src={getItemImage(item.category, item.image)}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />

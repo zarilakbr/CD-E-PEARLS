@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ProductResource;
 use App\Models\Approval;
 use App\Models\AuditLog;
 use App\Models\Product;
@@ -72,7 +73,7 @@ class ProductController extends Controller
             'total' => $products->total(),
             'current_page' => $products->currentPage(),
             'last_page' => $products->lastPage(),
-            'data' => $products->items(),
+            'data' => ProductResource::collection($products->items())->resolve($request),
         ];
 
         $hasAuth = (bool) $request->user() || $request->hasHeader('Authorization');
@@ -101,7 +102,7 @@ class ProductController extends Controller
     /**
      * Show single product details.
      */
-    public function show($id): JsonResponse
+    public function show(Request $request, $id): JsonResponse
     {
         $product = Product::where('id', $id)
             ->orWhere('code', $id)
@@ -110,7 +111,7 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $product,
+            'data' => (new ProductResource($product))->resolve($request),
         ]);
     }
 

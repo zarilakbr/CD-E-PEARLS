@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminProductRequest;
+use App\Http\Resources\ProductResource;
 use App\Models\Approval;
 use App\Models\AuditLog;
 use App\Models\Product;
@@ -53,7 +54,7 @@ class ProductAdminController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $products->items(),
+            'data' => ProductResource::collection($products->items())->resolve($request),
             'total' => $products->total(),
             'current_page' => $products->currentPage(),
             'last_page' => $products->lastPage(),

@@ -6,6 +6,7 @@ import {
   clearAllClientCache,
 } from './clientCache';
 import { markConnectionSuccessful } from './login-errors';
+export { resolveMediaUrl, resolveWebpUrl, getApiOrigin } from './media';
 
 // Cross-tab synchronization channel for authentication events
 export const authChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window

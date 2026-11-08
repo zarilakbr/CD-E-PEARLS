@@ -7,6 +7,7 @@ import {
   type CarouselApi,
 } from '../ui/carousel';
 import { ProductCard } from '../common/ProductCard';
+import { resolveMediaUrl } from '../../lib/media';
 import {
   Sparkles,
   ShieldCheck,
@@ -264,7 +265,7 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
                 grade={p.grade}
                 price={p.price}
                 formattedPrice={p.formattedPrice}
-                image={p.image}
+                image={resolveMediaUrl(p.image)}
                 onAddToCart={() => onAddToCart(p.name)}
                 onSelect={() => onSelectProduct(p)}
               />
@@ -310,7 +311,7 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
                 grade={p.grade}
                 price={p.price}
                 formattedPrice={p.formattedPrice}
-                image={p.image}
+                image={resolveMediaUrl(p.image)}
                 onAddToCart={() => onAddToCart(p.name)}
                 onSelect={() => onSelectProduct(p)}
               />

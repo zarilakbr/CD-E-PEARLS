@@ -4,6 +4,7 @@ import type { Product } from '../../types';
 import { Dialog } from '../ui/dialog';
 import { useCart } from '../../context/CartContext';
 import { recordWhatsAppLead } from '../../services/api';
+import { resolveMediaUrl, resolveWebpUrl } from '../../lib/media';
 
 interface ProductModalProps {
   product: Product | null;
@@ -59,11 +60,17 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, open, onOpe
         {/* Left: Product Media & Certificate */}
         <div className="flex flex-col gap-4">
           <div className="relative aspect-square w-full rounded-[20px] overflow-hidden bg-[#0D0B0A] border border-[#2D231F]">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
+            <picture className="w-full h-full">
+              <source srcSet={resolveWebpUrl(product.webp_url || product.image)} type="image/webp" />
+              <img
+                src={resolveMediaUrl(product.image, '/images/placeholder_jewelry.svg')}
+                alt={product.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/images/placeholder_jewelry.svg';
+                }}
+              />
+            </picture>
             {product.discount_percent > 0 && (
               <span className="absolute top-4 left-4 rounded-full bg-[#BA4E4E] text-white text-[11px] font-bold px-3 py-1 shadow-md">
                 HEMAT {product.discount_percent}%
