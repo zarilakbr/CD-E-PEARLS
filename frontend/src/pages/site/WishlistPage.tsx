@@ -5,6 +5,7 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { Heart, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { ProductCard } from '../../components/common/ProductCard';
+import { resolveMediaUrl } from '../../lib/media';
 
 export const WishlistPage: React.FC = () => {
   const navigate = useNavigate();
@@ -84,7 +85,7 @@ export const WishlistPage: React.FC = () => {
                 grade={(item as any).grade || item.pearl_grade || 'AAA'}
                 price={item.price}
                 formattedPrice={`Rp ${(item.price || 0).toLocaleString('id-ID')}`}
-                image={item.image}
+                image={resolveMediaUrl(item.image)}
                 rating={4.9}
                 soldCount={12}
                 isWishlisted={true}
@@ -161,9 +162,12 @@ export const WishlistPage: React.FC = () => {
                 >
                   <div className="relative aspect-4/3 overflow-hidden bg-[#F4F1EB]">
                     <img
-                      src={item.image}
+                      src={resolveMediaUrl(item.image, '/images/hero_pearl_shell.jpg')}
                       alt={item.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/images/hero_pearl_shell.jpg';
+                      }}
                     />
                     {grade && (
                       <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-[#12263A]/85 text-[#D9B877] text-[10px] font-bold">

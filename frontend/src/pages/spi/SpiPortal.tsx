@@ -19,6 +19,7 @@ import { DataTable } from '../../components/common/DataTable';
 import { spiApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboardSync } from '../../hooks/useDashboardSync';
+import { resolveMediaUrl } from '../../lib/media';
 
 interface SpiPortalProps {
   onNavigateHome: () => void;
@@ -112,7 +113,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
     revenue: { today: number; days_7: number; days_30: number };
     orders_by_status: Record<string, number>;
     top_products: Array<{ product_name: string; product_id: number; total_sold: number; total_revenue: number }>;
-    low_stock_products: Array<{ id: number; code: string; name: string; stock: number; price: number; category_slug: string }>;
+    low_stock_products: Array<{ id: number; code: string; name: string; stock: number; price: number; category_slug: string; image?: string }>;
     new_customers_count: number;
     recent_customers: Array<{ id: number; name: string; email: string; phone?: string; status: string; created_at: string }>;
   } | null>(null);
@@ -750,7 +751,21 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   {summaryData?.low_stock_products?.map((prod) => (
                     <tr key={prod.id} className="hover:bg-[#FBF8F3]">
                       <td className="py-2.5 px-3 font-mono text-[#8A6A2F] font-bold">{prod.code}</td>
-                      <td className="py-2.5 px-3 font-medium text-[#12263A]">{prod.name}</td>
+                      <td className="py-2.5 px-3 font-medium text-[#12263A]">
+                        <div className="flex items-center gap-2">
+                          {prod.image && (
+                            <img
+                              src={resolveMediaUrl(prod.image, '/images/placeholder_jewelry.svg')}
+                              alt={prod.name}
+                              className="w-7 h-7 rounded-md object-cover border border-[#E6DDD0] shrink-0"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = '/images/placeholder_jewelry.svg';
+                              }}
+                            />
+                          )}
+                          <span>{prod.name}</span>
+                        </div>
+                      </td>
                       <td className="py-2.5 px-3 text-[#4A5666] capitalize">{prod.category_slug}</td>
                       <td className="py-2.5 px-3 text-right font-mono">
                         Rp {Number(prod.price).toLocaleString('id-ID')}

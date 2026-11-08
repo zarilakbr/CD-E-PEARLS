@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { orderApi } from '../../lib/api';
+import { resolveMediaUrl } from '../../lib/media';
 import { Turnstile } from '@marsidev/react-turnstile';
 import {
   CreditCard,
@@ -286,7 +287,14 @@ export const CheckoutPage: React.FC = () => {
               {items.map((i, idx) => (
                 <div key={idx} className="pt-3 first:pt-0 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <img src={i.product.image} alt={i.product.name} className="w-12 h-12 rounded-lg object-cover" />
+                    <img
+                      src={resolveMediaUrl(i.product.image, '/images/placeholder_jewelry.svg')}
+                      alt={i.product.name}
+                      className="w-12 h-12 rounded-lg object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/images/placeholder_jewelry.svg';
+                      }}
+                    />
                     <div>
                       <p className="font-semibold text-[#12263A] dark:text-[#FBF8F3] line-clamp-1">{i.product.name}</p>
                       <p className="text-[11px] text-[#4A5666] dark:text-[#D9B877]">Jumlah: {i.quantity}</p>

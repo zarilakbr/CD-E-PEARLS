@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Award, ShoppingBag, MessageCircle, ShieldCheck, Sparkles } from 'lucide-react';
 import type { MockProduct } from '../../types/models';
+import { resolveMediaUrl, resolveWebpUrl } from '../../lib/media';
 
 interface ProductDetailModalProps {
   product: MockProduct | null;
@@ -10,7 +11,7 @@ interface ProductDetailModalProps {
 }
 
 const getSmartImageFallback = (item: MockProduct) => {
-  if (item.image && !item.image.includes('placeholder')) return item.image;
+  if (item.image && !item.image.includes('placeholder')) return resolveMediaUrl(item.image);
   const cat = (item.category || '').toLowerCase();
   if (cat.includes('cincin')) return '/images/placeholder_jewelry.svg';
   if (cat.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
@@ -46,12 +47,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* Gambar Produk Kiri (Tinggi besar dengan Foto Mewah Asli) */}
         <div className="w-full md:w-1/2 h-[300px] md:h-auto min-h-[320px] bg-[#12263A] relative shrink-0 overflow-hidden group">
           <picture className="w-full h-full block">
-            {getSmartImageFallback(product).endsWith('.jpg') && (
-              <source
-                type="image/webp"
-                srcSet={getSmartImageFallback(product).replace('.jpg', '.webp')}
-              />
-            )}
+            <source
+              type="image/webp"
+              srcSet={resolveWebpUrl(getSmartImageFallback(product))}
+            />
             <img
               src={getSmartImageFallback(product)}
               alt={`Detail perhiasan ${product.name}`}
@@ -60,6 +59,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
               loading="lazy"
               decoding="async"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/images/hero_pearl_shell.jpg';
+              }}
             />
           </picture>
           {/* Subtle gradient vignette & sheen */}

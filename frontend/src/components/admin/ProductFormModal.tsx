@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Upload, Save, Star, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 import type { MockProduct } from '../../types/models';
+import { resolveMediaUrl } from '../../lib/media';
 
 interface PhotoItem {
   id: string;
@@ -65,7 +66,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setPhotos(
           product.images.map((img, idx) => ({
             id: `existing-${idx}`,
-            previewUrl: img.url,
+            previewUrl: resolveMediaUrl(img.url),
             isPrimary: img.is_primary,
             alt: img.alt || `${product.name} - Foto ${idx + 1}`,
           }))
@@ -74,7 +75,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setPhotos([
           {
             id: 'existing-0',
-            previewUrl: product.image,
+            previewUrl: resolveMediaUrl(product.image),
             isPrimary: true,
             alt: product.name || 'Foto Produk',
           },

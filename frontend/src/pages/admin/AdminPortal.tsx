@@ -42,7 +42,7 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { ProductFormModal } from '../../components/admin/ProductFormModal';
 import { APPROVAL_RULES } from '../../config/approvalRules';
-import { reportApi, apiClient, catalogApi } from '../../lib/api';
+import { reportApi, apiClient, catalogApi, resolveMediaUrl } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboardSync } from '../../hooks/useDashboardSync';
 import type {
@@ -278,8 +278,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             stock: Number(item.stock) || 0,
             status: (item.status === 'published' ? 'Aktif' : 'Nonaktif') as 'Aktif' | 'Nonaktif',
             description: item.description || '',
-            image: item.image || '/images/placeholder_jewelry.svg',
-            images: item.images,
+            image: resolveMediaUrl(item.image, '/images/placeholder_jewelry.svg'),
+            images: Array.isArray(item.images)
+              ? item.images.map((img: any) =>
+                  typeof img === 'string'
+                    ? resolveMediaUrl(img)
+                    : { ...img, url: resolveMediaUrl(img.url) }
+                )
+              : item.images,
           }));
           setProducts(mapped);
 
@@ -563,7 +569,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         stock: Number(savedProductData.stock) !== undefined ? Number(savedProductData.stock) : Number(productData.stock) || 0,
         status: (savedProductData.status === 'published' ? 'Aktif' : 'Nonaktif') as 'Aktif' | 'Nonaktif',
         description: savedProductData.description || productData.description || '',
-        image: savedProductData.image || productData.image || '/images/placeholder_jewelry.svg',
+        image: resolveMediaUrl(savedProductData.image || productData.image, '/images/placeholder_jewelry.svg'),
         images: savedProductData.images || productData.images,
       };
 
@@ -593,7 +599,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         stock: Number(productData.stock) || 5,
         status: (productData.status as 'Aktif' | 'Nonaktif') || 'Aktif',
         description: productData.description || 'Deskripsi perhiasan mutiara Lombok...',
-        image: productData.image || '/images/placeholder_jewelry.svg',
+        image: resolveMediaUrl(productData.image, '/images/placeholder_jewelry.svg'),
         images: productData.images,
       };
       if (productData.id) {
@@ -1377,9 +1383,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     <td className="py-3 px-4">
                       <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
                         <img
-                          src={product.image || getAdminProductImage(product.category, product.name)}
+                          src={resolveMediaUrl(product.image) || getAdminProductImage(product.category, product.name)}
                           alt={product.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = getAdminProductImage(product.category, product.name);
+                          }}
                         />
                       </div>
                     </td>

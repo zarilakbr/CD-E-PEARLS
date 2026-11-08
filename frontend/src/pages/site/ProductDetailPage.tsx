@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { catalogApi } from '../../lib/api';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { resolveMediaUrl, resolveWebpUrl } from '../../lib/media';
 import {
   ShieldCheck,
   Heart,
@@ -74,7 +75,7 @@ export const ProductDetailPage: React.FC = () => {
         const item = res?.data || res;
         if (item && item.id) {
           setProduct(item);
-          setSelectedImage(item.image || '/images/hero_pearl_shell.jpg');
+          setSelectedImage(resolveMediaUrl(item.image, '/images/hero_pearl_shell.jpg'));
           if (item.metal) setSelectedMetal(item.metal);
           document.title = `${item.name} | CD'E Pearls Lombok`;
 
@@ -175,8 +176,8 @@ export const ProductDetailPage: React.FC = () => {
 
   const images: string[] =
     product.images && Array.isArray(product.images) && product.images.length > 0
-      ? product.images.map((img: any) => (typeof img === 'string' ? img : img.url || '/images/hero_pearl_shell.jpg'))
-      : [product.image || '/images/hero_pearl_shell.jpg'];
+      ? product.images.map((img: any) => resolveMediaUrl(typeof img === 'string' ? img : img.url, '/images/hero_pearl_shell.jpg'))
+      : [resolveMediaUrl(product.image, '/images/hero_pearl_shell.jpg')];
 
   const handleAddToCartDirect = () => {
     addToCart({
@@ -408,7 +409,7 @@ export const ProductDetailPage: React.FC = () => {
                     grade={p.grade}
                     price={p.price}
                     formattedPrice={p.formattedPrice}
-                    image={p.image}
+                    image={resolveMediaUrl(p.image)}
                     onAddToCart={() => addToCart(p as any)}
                     onSelect={() => navigate(`/produk/${p.id}`)}
                   />
@@ -567,9 +568,12 @@ export const ProductDetailPage: React.FC = () => {
           <div className="col-span-7 space-y-4">
             <div className="relative aspect-4/3 w-full rounded-3xl overflow-hidden bg-[#F4F1EB] dark:bg-white/5 border border-[#E6DDD0] dark:border-white/10 shadow-lg">
               <img
-                src={selectedImage || product.image}
+                src={resolveMediaUrl(selectedImage || product.image, '/images/hero_pearl_shell.jpg')}
                 alt={product.name}
                 className="w-full h-full object-cover object-center transition-all duration-300"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/images/hero_pearl_shell.jpg';
+                }}
               />
               {product.grade && (
                 <span className="absolute top-4 left-4 px-3 py-1 rounded-full bg-[#12263A]/90 backdrop-blur-md text-[#D9B877] text-xs font-bold border border-[#D9B877]/30 tracking-wider">

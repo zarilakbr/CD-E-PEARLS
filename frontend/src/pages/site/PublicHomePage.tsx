@@ -13,6 +13,7 @@ import { PearlVarietiesMarquee } from '../../components/home/PearlVarietiesMarqu
 import { MobileMarketplaceHome } from '../../components/home/MobileMarketplaceHome';
 import type { MockProduct } from '../../types/models';
 import { catalogApi } from '../../lib/api';
+import { resolveMediaUrl } from '../../lib/media';
 
 interface PublicHomePageProps {
   onNavigate: (tab: string, filter?: string) => void;
@@ -151,8 +152,14 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
             stock: Number(item.stock) || 0,
             status: item.status === 'published' ? 'Aktif' : 'Nonaktif',
             description: item.description || '',
-            image: item.image || '/images/placeholder_jewelry.svg',
-            images: item.images,
+            image: resolveMediaUrl(item.image, '/images/placeholder_jewelry.svg'),
+            images: Array.isArray(item.images)
+              ? item.images.map((img: any) =>
+                  typeof img === 'string'
+                    ? resolveMediaUrl(img)
+                    : { ...img, url: resolveMediaUrl(img.url) }
+                )
+              : item.images,
           }));
           setLiveProducts(mapped);
         } else {
@@ -594,7 +601,7 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
                   metal={p.metal}
                   price={p.price}
                   formattedPrice={p.formattedPrice}
-                  image={p.image}
+                  image={resolveMediaUrl(p.image)}
                   onAddToCart={() => onAddToCart(p.name)}
                   onToggleWishlist={() => toggleWishlist(p.id)}
                   isWishlisted={wishlistIds.includes(p.id)}
