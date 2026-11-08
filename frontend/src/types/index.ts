@@ -11,28 +11,38 @@ export interface Category {
 export interface Product {
   id: number;
   code?: string;
-  category_slug: string;
+  category_slug?: string;
+  category?: string | any;
+  category_name?: string;
   name: string;
   price: number;
   original_price?: number;
-  discount_percent: number;
+  originalPrice?: number;
+  discount_percent?: number;
   stock: number;
-  rating: number;
-  reviews_count: number;
+  rating?: number;
+  reviews_count?: number;
+  reviewCount?: number;
   pearl_type?: string;
   pearl_size?: string;
   pearl_color?: string;
   pearl_grade?: string;
+  variety?: string;
+  grade?: string;
+  pearlSize?: string;
   origin?: string;
   weight?: string;
   metal?: string;
-  is_featured: boolean;
-  is_bestseller: boolean;
+  is_featured?: boolean;
+  is_bestseller?: boolean;
+  featured?: boolean;
+  isNew?: boolean;
   image: string;
   webp_url?: string;
   images?: Array<{ url: string; order?: number; is_primary?: boolean; alt?: string } | string>;
   description?: string;
   certificate?: string;
+  formattedPrice?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -109,6 +119,7 @@ export interface Review {
 }
 
 export interface CartItem {
+  id?: number;
   product: Product;
   quantity: number;
   customSpecs?: Record<string, any>;

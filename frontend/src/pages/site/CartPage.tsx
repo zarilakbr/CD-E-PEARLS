@@ -12,21 +12,11 @@ import {
 import { Stepper } from '../../components/common/Stepper';
 import type { MockOrder } from '../../types/models';
 import { resolveMediaUrl } from '../../lib/media';
+import { useCart } from '../../context/CartContext';
 
-interface CartItem {
-  id: number;
-  name: string;
-  category: string;
-  pearlSize: string;
-  metal: string;
-  price: number;
-  quantity: number;
-  image?: string;
-}
-
-const getItemImage = (category: string, image?: string) => {
+const getItemImage = (category?: any, image?: string) => {
   if (image) return resolveMediaUrl(image);
-  const cat = (category || '').toLowerCase();
+  const cat = (typeof category === 'object' ? category?.name : (category || '')).toLowerCase();
   if (cat.includes('cincin')) return '/images/placeholder_jewelry.svg';
   if (cat.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
   if (cat.includes('anting')) return '/images/terroir_pearl_plate_left.jpg';
@@ -48,10 +38,24 @@ export const CartPage: React.FC<CartPageProps> = ({
   onNavigate: _onNavigate,
 }) => {
   const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const {
+    items: cartItems,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    insuranceCost,
+  } = useCart();
 
-  const [selectAll, setSelectAll] = useState(false);
-  const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<number[]>(() =>
+    cartItems.map((c) => c.product.id)
+  );
+
+  // Sync selected item IDs when cart changes
+  React.useEffect(() => {
+    setSelectedItemIds(cartItems.map((c) => c.product.id));
+  }, [cartItems.length]);
+
+  const selectAll = selectedItemIds.length === cartItems.length && cartItems.length > 0;
 
   // Order status lookup box state
   const [orderLookupNumber, setOrderLookupNumber] = useState('');
@@ -67,31 +71,18 @@ export const CartPage: React.FC<CartPageProps> = ({
   const handleToggleSelectAll = () => {
     if (selectAll) {
       setSelectedItemIds([]);
-      setSelectAll(false);
     } else {
-      setSelectedItemIds(cartItems.map((c) => c.id));
-      setSelectAll(true);
+      setSelectedItemIds(cartItems.map((c) => c.product.id));
     }
   };
 
-  const updateQuantity = (id: number, delta: number) => {
-    setCartItems((prev) =>
-      prev
-        .map((it) => (it.id === id ? { ...it, quantity: Math.max(1, it.quantity + delta) } : it))
-        .filter((it) => it.quantity > 0)
-    );
-  };
-
-  const removeItem = (id: number) => {
-    setCartItems((prev) => prev.filter((it) => it.id !== id));
-    setSelectedItemIds((prev) => prev.filter((i) => i !== id));
-  };
-
-  const selectedItems = cartItems.filter((it) => selectedItemIds.includes(it.id));
-  const subtotal = selectedItems.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
-  const insuranceCost = selectedItems.length > 0 ? 50000 : 0;
-  const shippingCost = 0; // Gratis kirim se-Indonesia
-  const total = subtotal + insuranceCost + shippingCost;
+  const selectedItems = cartItems.filter((it) => selectedItemIds.includes(it.product.id));
+  const activeSubtotal = selectedItems.reduce(
+    (acc, curr) => acc + (Number(curr.product.price) || 0) * curr.quantity,
+    0
+  );
+  const activeInsurance = selectedItems.length > 0 ? insuranceCost : 0;
+  const activeTotal = activeSubtotal + activeInsurance;
 
   const handleLookup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,7 +110,7 @@ export const CartPage: React.FC<CartPageProps> = ({
           {cartItems.length > 0 && (
             <button
               type="button"
-              onClick={() => setCartItems([])}
+              onClick={() => clearCart()}
               className="text-xs text-red-600 dark:text-red-400 font-semibold hover:underline cursor-pointer"
             >
               Hapus Semua
@@ -131,83 +122,94 @@ export const CartPage: React.FC<CartPageProps> = ({
           <>
             {/* Kartu Barang Kompak */}
             <div className="space-y-2.5">
-              {cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-2.5 sm:p-3 rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex items-center gap-2 sm:gap-3 shadow-2xs"
-                >
-                  {/* Checkbox */}
-                  <input
-                    type="checkbox"
-                    checked={selectedItemIds.includes(item.id)}
-                    onChange={() => toggleSelectItem(item.id)}
-                    className="w-4 h-4 rounded text-[#8A6A2F] border-[var(--border)] focus:ring-[#8A6A2F] cursor-pointer shrink-0"
-                    aria-label={`Pilih ${item.name}`}
-                  />
-
-                  {/* Foto 64px - 72px persegi */}
-                  <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl overflow-hidden bg-[var(--surface-2)] border border-[var(--border)] shrink-0">
-                    <img
-                      src={getItemImage(item.category, item.image)}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
+              {cartItems.map((item) => {
+                const isMaxStock =
+                  item.product.stock !== undefined && item.quantity >= item.product.stock;
+                return (
+                  <div
+                    key={item.product.id}
+                    className="p-2.5 sm:p-3 rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex items-center gap-2 sm:gap-3 shadow-2xs"
+                  >
+                    {/* Checkbox */}
+                    <input
+                      type="checkbox"
+                      checked={selectedItemIds.includes(item.product.id)}
+                      onChange={() => toggleSelectItem(item.product.id)}
+                      className="w-4 h-4 rounded text-[#8A6A2F] border-[var(--border)] focus:ring-[#8A6A2F] cursor-pointer shrink-0"
+                      aria-label={`Pilih ${item.product.name}`}
                     />
-                  </div>
 
-                  {/* Info: Nama 2 baris, varian kecil, harga, stepper, hapus */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-between h-16 sm:h-[72px]">
-                    <div className="min-w-0">
-                      <h3 className="font-serif text-xs font-bold text-[var(--text)] line-clamp-2 leading-tight">
-                        {item.name}
-                      </h3>
-                      <p className="text-[10px] text-[var(--text-2)] truncate mt-0.5">
-                        {item.pearlSize} • {item.metal}
-                      </p>
+                    {/* Foto 64px - 72px persegi */}
+                    <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl overflow-hidden bg-[var(--surface-2)] border border-[var(--border)] shrink-0">
+                      <img
+                        src={getItemImage(item.product.category, item.product.image)}
+                        alt={item.product.name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
 
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] sm:text-xs font-bold text-[#8A6A2F] dark:text-[#D9B877] truncate mr-1">
-                        Rp {(item.price * item.quantity).toLocaleString('id-ID')}
-                      </span>
+                    {/* Info: Nama 2 baris, varian kecil, harga, stepper, hapus */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between h-16 sm:h-[72px]">
+                      <div className="min-w-0">
+                        <h3 className="font-serif text-xs font-bold text-[var(--text)] line-clamp-2 leading-tight">
+                          {item.product.name}
+                        </h3>
+                        <p className="text-[10px] text-[var(--text-2)] truncate mt-0.5">
+                          {item.product.pearlSize || item.product.pearl_size || '12 mm'} • {item.product.metal || 'Emas 18K'}
+                          {item.product.stock !== undefined && (
+                            <span className="ml-1 text-[#8A6A2F]">
+                              (Stok: {item.product.stock})
+                            </span>
+                          )}
+                        </p>
+                      </div>
 
-                      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                        {/* Stepper Kuantitas +/- */}
-                        <div className="flex items-center border border-[var(--border)] rounded-lg bg-[var(--surface-2)] h-7 sm:h-8">
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] sm:text-xs font-bold text-[#8A6A2F] dark:text-[#D9B877] truncate mr-1">
+                          Rp {(item.product.price * item.quantity).toLocaleString('id-ID')}
+                        </span>
+
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                          {/* Stepper Kuantitas +/- */}
+                          <div className="flex items-center border border-[var(--border)] rounded-lg bg-[var(--surface-2)] h-7 sm:h-8">
+                            <button
+                              type="button"
+                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                              className="w-6 sm:w-7 h-7 sm:h-8 flex items-center justify-center text-[var(--text)] hover:opacity-80 active:scale-95 cursor-pointer touch-feedback"
+                              aria-label="Kurangi jumlah"
+                            >
+                              <Minus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                            </button>
+                            <span className="w-5 sm:w-6 text-center text-xs font-bold text-[var(--text)]">
+                              {item.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={isMaxStock}
+                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                              title={isMaxStock ? 'Stok perhiasan maksimal telah tercapai' : 'Tambah jumlah'}
+                              className="w-6 sm:w-7 h-7 sm:h-8 flex items-center justify-center text-[var(--text)] hover:opacity-80 active:scale-95 cursor-pointer touch-feedback disabled:opacity-30 disabled:cursor-not-allowed"
+                              aria-label="Tambah jumlah"
+                            >
+                              <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                            </button>
+                          </div>
+
+                          {/* Tombol Hapus Tempat Sampah */}
                           <button
                             type="button"
-                            onClick={() => updateQuantity(item.id, -1)}
-                            className="w-6 sm:w-7 h-7 sm:h-8 flex items-center justify-center text-[var(--text)] hover:opacity-80 active:scale-95 cursor-pointer touch-feedback"
-                            aria-label="Kurangi jumlah"
+                            onClick={() => removeFromCart(item.product.id)}
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer touch-feedback"
+                            aria-label={`Hapus ${item.product.name}`}
                           >
-                            <Minus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                          </button>
-                          <span className="w-5 sm:w-6 text-center text-xs font-bold text-[var(--text)]">
-                            {item.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => updateQuantity(item.id, 1)}
-                            className="w-6 sm:w-7 h-7 sm:h-8 flex items-center justify-center text-[var(--text)] hover:opacity-80 active:scale-95 cursor-pointer touch-feedback"
-                            aria-label="Tambah jumlah"
-                          >
-                            <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-
-                        {/* Tombol Hapus Tempat Sampah */}
-                        <button
-                          type="button"
-                          onClick={() => removeItem(item.id)}
-                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer touch-feedback"
-                          aria-label={`Hapus ${item.name}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Baris Ringkasan Bawah Tetap (Pilih Semua + Total + Checkout) */}
@@ -226,7 +228,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                 <div className="text-right">
                   <span className="text-[10px] text-[var(--text-2)] block leading-none">Total</span>
                   <span className="text-sm font-bold text-[#8A6A2F] dark:text-[#D9B877]">
-                    Rp {total.toLocaleString('id-ID')}
+                    Rp {activeTotal.toLocaleString('id-ID')}
                   </span>
                 </div>
 
@@ -288,7 +290,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                 </span>
                 <button
                   type="button"
-                  onClick={() => setCartItems([])}
+                  onClick={() => clearCart()}
                   className="text-xs text-red-600 hover:underline cursor-pointer"
                 >
                   Kosongkan Keranjang
@@ -296,74 +298,85 @@ export const CartPage: React.FC<CartPageProps> = ({
               </div>
 
               <div className="space-y-4">
-                {cartItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-row items-center justify-between gap-4 p-4 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0]"
-                  >
-                    <div className="flex items-center gap-4">
-                      {/* Foto Perhiasan Mewah */}
-                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
-                        <img
-                          src={getItemImage(item.category, item.image)}
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A6A2F]">
-                          {item.category}
-                        </span>
-                        <h3 className="font-serif text-lg font-medium text-[#12263A] leading-tight mt-0.5">
-                          {item.name}
-                        </h3>
-                        <p className="text-xs text-[#4A5666] mt-1">
-                          {item.pearlSize} • {item.metal} • Grade AAA
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-6">
-                      {/* Quantity controls */}
-                      <div className="flex items-center border border-[#E6DDD0] rounded-full bg-white">
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.id, -1)}
-                          className="p-1.5 hover:bg-[#EDE6DA] rounded-l-full text-[#12263A] cursor-pointer"
-                          aria-label="Kurangi jumlah"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="px-3 text-xs font-semibold text-[#12263A]">{item.quantity}</span>
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.id, 1)}
-                          className="p-1.5 hover:bg-[#EDE6DA] rounded-r-full text-[#12263A] cursor-pointer"
-                          aria-label="Tambah jumlah"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      {/* Price */}
-                      <div className="text-right">
-                        <div className="font-serif text-base sm:text-lg font-semibold text-[#12263A]">
-                          Rp {(item.price * item.quantity).toLocaleString('id-ID')}
+                {cartItems.map((item) => {
+                  const isMaxStock =
+                    item.product.stock !== undefined && item.quantity >= item.product.stock;
+                  return (
+                    <div
+                      key={item.product.id}
+                      className="flex flex-row items-center justify-between gap-4 p-4 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0]"
+                    >
+                      <div className="flex items-center gap-4">
+                        {/* Foto Perhiasan Mewah */}
+                        <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
+                          <img
+                            src={getItemImage(item.product.category, item.product.image)}
+                            alt={item.product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A6A2F]">
+                            {typeof item.product.category === 'object' ? item.product.category?.name : (item.product.category || 'Mutiara South Sea')}
+                          </span>
+                          <h3 className="font-serif text-lg font-medium text-[#12263A] leading-tight mt-0.5">
+                            {item.product.name}
+                          </h3>
+                          <p className="text-xs text-[#4A5666] mt-1">
+                            {item.product.pearlSize || item.product.pearl_size || '12 mm'} • {item.product.metal || 'Emas 18K'} • Grade AAA
+                            {item.product.stock !== undefined && (
+                              <span className="ml-2 font-semibold text-[#8A6A2F]">
+                                [Stok Tersedia: {item.product.stock}]
+                              </span>
+                            )}
+                          </p>
                         </div>
                       </div>
 
-                      {/* Remove */}
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.id)}
-                        className="p-1.5 text-[#4A5666] hover:text-red-600 cursor-pointer"
-                        title="Hapus"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-6">
+                        {/* Quantity controls */}
+                        <div className="flex items-center border border-[#E6DDD0] rounded-full bg-white">
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            className="p-1.5 hover:bg-[#EDE6DA] rounded-l-full text-[#12263A] cursor-pointer"
+                            aria-label="Kurangi jumlah"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="px-3 text-xs font-semibold text-[#12263A]">{item.quantity}</span>
+                          <button
+                            type="button"
+                            disabled={isMaxStock}
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            title={isMaxStock ? 'Stok perhiasan maksimal telah tercapai' : 'Tambah jumlah'}
+                            className="p-1.5 hover:bg-[#EDE6DA] rounded-r-full text-[#12263A] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                            aria-label="Tambah jumlah"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Price */}
+                        <div className="text-right">
+                          <div className="font-serif text-base sm:text-lg font-semibold text-[#12263A]">
+                            Rp {(item.product.price * item.quantity).toLocaleString('id-ID')}
+                          </div>
+                        </div>
+
+                        {/* Remove */}
+                        <button
+                          type="button"
+                          onClick={() => removeFromCart(item.product.id)}
+                          className="p-1.5 text-[#4A5666] hover:text-red-600 cursor-pointer"
+                          title="Hapus"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="pt-4 flex items-center justify-between text-xs text-[#8A6A2F]">
@@ -390,11 +403,11 @@ export const CartPage: React.FC<CartPageProps> = ({
               <div className="space-y-3 text-xs text-[#4A5666]">
                 <div className="flex justify-between">
                   <span>Subtotal Perhiasan</span>
-                  <span className="font-semibold text-[#12263A]">Rp {subtotal.toLocaleString('id-ID')}</span>
+                  <span className="font-semibold text-[#12263A]">Rp {activeSubtotal.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Asuransi Gemologi Penuh</span>
-                  <span className="font-semibold text-[#12263A]">Rp {insuranceCost.toLocaleString('id-ID')}</span>
+                  <span className="font-semibold text-[#12263A]">Rp {activeInsurance.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Ongkos Kirim Domestik</span>
@@ -404,7 +417,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                 <div className="pt-4 border-t border-[#E6DDD0] flex justify-between items-baseline">
                   <span className="font-serif text-base font-medium text-[#12263A]">Total Pembayaran</span>
                   <span className="font-serif text-2xl font-semibold text-[#8A6A2F]">
-                    Rp {total.toLocaleString('id-ID')}
+                    Rp {activeTotal.toLocaleString('id-ID')}
                   </span>
                 </div>
               </div>
@@ -412,9 +425,10 @@ export const CartPage: React.FC<CartPageProps> = ({
               <button
                 type="button"
                 onClick={handleCheckoutClick}
-                className="w-full min-h-[48px] px-6 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all active:scale-98"
+                disabled={selectedItems.length === 0}
+                className="w-full min-h-[48px] px-6 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all active:scale-98 disabled:opacity-50"
               >
-                <span>Lanjut ke Pembayaran</span>
+                <span>Lanjut ke Pembayaran ({selectedItems.length})</span>
                 <ArrowRight className="w-4 h-4 text-[#D9B877]" />
               </button>
 

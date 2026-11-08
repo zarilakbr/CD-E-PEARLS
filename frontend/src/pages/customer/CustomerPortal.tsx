@@ -28,9 +28,11 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Stepper } from '../../components/common/Stepper';
 import { ProductCard } from '../../components/common/ProductCard';
-import type { MockOrder, MockProduct } from '../../types/models';
+import type { MockOrder } from '../../types/models';
 import { authApi, apiClient, addressApi, orderApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { useWishlist } from '../../context/WishlistContext';
+import { useCart } from '../../context/CartContext';
 import { GuestAccountHub } from './GuestAccountHub';
 import { SiteLayout } from '../../layouts/SiteLayout';
 import { useDashboardSync } from '../../hooks/useDashboardSync';
@@ -89,8 +91,10 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   const [trackingQuery, setTrackingQuery] = useState('');
   const [searchedTrackingOrder, setSearchedTrackingOrder] = useState<MockOrder | null>(null);
 
-  // Wishlist State
-  const [wishlistProducts, setWishlistProducts] = useState<MockProduct[]>([]);
+  // Wishlist & Cart Context
+  const { wishlist, toggleWishlist, refreshWishlist } = useWishlist();
+  const { addToCart } = useCart();
+  const wishlistProducts = wishlist;
 
   // Addresses State
   const [addresses, setAddresses] = useState<any[]>([]);
@@ -248,7 +252,6 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
   // Load live customer data from API
   useEffect(() => {
-    let isMounted = true;
     if (user) {
       setProfileData({
         name: user.name || '',
@@ -259,21 +262,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
       loadCustomerOrders();
       loadAddresses();
-
-      // 3. Wishlist
-      apiClient.get('/wishlist')
-        .then((res) => {
-          const wish = res.data?.data || res.data;
-          if (isMounted && Array.isArray(wish)) {
-            setWishlistProducts(wish);
-          }
-        })
-        .catch(() => {});
+      refreshWishlist();
     }
-    return () => {
-      isMounted = false;
-    };
-  }, [user, loadCustomerOrders, loadAddresses]);
+  }, [user, loadCustomerOrders, loadAddresses, refreshWishlist]);
 
   // Logout Dialog State
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
@@ -1312,14 +1303,12 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     price={p.price}
                     formattedPrice={p.formattedPrice}
                     isWishlisted={true}
-                    onAddToCart={() => onAddToCart?.(p.name)}
-                    onToggleWishlist={() => {
-                      setWishlistProducts(wishlistProducts.filter(item => item.id !== p.id));
-                    }}
+                    onAddToCart={() => addToCart(p)}
+                    onToggleWishlist={() => toggleWishlist(p)}
                   />
                   <button
                     type="button"
-                    onClick={() => setWishlistProducts(wishlistProducts.filter(item => item.id !== p.id))}
+                    onClick={() => toggleWishlist(p)}
                     className="w-full mt-2 min-h-[36px] rounded-full text-xs text-red-700 hover:bg-red-50 border border-red-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

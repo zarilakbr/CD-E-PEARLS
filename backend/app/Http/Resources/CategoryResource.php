@@ -41,3 +41,4 @@ class CategoryResource extends JsonResource
         return $data;
     }
 }
+

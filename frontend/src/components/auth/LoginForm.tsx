@@ -103,7 +103,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, nextPath }) => 
     }
   }, [errors, setFocus]);
 
-  const targetNext = nextPath || searchParams.get('next') || '';
+  const targetNext = nextPath || searchParams.get('next') || searchParams.get('return_to') || '';
   const safeNext = targetNext.startsWith('/') && !targetNext.startsWith('//') ? targetNext : '';
 
   const onSubmit = async (data: LoginFormData) => {

@@ -204,6 +204,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('cde_user_role');
       localStorage.removeItem('cde_auth');
       localStorage.removeItem('cde_auth_role');
+      localStorage.removeItem('cde_cart_v3');
+      localStorage.removeItem('cde_wishlist_v3');
+      localStorage.removeItem('cde_coupon_v3');
+      try {
+        sessionStorage.removeItem('cde_pending_wishlist');
+      } catch { }
 
       // Invalidate and cancel all TanStack Query requests
       queryClient.cancelQueries();

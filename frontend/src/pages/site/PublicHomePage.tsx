@@ -14,6 +14,8 @@ import { MobileMarketplaceHome } from '../../components/home/MobileMarketplaceHo
 import type { MockProduct } from '../../types/models';
 import { catalogApi } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
+import { useWishlist } from '../../context/WishlistContext';
+import { useCart } from '../../context/CartContext';
 
 interface PublicHomePageProps {
   onNavigate: (tab: string, filter?: string) => void;
@@ -113,7 +115,8 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
   const [varietyFilter, setVarietyFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
-  const [wishlistIds, setWishlistIds] = useState<number[]>([]);
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const { addToCart } = useCart();
 
   // Live Data States dari API
   const [liveProducts, setLiveProducts] = useState<MockProduct[]>([]);
@@ -181,12 +184,6 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
   useEffect(() => {
     fetchCatalogData();
   }, []);
-
-  const toggleWishlist = (id: number) => {
-    setWishlistIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
 
   // Filter products
   const filteredProducts = liveProducts.filter((p) => {
@@ -588,9 +585,12 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
                   price={p.price}
                   formattedPrice={p.formattedPrice}
                   image={resolveMediaUrl(p.image)}
-                  onAddToCart={() => onAddToCart(p.name)}
-                  onToggleWishlist={() => toggleWishlist(p.id)}
-                  isWishlisted={wishlistIds.includes(p.id)}
+                  onAddToCart={() => {
+                    addToCart(p);
+                    onAddToCart(p.name);
+                  }}
+                  onToggleWishlist={() => toggleWishlist(p)}
+                  isWishlisted={isInWishlist(p.id)}
                   onSelect={() => onSelectProduct && onSelectProduct(p)}
                 />
               ))}
