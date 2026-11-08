@@ -76,12 +76,12 @@ describe('Tahap V3a: Investigasi & Perbaikan Favorit dan Keranjang Pembeli (Buti
 
     const originalLocation = window.location;
     delete (window as any).location;
-    window.location = {
+    (window as any).location = {
       ...originalLocation,
       pathname: '/katalog',
       search: '?kategori=kalung',
       href: '',
-    } as any;
+    };
 
     await act(async () => {
       root.render(
@@ -109,7 +109,7 @@ describe('Tahap V3a: Investigasi & Perbaikan Favorit dan Keranjang Pembeli (Buti
     expect(window.location.href).toContain('action=favorite');
     expect(window.location.href).toContain('product_id=101');
 
-    window.location = originalLocation;
+    (window as any).location = originalLocation;
   });
 
   it('2. Tamu belanja di keranjang lokal (localStorage): kuantitas tidak boleh melebihi stok yang ada', async () => {
@@ -232,7 +232,7 @@ describe('Tahap V3a: Investigasi & Perbaikan Favorit dan Keranjang Pembeli (Buti
       success: true,
       message: 'Login berhasil',
       token: 'token-authenticated-user',
-      user: { id: 777, name: 'Siti Rahma', email: 'siti@cdepearlslombok.id', role: 'user' },
+      user: { id: 777, uuid: 'usr-777', name: 'Siti Rahma', email: 'siti@cdepearlslombok.id', role: 'user', status: 'active' },
     });
 
     let captured: any = null;
@@ -278,7 +278,7 @@ describe('Tahap V3a: Investigasi & Perbaikan Favorit dan Keranjang Pembeli (Buti
       success: true,
       message: 'Login berhasil',
       token: 'token-authenticated-user',
-      user: { id: 777, name: 'Siti Rahma', email: 'siti@cdepearlslombok.id', role: 'user' },
+      user: { id: 777, uuid: 'usr-777', name: 'Siti Rahma', email: 'siti@cdepearlslombok.id', role: 'user', status: 'active' },
     });
 
     let captured: any = null;
@@ -328,13 +328,13 @@ describe('Tahap V3a: Investigasi & Perbaikan Favorit dan Keranjang Pembeli (Buti
       success: true,
       message: 'Login berhasil',
       token: 'tok-user',
-      user: { id: 777, name: 'Siti Rahma', email: 'siti@cdepearlslombok.id', role: 'user' },
+      user: { id: 777, uuid: 'usr-777', name: 'Siti Rahma', email: 'siti@cdepearlslombok.id', role: 'user', status: 'active' },
     });
-    vi.spyOn(authApi, 'logout').mockResolvedValue({ success: true, message: 'Logout berhasil' });
+    vi.spyOn(authApi, 'logout').mockResolvedValue(undefined as any);
 
     const originalLocation = window.location;
     delete (window as any).location;
-    window.location = { ...originalLocation, href: '' } as any;
+    (window as any).location = { ...originalLocation, href: '' };
 
     let captured: any = null;
 
@@ -373,6 +373,6 @@ describe('Tahap V3a: Investigasi & Perbaikan Favorit dan Keranjang Pembeli (Buti
     expect(localStorage.getItem('cde_coupon_v3')).toBeNull();
     expect(sessionStorage.getItem('cde_pending_wishlist')).toBeNull();
 
-    window.location = originalLocation;
+    (window as any).location = originalLocation;
   });
 });
