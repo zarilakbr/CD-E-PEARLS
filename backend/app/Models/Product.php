@@ -52,6 +52,22 @@ class Product extends Model
         'images' => 'array',
     ];
 
+    protected $appends = [
+        'webp_url',
+    ];
+
+    public function getWebpUrlAttribute(): ?string
+    {
+        $image = $this->attributes['image'] ?? null;
+        if (empty($image)) {
+            return null;
+        }
+        if (! str_starts_with($image, 'http://') && ! str_starts_with($image, 'https://')) {
+            $image = rtrim(config('app.url'), '/') . '/' . ltrim($image, '/');
+        }
+        return preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $image);
+    }
+
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_slug', 'slug');
