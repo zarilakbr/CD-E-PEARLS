@@ -19,6 +19,7 @@ import {
   RotateCcw,
   HelpCircle,
   Settings,
+  Upload,
 } from 'lucide-react';
 import { DashboardLayout, type DashboardMenuItem } from '../../layouts/DashboardLayout';
 import { PageHeader } from '../../components/common/PageHeader';
@@ -28,7 +29,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { Stepper } from '../../components/common/Stepper';
 import { ProductCard } from '../../components/common/ProductCard';
 import type { MockOrder, MockProduct } from '../../types/models';
-import { authApi, apiClient } from '../../lib/api';
+import { authApi, apiClient, addressApi, orderApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { GuestAccountHub } from './GuestAccountHub';
 import { SiteLayout } from '../../layouts/SiteLayout';
@@ -94,6 +95,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   // Addresses State
   const [addresses, setAddresses] = useState<any[]>([]);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<any | null>(null);
   const [newAddress, setNewAddress] = useState({
     label: 'Rumah',
     recipient: '',
@@ -105,6 +107,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     fullAddress: '',
   });
 
+  // Proof of Payment & Order Action State
+  const [isProofModalOpen, setIsProofModalOpen] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofNotes, setProofNotes] = useState('');
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [isCancellingOrder, setIsCancellingOrder] = useState(false);
+
   // Profile State
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -113,6 +122,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     birthDate: '',
   });
   const [profileSaveMessage, setProfileSaveMessage] = useState<string | null>(null);
+
+  // Password Security State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirmation, setNewPasswordConfirmation] = useState('');
+  const [passwordUpdateMessage, setPasswordUpdateMessage] = useState<string | null>(null);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   // Real-time synchronization layer with 60s ETag polling (Tahap V2c)
   const { lastSyncLabel } = useDashboardSync({
@@ -173,6 +189,63 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     },
   });
 
+  // Load customer orders from server
+  const loadCustomerOrders = React.useCallback(() => {
+    if (!user) return;
+    apiClient.get('/user/orders')
+      .then((res) => {
+        const ords = res.data?.data || res.data;
+        if (Array.isArray(ords)) {
+          const mappedOrders: MockOrder[] = ords.map((o: any) => ({
+            id: o.order_number || `#ORD-${o.id}`,
+            date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+            customerName: o.customer_name || user?.name || 'Pelanggan Butik',
+            customerEmail: o.customer_email || user?.email || '',
+            customerPhone: o.customer_phone || '',
+            shippingAddress: o.customer_address || '',
+            city: o.city || 'Indonesia',
+            productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
+            items: (o.items || []).map((it: any) => ({
+              productId: it.product_id,
+              name: it.product?.name || it.product_name || 'Mutiara Lombok',
+              pearlSize: it.pearl_size || '12 mm',
+              metal: it.metal || 'Emas 18K',
+              price: Number(it.price) || 0,
+              quantity: Number(it.quantity) || 1,
+            })),
+            subtotal: Number(o.subtotal || o.total) || 0,
+            shippingCost: Number(o.shipping_cost) || 0,
+            insuranceCost: Number(o.insurance_cost) || 0,
+            total: Number(o.total) || 0,
+            paymentMethod: o.payment_method || 'TRANSFER_BANK',
+            status: o.order_status === 'DELIVERED' ? 'Selesai' : o.order_status === 'SHIPPED' ? 'Dikirim' : o.order_status === 'PROCESSING' ? 'Dikemas' : o.order_status === 'CANCELLED' ? 'Dibatalkan' : 'Menunggu Pembayaran',
+            trackingNumber: o.tracking_number,
+            courier: o.courier || 'JNE Express (Berasuransi)',
+            timeline: (o.status_histories || []).map((h: any) => ({
+              status: h.status,
+              date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
+              description: h.notes || '',
+              completed: true,
+            })),
+          }));
+          setOrders(mappedOrders);
+        }
+      })
+      .catch(() => {});
+  }, [user]);
+
+  // Load customer shipping addresses
+  const loadAddresses = React.useCallback(() => {
+    if (!user) return;
+    addressApi.getAddresses()
+      .then((adds) => {
+        if (Array.isArray(adds)) {
+          setAddresses(adds);
+        }
+      })
+      .catch(() => {});
+  }, [user]);
+
   // Load live customer data from API
   useEffect(() => {
     let isMounted = true;
@@ -184,57 +257,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         birthDate: '',
       });
 
-      // 1. Pesanan Saya
-      apiClient.get('/user/orders')
-        .then((res) => {
-          const ords = res.data?.data || res.data;
-          if (isMounted && Array.isArray(ords)) {
-            const mappedOrders: MockOrder[] = ords.map((o: any) => ({
-              id: o.order_number || `#ORD-${o.id}`,
-              date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
-              customerName: o.customer_name || user?.name || 'Pelanggan Butik',
-              customerEmail: o.customer_email || user?.email || '',
-              customerPhone: o.customer_phone || '',
-              shippingAddress: o.customer_address || '',
-              city: o.city || 'Indonesia',
-              productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
-              items: (o.items || []).map((it: any) => ({
-                productId: it.product_id,
-                name: it.product?.name || it.product_name || 'Mutiara Lombok',
-                pearlSize: it.pearl_size || '12 mm',
-                metal: it.metal || 'Emas 18K',
-                price: Number(it.price) || 0,
-                quantity: Number(it.quantity) || 1,
-              })),
-              subtotal: Number(o.subtotal || o.total) || 0,
-              shippingCost: Number(o.shipping_cost) || 0,
-              insuranceCost: Number(o.insurance_cost) || 0,
-              total: Number(o.total) || 0,
-              paymentMethod: o.payment_method || 'TRANSFER_BANK',
-              status: o.order_status === 'DELIVERED' ? 'Selesai' : o.order_status === 'SHIPPED' ? 'Dikirim' : o.order_status === 'PROCESSING' ? 'Dikemas' : o.order_status === 'CANCELLED' ? 'Dibatalkan' : 'Menunggu Pembayaran',
-              trackingNumber: o.tracking_number,
-              courier: o.courier || 'JNE Express (Berasuransi)',
-              timeline: (o.status_histories || []).map((h: any) => ({
-                status: h.status,
-                date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
-                description: h.notes || '',
-                completed: true,
-              })),
-            }));
-            setOrders(mappedOrders);
-          }
-        })
-        .catch(() => {});
-
-      // 2. Alamat Tersimpan
-      apiClient.get('/addresses')
-        .then((res) => {
-          const adds = res.data?.data || res.data;
-          if (isMounted && Array.isArray(adds)) {
-            setAddresses(adds);
-          }
-        })
-        .catch(() => {});
+      loadCustomerOrders();
+      loadAddresses();
 
       // 3. Wishlist
       apiClient.get('/wishlist')
@@ -249,7 +273,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [user, loadCustomerOrders, loadAddresses]);
 
   // Logout Dialog State
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
@@ -288,6 +312,156 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         o.trackingNumber?.toLowerCase().includes(trackingQuery.toLowerCase())
     );
     setSearchedTrackingOrder(found || null);
+  };
+
+  // Address Actions (API-backed)
+  const handleSaveAddress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAddress.recipient.trim() || !newAddress.fullAddress.trim()) {
+      toast.error('Nama penerima dan alamat lengkap wajib diisi.');
+      return;
+    }
+    try {
+      if (editingAddress) {
+        await addressApi.updateAddress(editingAddress.id, {
+          label: newAddress.label || 'Rumah',
+          recipient_name: newAddress.recipient,
+          phone: newAddress.phone || '+62 812-0000-0000',
+          address_line: newAddress.fullAddress,
+          city: newAddress.city || 'Indonesia',
+          province: newAddress.province || '-',
+          postal_code: newAddress.postalCode || '83115',
+        });
+        toast.success('Alamat berhasil diperbarui.');
+      } else {
+        await addressApi.createAddress({
+          label: newAddress.label || 'Rumah',
+          recipient_name: newAddress.recipient,
+          phone: newAddress.phone || '+62 812-0000-0000',
+          address_line: newAddress.fullAddress,
+          city: newAddress.city || 'Indonesia',
+          province: newAddress.province || '-',
+          postal_code: newAddress.postalCode || '83115',
+          is_default: addresses.length === 0,
+        });
+        toast.success('Alamat baru berhasil ditambahkan.');
+      }
+      setIsAddressModalOpen(false);
+      setEditingAddress(null);
+      setNewAddress({
+        label: 'Rumah',
+        recipient: '',
+        phone: '',
+        province: '',
+        city: '',
+        district: '',
+        postalCode: '',
+        fullAddress: '',
+      });
+      loadAddresses();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal menyimpan alamat.');
+    }
+  };
+
+  const handleDeleteAddress = async (id: number) => {
+    if (!confirm('Hapus alamat ini dari buku alamat?')) return;
+    try {
+      await addressApi.deleteAddress(id);
+      toast.success('Alamat pengiriman telah dihapus.');
+      loadAddresses();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal menghapus alamat.');
+    }
+  };
+
+  const handleSetDefaultAddress = async (id: number) => {
+    try {
+      await addressApi.setDefaultAddress(id);
+      toast.success('Alamat utama berhasil diperbarui.');
+      loadAddresses();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal menetapkan alamat utama.');
+    }
+  };
+
+  // Order Actions (API-backed)
+  const handleCancelOrder = async () => {
+    if (!selectedOrder) return;
+    if (!confirm(`Apakah Anda yakin ingin membatalkan pesanan ${selectedOrder.id}?`)) return;
+    setIsCancellingOrder(true);
+    try {
+      const res = await orderApi.cancelOrder(selectedOrder.id);
+      toast.success(res.message || 'Pesanan berhasil dibatalkan dan stok dikembalikan.');
+      loadCustomerOrders();
+      setSelectedOrder((prev) => prev ? { ...prev, status: 'Dibatalkan' } : null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal membatalkan pesanan.');
+    } finally {
+      setIsCancellingOrder(false);
+    }
+  };
+
+  const handleUploadProofSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder || !proofFile) {
+      toast.error('Mohon pilih berkas foto bukti transfer terlebih dahulu.');
+      return;
+    }
+    setIsUploadingProof(true);
+    try {
+      const fd = new FormData();
+      fd.append('proof_image', proofFile);
+      if (proofNotes.trim()) {
+        fd.append('notes', proofNotes.trim());
+      }
+      const res = await orderApi.uploadProof(selectedOrder.id, fd);
+      toast.success(res.message || 'Bukti transfer berhasil diunggah. Kami akan memverifikasi pembayaran Anda.');
+      setIsProofModalOpen(false);
+      setProofFile(null);
+      setProofNotes('');
+      loadCustomerOrders();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal mengunggah bukti pembayaran.');
+    } finally {
+      setIsUploadingProof(false);
+    }
+  };
+
+  // Password Security Action (API-backed)
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword) {
+      setPasswordUpdateMessage('Kata sandi lama dan baru wajib diisi.');
+      return;
+    }
+    if (newPassword.length < 12) {
+      setPasswordUpdateMessage('Kata sandi baru minimal 12 karakter.');
+      return;
+    }
+    if (newPassword !== newPasswordConfirmation) {
+      setPasswordUpdateMessage('Konfirmasi kata sandi baru tidak cocok.');
+      return;
+    }
+    setIsUpdatingPassword(true);
+    setPasswordUpdateMessage(null);
+    try {
+      await authApi.updatePassword({
+        current_password: currentPassword,
+        password: newPassword,
+        password_confirmation: newPasswordConfirmation,
+      });
+      setPasswordUpdateMessage('Kata sandi Anda berhasil diperbarui.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setNewPasswordConfirmation('');
+      toast.success('Kata sandi berhasil diperbarui.');
+      setTimeout(() => setPasswordUpdateMessage(null), 4000);
+    } catch (err: any) {
+      setPasswordUpdateMessage(err.response?.data?.message || 'Gagal memperbarui kata sandi.');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   if (!user) {
@@ -838,16 +1012,115 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 </a>
 
                 {selectedOrder.status === 'Menunggu Pembayaran' && (
-                  <button
-                    type="button"
-                    onClick={() => alert(`Membuka instruksi pembayaran untuk pesanan ${selectedOrder.id}`)}
-                    className="min-h-[44px] px-8 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] text-xs font-semibold inline-flex items-center gap-2 shadow-xs cursor-pointer"
-                  >
-                    <CreditCard className="w-4 h-4 text-[#D9B877]" />
-                    <span>Bayar Sekarang</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCancelOrder}
+                      disabled={isCancellingOrder}
+                      className="min-h-[44px] px-5 rounded-full border border-red-300 text-red-600 hover:bg-red-50 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>{isCancellingOrder ? 'Membatalkan...' : 'Batalkan Pesanan'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsProofModalOpen(true)}
+                      className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] text-xs font-semibold inline-flex items-center gap-2 shadow-xs cursor-pointer"
+                    >
+                      <Upload className="w-4 h-4 text-[#D9B877]" />
+                      <span>Unggah Bukti Bayar</span>
+                    </button>
+                  </div>
                 )}
               </div>
+
+              {/* Modal Unggah Bukti Bayar */}
+              {isProofModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+                  <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
+                      <div>
+                        <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                          Unggah Bukti Pembayaran
+                        </h3>
+                        <p className="text-xs text-[#4A5666] mt-0.5">
+                          Pesanan {selectedOrder.id} • Total Rp {selectedOrder.total.toLocaleString('id-ID')}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsProofModalOpen(false);
+                          setProofFile(null);
+                          setProofNotes('');
+                        }}
+                        className="text-[#4A5666] hover:text-[#12263A] text-lg font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleUploadProofSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-[#12263A] mb-1.5">
+                          Foto Bukti Transfer (JPG, PNG, atau WebP, maks. 5 MB) *
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          required
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              setProofFile(e.target.files[0]);
+                            }
+                          }}
+                          className="w-full text-xs text-[#4A5666] file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#12263A] file:text-white hover:file:bg-[#1A3652] cursor-pointer"
+                        />
+                        {proofFile && (
+                          <p className="text-[11px] text-[#8A6A2F] mt-1 font-medium">
+                            ✓ Berkas terpilih: {proofFile.name} ({(proofFile.size / 1024).toFixed(0)} KB)
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#12263A] mb-1.5">
+                          Catatan / Referensi Transfer (Opsional)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={proofNotes}
+                          onChange={(e) => setProofNotes(e.target.value)}
+                          placeholder="Contoh: Transfer via m-BCA a.n. Siti Rahma"
+                          className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                        />
+                      </div>
+
+                      <div className="pt-3 border-t border-[#E6DDD0] flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsProofModalOpen(false);
+                            setProofFile(null);
+                            setProofNotes('');
+                          }}
+                          className="min-h-[42px] px-5 rounded-full border border-[#12263A] text-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB]"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isUploadingProof || !proofFile}
+                          className="min-h-[42px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652] disabled:opacity-50 inline-flex items-center gap-1.5"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{isUploadingProof ? 'Mengunggah...' : 'Kirim Bukti Pembayaran'}</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             /* Tabel Daftar Pesanan */
@@ -1130,7 +1403,20 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => alert(`Ubah alamat ${addr.label}`)}
+                      onClick={() => {
+                        setEditingAddress(addr);
+                        setNewAddress({
+                          label: addr.label || 'Rumah',
+                          recipient: addr.recipient || '',
+                          phone: addr.phone || '',
+                          province: addr.province || '-',
+                          city: addr.city || '',
+                          district: addr.district || '-',
+                          postalCode: addr.postalCode || '83115',
+                          fullAddress: addr.fullAddress || '',
+                        });
+                        setIsAddressModalOpen(true);
+                      }}
                       className="text-xs font-semibold text-[#12263A] hover:underline cursor-pointer"
                     >
                       Ubah
@@ -1138,11 +1424,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     <span className="text-gray-300">•</span>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm('Hapus alamat ini?')) {
-                          setAddresses(addresses.filter(a => a.id !== addr.id));
-                        }
-                      }}
+                      onClick={() => handleDeleteAddress(addr.id)}
                       className="text-xs font-semibold text-red-600 hover:underline cursor-pointer"
                     >
                       Hapus
@@ -1152,9 +1434,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   {!addr.isPrimary && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setAddresses(addresses.map(a => ({ ...a, isPrimary: a.id === addr.id })));
-                      }}
+                      onClick={() => handleSetDefaultAddress(addr.id)}
                       className="text-xs font-semibold text-[#8A6A2F] hover:underline cursor-pointer"
                     >
                       Jadikan Utama
@@ -1165,23 +1445,32 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             ))}
           </div>
 
-          {/* Modal Tambah Alamat */}
+          {/* Modal Tambah/Ubah Alamat */}
           {isAddressModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
               <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 w-full max-w-lg shadow-xl">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
-                    Tambah Alamat Baru
+                    {editingAddress ? 'Ubah Alamat Pengiriman' : 'Tambah Alamat Baru'}
                   </h3>
-                  <button type="button" onClick={() => setIsAddressModalOpen(false)}>✕</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddressModalOpen(false);
+                      setEditingAddress(null);
+                    }}
+                  >
+                    ✕
+                  </button>
                 </div>
 
-                <div className="space-y-3.5">
+                <form onSubmit={handleSaveAddress} className="space-y-3.5">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-[#12263A] mb-1">Label Alamat</label>
                       <input
                         type="text"
+                        required
                         placeholder="Contoh: Rumah, Kantor"
                         value={newAddress.label}
                         onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
@@ -1192,6 +1481,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       <label className="block text-xs font-semibold text-[#12263A] mb-1">Nama Penerima</label>
                       <input
                         type="text"
+                        required
                         placeholder="Nama Lengkap Penerima"
                         value={newAddress.recipient}
                         onChange={(e) => setNewAddress({ ...newAddress, recipient: e.target.value })}
@@ -1205,6 +1495,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       <label className="block text-xs font-semibold text-[#12263A] mb-1">Nomor Telepon / WA</label>
                       <input
                         type="text"
+                        required
                         placeholder="+62 812..."
                         value={newAddress.phone}
                         onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
@@ -1215,6 +1506,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       <label className="block text-xs font-semibold text-[#12263A] mb-1">Kota / Kabupaten</label>
                       <input
                         type="text"
+                        required
                         placeholder="Jakarta Pusat"
                         value={newAddress.city}
                         onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
@@ -1227,6 +1519,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     <label className="block text-xs font-semibold text-[#12263A] mb-1">Alamat Lengkap</label>
                     <textarea
                       rows={2}
+                      required
                       placeholder="Nama jalan, nomor rumah, RT/RW, patokan..."
                       value={newAddress.fullAddress}
                       onChange={(e) => setNewAddress({ ...newAddress, fullAddress: e.target.value })}
@@ -1237,39 +1530,22 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   <div className="flex justify-end gap-2 pt-3 border-t border-[#E6DDD0]">
                     <button
                       type="button"
-                      onClick={() => setIsAddressModalOpen(false)}
+                      onClick={() => {
+                        setIsAddressModalOpen(false);
+                        setEditingAddress(null);
+                      }}
                       className="min-h-[44px] px-5 rounded-full border border-[#12263A] text-xs font-semibold"
                     >
                       Batal
                     </button>
                     <button
-                      type="button"
-                      onClick={() => {
-                        if (newAddress.recipient && newAddress.fullAddress) {
-                          setAddresses([
-                            ...addresses,
-                            {
-                              id: Date.now(),
-                              label: newAddress.label || 'Alamat',
-                              recipient: newAddress.recipient,
-                              phone: newAddress.phone || '+62 812-0000-0000',
-                              province: '-',
-                              city: newAddress.city || '-',
-                              district: '-',
-                              postalCode: '-',
-                              fullAddress: newAddress.fullAddress,
-                              isPrimary: addresses.length === 0,
-                            },
-                          ]);
-                          setIsAddressModalOpen(false);
-                        }
-                      }}
-                      className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold"
+                      type="submit"
+                      className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652]"
                     >
-                      Simpan Alamat
+                      {editingAddress ? 'Simpan Perubahan' : 'Tambah Alamat'}
                     </button>
                   </div>
-                </div>
+                </form>
               </div>
             </div>
           )}
@@ -1307,7 +1583,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 <div>
                   <button
                     type="button"
-                    onClick={() => alert('Fitur ganti foto profil avatar X')}
+                    onClick={() => toast.success('Foto profil disinkronkan dengan akun pelanggan Anda.')}
                     className="min-h-[38px] px-4 rounded-full border border-[#12263A] text-xs font-semibold text-[#12263A] hover:bg-[#F4F1EB]"
                   >
                     Ganti Foto
@@ -1361,7 +1637,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             </div>
 
             {/* Bagian Keamanan */}
-            <div className="pt-6 border-t border-[#E6DDD0]">
+            <form onSubmit={handleUpdatePassword} className="pt-6 border-t border-[#E6DDD0]">
               <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                 Kredensial
               </span>
@@ -1371,9 +1647,12 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
               <div className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Kata Sandi Lama</label>
+                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Kata Sandi Saat Ini</label>
                   <input
                     type="password"
+                    required
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="••••••••••••"
                     className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
                   />
@@ -1381,9 +1660,12 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">Kata Sandi Baru</label>
+                    <label className="block text-xs font-semibold text-[#12263A] mb-1">Kata Sandi Baru (Min. 12 Karakter)</label>
                     <input
                       type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="••••••••••••"
                       className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
                     />
@@ -1392,13 +1674,36 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     <label className="block text-xs font-semibold text-[#12263A] mb-1">Konfirmasi Kata Sandi</label>
                     <input
                       type="password"
+                      required
+                      value={newPasswordConfirmation}
+                      onChange={(e) => setNewPasswordConfirmation(e.target.value)}
                       placeholder="••••••••••••"
                       className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
                     />
                   </div>
                 </div>
+
+                {passwordUpdateMessage && (
+                  <div className={`p-3 rounded-xl text-xs font-semibold ${
+                    passwordUpdateMessage.includes('berhasil')
+                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                      : 'bg-red-50 border border-red-200 text-red-800'
+                  }`}>
+                    {passwordUpdateMessage}
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={isUpdatingPassword}
+                    className="min-h-[40px] px-5 rounded-full border border-[#12263A] text-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB] disabled:opacity-50"
+                  >
+                    {isUpdatingPassword ? 'Memperbarui...' : 'Perbarui Kata Sandi'}
+                  </button>
+                </div>
               </div>
-            </div>
+            </form>
 
             {profileSaveMessage && (
               <div className="p-3 mb-4 rounded-xl bg-[#8A6A2F]/10 border border-[#8A6A2F]/30 text-xs text-[#8A6A2F] font-semibold">

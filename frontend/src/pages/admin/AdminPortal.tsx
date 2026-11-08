@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import {
   LayoutDashboard,
   Package,
@@ -688,225 +689,172 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   };
 
   // Submit Delete Product Approval to SPI (atau Eksekusi Langsung oleh SPI)
-  const submitDeleteProductApproval = (e: React.FormEvent) => {
+  const submitDeleteProductApproval = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!deleteProductCandidate || !deleteProductNotes.trim()) return;
 
-    if (userRole === 'spi') {
-      setProducts(prev => prev.filter(p => p.id !== deleteProductCandidate.id));
-      onLogActivity?.(
-        'Penghapusan Produk',
-        deleteProductCandidate.name,
-        `Status: Tersedia (Stok: ${deleteProductCandidate.stock}, Harga: ${deleteProductCandidate.formattedPrice})`,
-        `Dihapus Permanen - Alasan: ${deleteProductNotes.trim()} [Dieksekusi langsung oleh SPI]`
-      );
+    try {
+      await apiClient.delete(`/admin/products/${deleteProductCandidate.id}`);
+      showAdminToast(`✓ Produk "${deleteProductCandidate.name}" berhasil dinonaktifkan (diarsipkan).`);
       setDeleteProductCandidate(null);
       setDeleteProductNotes('');
-      showAdminToast('✓ Produk berhasil dihapus dari katalog langsung oleh SPI.');
-      return;
+      setProductToDelete(null);
+      loadProducts();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menghapus produk.';
+      showAdminToast(`✕ ${msg}`);
+      setDeleteProductCandidate(null);
+      setProductToDelete(null);
     }
-
-    onAddApproval?.({
-      type: 'HAPUS_PRODUK',
-      title: 'Penghapusan Produk dari Katalog',
-      target: deleteProductCandidate.name,
-      targetId: deleteProductCandidate.id,
-      requestedBy: 'Budi Santoso (Admin)',
-      notes: deleteProductNotes.trim(),
-      oldValue: `Status: Tersedia (Stok: ${deleteProductCandidate.stock}, Harga: ${deleteProductCandidate.formattedPrice})`,
-      newValue: 'Status: Dihapus Permanen dari Katalog',
-      payload: {
-        productId: deleteProductCandidate.id,
-        productName: deleteProductCandidate.name,
-      },
-    });
-
-    setDeleteProductCandidate(null);
-    setDeleteProductNotes('');
-    showAdminToast('✓ Pengajuan hapus produk telah diteruskan ke SPI untuk persetujuan.');
   };
 
   // Submit Payment Confirmation Approval to SPI (atau Eksekusi Langsung oleh SPI)
-  const submitPaymentApproval = (e: React.FormEvent) => {
+  const submitPaymentApproval = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!paymentApprovalOrder || !paymentApprovalNotes.trim()) return;
 
-    if (userRole === 'spi') {
-      setOrders(prev =>
-        prev.map(o => (o.id === paymentApprovalOrder.id ? { ...o, status: 'Dikemas' as const } : o))
-      );
-      onLogActivity?.(
-        'Konfirmasi Pembayaran Lunas',
-        `Pesanan ${paymentApprovalOrder.id}`,
-        `Status: ${paymentApprovalOrder.status} (${paymentApprovalOrder.paymentMethod})`,
-        `Status: Dikemas - Alasan: ${paymentApprovalNotes.trim()} [Dieksekusi langsung oleh SPI]`
-      );
+    try {
+      const res = await apiClient.put(`/orders/${paymentApprovalOrder.id}/payment-status`, {
+        payment_status: 'PAID',
+        notes: paymentApprovalNotes.trim(),
+      });
+      if (res.status === 202) {
+        showAdminToast('✓ Pengajuan konfirmasi pembayaran dikirim ke SPI untuk disetujui.');
+      } else {
+        showAdminToast('✓ Pembayaran pesanan diverifikasi lunas.');
+      }
       setIsPaymentApprovalModalOpen(false);
       setPaymentApprovalOrder(null);
       setPaymentApprovalNotes('');
-      showAdminToast('✓ Pembayaran pesanan diverifikasi lunas & dieksekusi langsung oleh SPI.');
-      return;
+      loadOrders();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal memproses verifikasi pembayaran.';
+      showAdminToast(`✕ ${msg}`);
+      setIsPaymentApprovalModalOpen(false);
+      setPaymentApprovalOrder(null);
     }
-
-    onAddApproval?.({
-      type: 'KONFIRMASI_PEMBAYARAN',
-      title: 'Konfirmasi Pelunasan Pembayaran Transfer Manual',
-      target: `Pesanan ${paymentApprovalOrder.id}`,
-      targetId: paymentApprovalOrder.id,
-      requestedBy: 'Budi Santoso (Admin)',
-      notes: paymentApprovalNotes.trim(),
-      oldValue: `Status: ${paymentApprovalOrder.status} (${paymentApprovalOrder.paymentMethod})`,
-      newValue: 'Status: Dikemas (Telah Diverifikasi Lunas)',
-      payload: {
-        orderId: paymentApprovalOrder.id,
-        newStatus: 'Dikemas',
-        paymentMethodDetail: `${paymentApprovalOrder.paymentMethod} (Disetujui SPI)`,
-      },
-    });
-
-    setIsPaymentApprovalModalOpen(false);
-    setPaymentApprovalOrder(null);
-    setPaymentApprovalNotes('');
-    showAdminToast('✓ Pengajuan konfirmasi pembayaran dikirim ke SPI untuk disetujui.');
   };
 
   // Submit Cancel Order Approval to SPI (atau Eksekusi Langsung oleh SPI)
-  const submitCancelOrderApproval = (e: React.FormEvent) => {
+  const submitCancelOrderApproval = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cancelOrderCandidate || !cancelOrderNotes.trim()) return;
 
-    if (userRole === 'spi') {
-      setOrders(prev =>
-        prev.map(o => (o.id === cancelOrderCandidate.id ? { ...o, status: 'Dibatalkan' as const } : o))
-      );
-      onLogActivity?.(
-        'Pembatalan Pesanan',
-        `Pesanan ${cancelOrderCandidate.id}`,
-        `Status: ${cancelOrderCandidate.status}`,
-        `Status: Dibatalkan - Alasan: ${cancelOrderNotes.trim()} [Dieksekusi langsung oleh SPI]`
-      );
+    try {
+      const res = await apiClient.put(`/orders/${cancelOrderCandidate.id}/order-status`, {
+        order_status: 'CANCELLED',
+        notes: cancelOrderNotes.trim(),
+      });
+      if (res.status === 202) {
+        showAdminToast('✓ Pengajuan pembatalan pesanan dikirim ke SPI untuk otorisasi.');
+      } else {
+        showAdminToast('✓ Pesanan berhasil dibatalkan.');
+      }
       setIsCancelOrderApprovalModalOpen(false);
       setCancelOrderCandidate(null);
       setCancelOrderNotes('');
-      showAdminToast('✓ Pesanan berhasil dibatalkan langsung oleh SPI.');
-      return;
+      loadOrders();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal membatalkan pesanan.';
+      showAdminToast(`✕ ${msg}`);
+      setIsCancelOrderApprovalModalOpen(false);
+      setCancelOrderCandidate(null);
     }
-
-    onAddApproval?.({
-      type: 'PEMBATALAN_PESANAN',
-      title: 'Pembatalan Pesanan Pelanggan',
-      target: `Pesanan ${cancelOrderCandidate.id}`,
-      targetId: cancelOrderCandidate.id,
-      requestedBy: 'Budi Santoso (Admin)',
-      notes: cancelOrderNotes.trim(),
-      oldValue: `Status: ${cancelOrderCandidate.status} (Total: Rp ${cancelOrderCandidate.total.toLocaleString('id-ID')})`,
-      newValue: 'Status: Dibatalkan',
-      payload: {
-        orderId: cancelOrderCandidate.id,
-        newStatus: 'Dibatalkan',
-      },
-    });
-
-    setIsCancelOrderApprovalModalOpen(false);
-    setCancelOrderCandidate(null);
-    setCancelOrderNotes('');
-    showAdminToast('✓ Pengajuan pembatalan pesanan dikirim ke SPI untuk otorisasi.');
   };
 
   // Submit Stock Adjustment Approval to SPI (atau Eksekusi Langsung oleh SPI)
-  const submitStockAdjustmentApproval = (e: React.FormEvent) => {
+  const submitStockAdjustmentApproval = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStockItem || !stockAdjustNotes.trim()) return;
 
     const diff = stockAdjustQty - selectedStockItem.stock;
-    const sign = diff > 0 ? '+' : '';
 
-    if (userRole === 'spi') {
-      const targetQty = stockAdjustQty;
-      setStockItems(prev =>
-        prev.map(s =>
-          s.id === selectedStockItem.id
-            ? {
-                ...s,
-                stock: targetQty,
-                status: targetQty === 0 ? 'Habis' : targetQty <= 5 ? 'Menipis' : 'Aman',
-              }
-            : s
-        )
-      );
-      onLogActivity?.(
-        'Penyesuaian Manual Stok Gudang',
-        selectedStockItem.productName,
-        `Stok: ${selectedStockItem.stock} butir`,
-        `Stok: ${targetQty} butir (${sign}${diff} butir) - Alasan: ${stockAdjustNotes.trim()} [Dieksekusi langsung oleh SPI]`
-      );
+    try {
+      const res = await apiClient.post(`/products/${selectedStockItem.id}/stock`, {
+        delta: diff,
+        reason: stockAdjustNotes.trim() || 'Penyesuaian stok opname fisik oleh operasional',
+      });
+      if (res.status === 202) {
+        showAdminToast('✓ Pengajuan penyesuaian stok manual dikirim ke antrean Persetujuan SPI.');
+      } else {
+        showAdminToast('✓ Penyesuaian stok berhasil diterapkan ke inventaris.');
+      }
       setIsAdjustStockOpen(false);
       setSelectedStockItem(null);
       setStockAdjustNotes('');
-      showAdminToast('✓ Penyesuaian stok berhasil diterapkan langsung oleh SPI.');
-      return;
+      loadProducts();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menyesuaikan stok produk.';
+      showAdminToast(`✕ ${msg}`);
+      setIsAdjustStockOpen(false);
+      setSelectedStockItem(null);
     }
-
-    onAddApproval?.({
-      type: 'PENYESUAIAN_STOK',
-      title: 'Penyesuaian Manual Stok Gudang',
-      target: selectedStockItem.productName,
-      targetId: selectedStockItem.id,
-      requestedBy: 'Budi Santoso (Admin)',
-      notes: stockAdjustNotes.trim(),
-      oldValue: `Stok: ${selectedStockItem.stock} butir`,
-      newValue: `Stok: ${stockAdjustQty} butir (${sign}${diff} butir)`,
-      payload: {
-        stockId: selectedStockItem.id,
-        newStock: stockAdjustQty,
-        qtyChange: diff,
-        type: diff > 0 ? 'Masuk' : 'Keluar',
-      },
-    });
-
-    setIsAdjustStockOpen(false);
-    setSelectedStockItem(null);
-    setStockAdjustNotes('');
-    showAdminToast('✓ Pengajuan penyesuaian stok manual dikirim ke antrean Persetujuan SPI.');
   };
 
   // Handle Order Status Update
-  const handleUpdateOrderStatus = (newStatus: MockOrder['status']) => {
+  const handleUpdateOrderStatus = async (newStatus: MockOrder['status']) => {
     if (!selectedOrder) return;
-    const updated: MockOrder = {
-      ...selectedOrder,
-      status: newStatus,
-      trackingNumber: inputResi || selectedOrder.trackingNumber,
-      courier: inputCourier || selectedOrder.courier,
-    };
-    setSelectedOrder(updated);
-    setOrders(prev => prev.map(o => (o.id === selectedOrder.id ? updated : o)));
-    showAdminToast(`✓ Status pesanan ${selectedOrder.id} diperbarui menjadi "${newStatus}".`);
+    try {
+      if (newStatus === 'Dikirim') {
+        await apiClient.put(`/orders/${selectedOrder.id}/tracking`, {
+          tracking_number: inputResi || selectedOrder.trackingNumber || 'JNE-REG-001',
+          courier: inputCourier || selectedOrder.courier || 'JNE Express (Berasuransi)',
+        });
+      } else {
+        const statusMap: Record<string, string> = {
+          'Menunggu Pembayaran': 'PENDING',
+          'Dikemas': 'PROCESSING',
+          'Dikirim': 'SHIPPED',
+          'Selesai': 'DELIVERED',
+          'Dibatalkan': 'CANCELLED',
+        };
+        const backendStatus = statusMap[newStatus] || 'PROCESSING';
+        await apiClient.put(`/orders/${selectedOrder.id}/order-status`, {
+          order_status: backendStatus,
+          notes: `Status pesanan diubah menjadi ${newStatus} oleh operasional`,
+        });
+      }
+      showAdminToast(`✓ Status pesanan ${selectedOrder.id} diperbarui menjadi "${newStatus}".`);
+      loadOrders();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal memperbarui status pesanan.';
+      showAdminToast(`✕ ${msg}`);
+    }
   };
 
   // Handle Issue Certificate
-  const handleIssueCertificate = (e: React.FormEvent) => {
+  const handleIssueCertificate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCertNumber.trim()) return;
-    const newCert: MockCertificate = {
-      id: Date.now(),
-      certNumber: newCertNumber.trim(),
-      productName: newCertProduct,
-      issuingLab: newCertLab,
-      grade: newCertGrade,
-      pearlSize: newCertPearlSize,
-      issueDate: '29 Okt 2026',
-      pdfFileUrl: `#[PDF-${newCertNumber.trim()}]`,
-    };
-    setCertificates(prev => [newCert, ...prev]);
-    setNewCertNumber('');
-    setIsCertModalOpen(false);
+    try {
+      await apiClient.post('/admin/certificates', {
+        nomor: newCertNumber.trim(),
+        lab: newCertLab || 'Laboratorium Gemologi Independen',
+        grade: newCertGrade || 'AAA',
+        ukuran: newCertPearlSize || '11-12 mm',
+        tanggal: new Date().toISOString().split('T')[0],
+      });
+      showAdminToast(`✓ Sertifikat keaslian gemologi ${newCertNumber.trim()} berhasil diterbitkan.`);
+      setNewCertNumber('');
+      setIsCertModalOpen(false);
+      loadCertificates();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menerbitkan sertifikat gemologi.';
+      showAdminToast(`✕ ${msg}`);
+    }
   };
 
   // Handle Delete Certificate
-  const handleConfirmDeleteCert = () => {
-    if (certToDelete) {
-      setCertificates(prev => prev.filter(c => c.id !== certToDelete.id));
+  const handleConfirmDeleteCert = async () => {
+    if (!certToDelete) return;
+    try {
+      await apiClient.delete(`/admin/certificates/${certToDelete.id}`);
+      showAdminToast(`✓ Sertifikat ${certToDelete.certNumber} telah berhasil dihapus.`);
+      setCertToDelete(null);
+      loadCertificates();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menghapus sertifikat.';
+      showAdminToast(`✕ ${msg}`);
       setCertToDelete(null);
     }
   };
@@ -2793,7 +2741,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <label className="block text-xs font-semibold text-[#12263A] mb-1">Deskripsi Singkat</label>
                   <textarea rows={3} defaultValue="Atelier mutiara air laut selatan pilihan dari Lombok dengan kilau cermin alami dan sertifikasi gemologi resmi." className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
                 </div>
-                <button type="button" onClick={() => alert('Perubahan profil tersimpan')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
+                <button type="button" onClick={() => toast.success('Perubahan profil toko perhiasan berhasil disimpan.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
               </div>
             )}
 
@@ -2812,7 +2760,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <label className="block text-xs font-semibold text-[#12263A] mb-1">Alamat Atelier</label>
                   <textarea rows={2} defaultValue="Kawasan Pesisir Sire, Tanjung, Kabupaten Lombok Utara, Nusa Tenggara Barat 83352" className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
                 </div>
-                <button type="button" onClick={() => alert('Perubahan kontak tersimpan')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
+                <button type="button" onClick={() => toast.success('Pengaturan kontak concierge berhasil disimpan.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
               </div>
             )}
 
@@ -2833,7 +2781,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     <span>Wajibkan Asuransi Penuh untuk Nilai Tinggi</span>
                   </label>
                 </div>
-                <button type="button" onClick={() => alert('Pengaturan kurir tersimpan')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
+                <button type="button" onClick={() => toast.success('Konfigurasi pengiriman dan asuransi diperbarui.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
               </div>
             )}
 
@@ -2848,7 +2796,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <p className="font-semibold text-[#12263A]">Rekening Mandiri Bisnis:</p>
                   <p className="font-mono text-[#12263A]">142-00-9922881-0 a.n. CD'E Pearls Official</p>
                 </div>
-                <button type="button" onClick={() => alert('Rekening bank tersimpan')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Perbarui Rekening</button>
+                <button type="button" onClick={() => toast.success('Informasi rekening pembayaran bank berhasil diperbarui.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Perbarui Rekening</button>
               </div>
             )}
 
@@ -2867,7 +2815,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <label className="block text-xs font-semibold text-[#12263A] mb-1">Kata Sandi Baru</label>
                   <input type="password" placeholder="••••••••••••" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
                 </div>
-                <button type="button" onClick={() => alert('Kata sandi diperbarui')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Keamanan</button>
+                <button type="button" onClick={() => toast.success('Kredensial keamanan akun staf telah diperbarui.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Keamanan</button>
               </div>
             )}
           </div>

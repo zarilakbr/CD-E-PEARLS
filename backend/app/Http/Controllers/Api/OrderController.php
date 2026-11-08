@@ -645,7 +645,7 @@ class OrderController extends Controller
     public function requestPaymentConfirmation(Request $request, $id): JsonResponse
     {
         $user = $request->user();
-        $order = Order::findOrFail($id);
+        $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
 
         $request->validate([
             'notes' => 'required|string|min:5|max:1000',
@@ -704,7 +704,7 @@ class OrderController extends Controller
     public function updatePaymentStatus(Request $request, $id): JsonResponse
     {
         $user = $request->user();
-        $order = Order::findOrFail($id);
+        $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
 
         $request->validate([
             'payment_status' => 'required|in:WAITING_PAYMENT,PAYMENT_REVIEW,PAID,FAILED,REFUNDED',
@@ -761,7 +761,7 @@ class OrderController extends Controller
     public function updateOrderStatus(Request $request, $id): JsonResponse
     {
         $user = $request->user();
-        $order = Order::findOrFail($id);
+        $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
 
         $request->validate([
             'order_status' => 'required|in:PENDING,PROCESSING,READY_TO_SHIP,SHIPPED,DELIVERED,COMPLETED,CANCELLED',
@@ -843,7 +843,7 @@ class OrderController extends Controller
     public function updateTracking(Request $request, $id): JsonResponse
     {
         $user = $request->user();
-        $order = Order::findOrFail($id);
+        $order = Order::where('id', $id)->orWhere('order_number', $id)->firstOrFail();
 
         $request->validate([
             'tracking_number' => 'required|string|max:100',
