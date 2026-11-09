@@ -43,7 +43,7 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { ProductFormModal } from '../../components/admin/ProductFormModal';
 import { APPROVAL_RULES } from '../../config/approvalRules';
-import { reportApi, apiClient, categoryApi, resolveMediaUrl } from '../../lib/api';
+import { reportApi, apiClient, categoryApi, orderApi, resolveMediaUrl } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboardSync } from '../../hooks/useDashboardSync';
 import type {
@@ -219,8 +219,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [orderStatusTab, setOrderStatusTab] = useState('Semua');
   const [orderSearch, setOrderSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<MockOrder | null>(null);
-  const [inputResi, setInputResi] = useState('');
-  const [inputCourier, setInputCourier] = useState('JNE Express (Berasuransi)');
+  const [isRejectPaymentModalOpen, setIsRejectPaymentModalOpen] = useState(false);
+  const [rejectPaymentReason, setRejectPaymentReason] = useState('');
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [previewProofUrl, setPreviewProofUrl] = useState<string | null>(null);
 
   // Customers state
   const [customers, setCustomers] = useState<MockCustomer[]>([]);
@@ -313,38 +315,70 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       .then((res) => {
         const ords = res.data?.data || res.data;
         if (Array.isArray(ords)) {
-          const mappedOrders: MockOrder[] = ords.map((o: any) => ({
-            id: o.order_number || `#ORD-${o.id}`,
-            date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
-            customerName: o.customer_name || 'Pelanggan Butik',
-            customerEmail: o.customer_email || o.user?.email || '',
-            customerPhone: o.customer_phone || '',
-            shippingAddress: o.customer_address || '',
-            city: o.city || 'Indonesia',
-            productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
-            items: (o.items || []).map((it: any) => ({
-              productId: it.product_id,
-              name: it.product?.name || it.product_name || 'Mutiara Lombok',
-              pearlSize: it.pearl_size || '12 mm',
-              metal: it.metal || 'Emas 18K',
-              price: Number(it.price) || 0,
-              quantity: Number(it.quantity) || 1,
-            })),
-            subtotal: Number(o.subtotal || o.total) || 0,
-            shippingCost: Number(o.shipping_cost) || 0,
-            insuranceCost: Number(o.insurance_cost) || 0,
-            total: Number(o.total) || 0,
-            paymentMethod: o.payment_method || 'TRANSFER_BANK',
-            status: o.order_status === 'DELIVERED' ? 'Selesai' : o.order_status === 'SHIPPED' ? 'Dikirim' : o.order_status === 'PROCESSING' ? 'Dikemas' : o.order_status === 'CANCELLED' ? 'Dibatalkan' : 'Menunggu Pembayaran',
-            trackingNumber: o.tracking_number,
-            courier: o.courier || 'JNE Express (Berasuransi)',
-            timeline: (o.status_histories || []).map((h: any) => ({
-              status: h.status,
-              date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
-              description: h.notes || '',
-              completed: true,
-            })),
-          }));
+          const mappedOrders: MockOrder[] = ords.map((o: any) => {
+            const rawPayment = Array.isArray(o.payments) && o.payments.length > 0 ? o.payments[0] : null;
+            const pStatus = (o.payment_status || rawPayment?.status || 'WAITING_PAYMENT').toUpperCase();
+            const oStatus = (o.order_status || 'PENDING').toUpperCase();
+
+            let displayStatus: MockOrder['status'] = 'Menunggu Pembayaran';
+            if (oStatus === 'CANCELLED') {
+              displayStatus = 'Dibatalkan';
+            } else if (oStatus === 'DELIVERED' || oStatus === 'COMPLETED') {
+              displayStatus = 'Selesai';
+            } else if (oStatus === 'SHIPPED') {
+              displayStatus = 'Dikirim';
+            } else if (oStatus === 'PROCESSING') {
+              displayStatus = 'Dikemas';
+            } else if (pStatus === 'PAYMENT_REVIEW') {
+              displayStatus = 'Menunggu Verifikasi';
+            } else if (pStatus === 'PAID') {
+              displayStatus = 'Lunas & Diproses';
+            } else {
+              displayStatus = 'Menunggu Pembayaran';
+            }
+
+            return {
+              id: o.order_number || `#ORD-${o.id}`,
+              rawId: o.id,
+              orderNumber: o.order_number,
+              date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+              customerName: o.customer_name || 'Pelanggan Butik',
+              customerEmail: o.customer_email || o.user?.email || '',
+              customerPhone: o.customer_phone || '',
+              shippingAddress: o.customer_address || '',
+              city: o.city || 'Indonesia',
+              productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
+              items: (o.items || []).map((it: any) => ({
+                productId: it.product_id,
+                name: it.product?.name || it.product_name || 'Mutiara Lombok',
+                pearlSize: it.pearl_size || '12 mm',
+                metal: it.metal || 'Emas 18K',
+                price: Number(it.price) || 0,
+                quantity: Number(it.quantity) || 1,
+              })),
+              subtotal: Number(o.subtotal || o.total) || 0,
+              shippingCost: Number(o.shipping_cost) || 0,
+              insuranceCost: Number(o.insurance_cost) || 0,
+              total: Number(o.total) || 0,
+              paymentMethod: o.payment_method || 'TRANSFER_BANK',
+              paymentStatus: pStatus,
+              orderStatus: oStatus,
+              notes: o.notes || '',
+              rejectionReason: rawPayment?.notes || o.notes || '',
+              paymentProofPath: rawPayment?.proof_path || '',
+              paymentProofUrl: rawPayment ? `/api/v1/orders/${o.id}/payments/${rawPayment.id}/proof` : undefined,
+              payments: o.payments || [],
+              status: displayStatus,
+              trackingNumber: o.tracking_number,
+              courier: o.courier || 'JNE Express (Berasuransi)',
+              timeline: (o.status_histories || []).map((h: any) => ({
+                status: h.status,
+                date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
+                description: h.notes || '',
+                completed: true,
+              })),
+            };
+          });
           setOrders(mappedOrders);
         }
       })
@@ -513,7 +547,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'products', label: 'Produk', icon: <Package className="w-4 h-4" />, badge: products.length },
     { id: 'categories', label: 'Kategori', icon: <Layers className="w-4 h-4" /> },
-    { id: 'orders', label: 'Pesanan', icon: <ShoppingBag className="w-4 h-4" />, badge: orders.filter(o => o.status === 'Menunggu Pembayaran' || o.status === 'Dikemas').length },
+    { id: 'orders', label: 'Pesanan', icon: <ShoppingBag className="w-4 h-4" />, badge: orders.filter(o => o.paymentStatus === 'PAYMENT_REVIEW' || o.status === 'Menunggu Verifikasi').length },
     { id: 'customers', label: 'Pelanggan', icon: <Users className="w-4 h-4" /> },
     { id: 'stock', label: 'Stok', icon: <Boxes className="w-4 h-4" />, badge: stockItems.filter(s => s.status !== 'Aman').length },
     { id: 'certificates', label: 'Sertifikat', icon: <Award className="w-4 h-4" /> },
@@ -708,6 +742,48 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     }
   };
 
+  // Verifikasi Pembayaran Lunas Langsung oleh Admin (POST /api/v1/admin/orders/{id}/verify-payment)
+  const handleVerifyPaymentDirect = async (notes?: string) => {
+    if (!selectedOrder) return;
+    const targetId = selectedOrder.rawId || selectedOrder.id;
+    setIsVerifyingPayment(true);
+    try {
+      await orderApi.verifyPayment(targetId, notes || 'Pembayaran transfer bank telah diverifikasi lunas oleh admin operasional.');
+      showAdminToast(`✓ Pembayaran pesanan ${selectedOrder.id} berhasil diverifikasi lunas.`);
+      setSelectedOrder(null);
+      loadOrders();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal memverifikasi pembayaran.';
+      showAdminToast(`✕ ${msg}`);
+    } finally {
+      setIsVerifyingPayment(false);
+    }
+  };
+
+  // Tolak Pembayaran oleh Admin (POST /api/v1/admin/orders/{id}/reject-payment)
+  const handleRejectPaymentDirect = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder || !rejectPaymentReason.trim() || rejectPaymentReason.trim().length < 5) {
+      showAdminToast('✕ Alasan penolakan wajib diisi minimal 5 karakter.');
+      return;
+    }
+    const targetId = selectedOrder.rawId || selectedOrder.id;
+    setIsVerifyingPayment(true);
+    try {
+      await orderApi.rejectPayment(targetId, rejectPaymentReason.trim());
+      showAdminToast(`✓ Pembayaran pesanan ${selectedOrder.id} ditolak dan alasan dikirim ke pembeli.`);
+      setIsRejectPaymentModalOpen(false);
+      setRejectPaymentReason('');
+      setSelectedOrder(null);
+      loadOrders();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menolak pembayaran.';
+      showAdminToast(`✕ ${msg}`);
+    } finally {
+      setIsVerifyingPayment(false);
+    }
+  };
+
   // Submit Payment Confirmation Approval to SPI (atau Eksekusi Langsung oleh SPI)
   const submitPaymentApproval = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -788,37 +864,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       showAdminToast(`✕ ${msg}`);
       setIsAdjustStockOpen(false);
       setSelectedStockItem(null);
-    }
-  };
-
-  // Handle Order Status Update
-  const handleUpdateOrderStatus = async (newStatus: MockOrder['status']) => {
-    if (!selectedOrder) return;
-    try {
-      if (newStatus === 'Dikirim') {
-        await apiClient.put(`/orders/${selectedOrder.id}/tracking`, {
-          tracking_number: inputResi || selectedOrder.trackingNumber || 'JNE-REG-001',
-          courier: inputCourier || selectedOrder.courier || 'JNE Express (Berasuransi)',
-        });
-      } else {
-        const statusMap: Record<string, string> = {
-          'Menunggu Pembayaran': 'PENDING',
-          'Dikemas': 'PROCESSING',
-          'Dikirim': 'SHIPPED',
-          'Selesai': 'DELIVERED',
-          'Dibatalkan': 'CANCELLED',
-        };
-        const backendStatus = statusMap[newStatus] || 'PROCESSING';
-        await apiClient.put(`/orders/${selectedOrder.id}/order-status`, {
-          order_status: backendStatus,
-          notes: `Status pesanan diubah menjadi ${newStatus} oleh operasional`,
-        });
-      }
-      showAdminToast(`✓ Status pesanan ${selectedOrder.id} diperbarui menjadi "${newStatus}".`);
-      loadOrders();
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'Gagal memperbarui status pesanan.';
-      showAdminToast(`✕ ${msg}`);
     }
   };
 
@@ -1803,9 +1848,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
           {/* Tab Status Pesanan */}
           <div className="flex flex-wrap items-center gap-2 border-b border-[#E6DDD0] pb-3">
-            {['Semua', 'Menunggu Pembayaran', 'Dikemas', 'Dikirim', 'Selesai', 'Dibatalkan'].map((tab) => {
+            {['Semua', 'Verifikasi Pembayaran', 'Menunggu Pembayaran', 'Dikemas', 'Dikirim', 'Selesai', 'Dibatalkan'].map((tab) => {
               const isActive = orderStatusTab === tab;
-              const count = tab === 'Semua' ? orders.length : orders.filter(o => o.status === tab).length;
+              const count = tab === 'Semua'
+                ? orders.length
+                : tab === 'Verifikasi Pembayaran'
+                ? orders.filter(o => o.paymentStatus === 'PAYMENT_REVIEW' || o.status === 'Menunggu Verifikasi').length
+                : orders.filter(o => o.status === tab).length;
               return (
                 <button
                   key={tab}
@@ -1907,85 +1956,109 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 </div>
               </div>
 
-              {/* Input Resi, Kurir, Ubah Status */}
-              <div className="p-4 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0] space-y-4">
-                <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
-                  Logistik &amp; Perubahan Status
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">Kurir Pengiriman</label>
-                    <input
-                      type="text"
-                      value={inputCourier}
-                      onChange={(e) => setInputCourier(e.target.value)}
-                      className="w-full min-h-[44px] px-3 rounded-xl bg-white border border-[#E6DDD0] text-xs text-[#12263A]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">Nomor Resi Pengiriman</label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: JNE-YES-998823101"
-                      value={inputResi}
-                      onChange={(e) => setInputResi(e.target.value)}
-                      className="w-full min-h-[44px] px-3 rounded-xl bg-white border border-[#E6DDD0] text-xs font-mono text-[#12263A]"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 pt-2">
-                  <span className="text-xs font-semibold text-[#12263A] mr-2">Ubah Status Jadi:</span>
-                  {(['Menunggu Pembayaran', 'Dikemas', 'Dikirim', 'Selesai', 'Dibatalkan'] as const).map(st => (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={() => {
-                        if (st === 'Dibatalkan') {
-                          // Sensitive action: Pembatalan pesanan wajib diajukan ke SPI
-                          setCancelOrderCandidate(selectedOrder);
-                          setCancelOrderNotes('');
-                          setIsCancelOrderApprovalModalOpen(true);
-                        } else {
-                          handleUpdateOrderStatus(st);
-                        }
-                      }}
-                      className={`min-h-[38px] px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                        selectedOrder.status === st
-                          ? 'bg-[#12263A] text-white'
-                          : 'bg-white border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB]'
-                      }`}
-                    >
-                      {st}
-                    </button>
-                  ))}
-                </div>
-
-                {selectedOrder.status === 'Menunggu Pembayaran' && (
-                  <div className="mt-4 p-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-3">
+              {/* PANEL VERIFIKASI PEMBAYARAN (ADMIN EXCLUSIVE) */}
+              {(selectedOrder.paymentStatus === 'PAYMENT_REVIEW' || selectedOrder.status === 'Menunggu Verifikasi') && (
+                <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-4">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <FileText className="w-5 h-5 text-[#8A6A2F] shrink-0" />
+                      <ShieldCheck className="w-5 h-5 text-amber-700" />
                       <div>
-                        <p className="text-xs font-semibold text-[#12263A]">Status: Menunggu Pembayaran</p>
-                        <p className="text-[11px] text-[#4A5666]">
-                          Sudah menerima transfer manual atau pelunasan kasir? Ajukan konfirmasi pelunasan ke SPI untuk verifikasi.
+                        <h4 className="text-sm font-bold text-[#12263A]">
+                          Antrean Verifikasi Bukti Pembayaran
+                        </h4>
+                        <p className="text-xs text-[#4A5666]">
+                          Pelanggan telah mengunggah bukti transfer. Pastikan dana telah masuk mutasi bank sebelum memverifikasi lunas.
                         </p>
                       </div>
                     </div>
+                    <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-amber-200 text-amber-900">
+                      PAYMENT_REVIEW
+                    </span>
+                  </div>
+
+                  {selectedOrder.paymentProofUrl && (
+                    <div className="flex items-center gap-4 p-3.5 rounded-xl bg-white border border-amber-200">
+                      <div
+                        onClick={() => setPreviewProofUrl(selectedOrder.paymentProofUrl || null)}
+                        className="w-20 h-20 rounded-lg overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 cursor-pointer shadow-xs hover:opacity-90"
+                      >
+                        <img
+                          src={selectedOrder.paymentProofUrl}
+                          alt="Bukti Transfer"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-[#12263A]">Berkas Bukti Transfer Pelanggan</p>
+                        <p className="text-[11px] text-[#4A5666] mt-0.5 truncate">
+                          Jalur: {selectedOrder.paymentProofPath || 'private/payments/...'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewProofUrl(selectedOrder.paymentProofUrl || null)}
+                          className="mt-2 text-xs font-semibold text-[#8A6A2F] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Perbesar Bukti Gambar</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
                     <button
                       type="button"
                       onClick={() => {
-                        setPaymentApprovalOrder(selectedOrder);
-                        setPaymentApprovalNotes('');
-                        setIsPaymentApprovalModalOpen(true);
+                        setRejectPaymentReason('');
+                        setIsRejectPaymentModalOpen(true);
                       }}
-                      className="min-h-[40px] px-5 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] cursor-pointer inline-flex items-center gap-1.5 shadow-sm border border-[#D9B877]/40"
+                      disabled={isVerifyingPayment}
+                      className="min-h-[42px] px-5 rounded-full bg-red-50 text-red-700 border border-red-200 font-semibold text-xs hover:bg-red-100 cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <X className="w-4 h-4" />
+                      <span>Tolak Pembayaran</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleVerifyPaymentDirect()}
+                      disabled={isVerifyingPayment}
+                      className="min-h-[42px] px-6 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] cursor-pointer inline-flex items-center gap-1.5 shadow-sm border border-[#D9B877]/40 disabled:opacity-50"
                     >
                       <Check className="w-4 h-4 text-[#D9B877]" />
-                      <span>Ajukan Konfirmasi Pembayaran</span>
+                      <span>{isVerifyingPayment ? 'Memproses...' : 'Verifikasi Lunas (PAID)'}</span>
                     </button>
                   </div>
+                </div>
+              )}
+
+              {/* Status Logistik & Pengiriman (READ-ONLY untuk Admin - Pengiriman diatur SPI) */}
+              <div className="p-4 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0] space-y-3">
+                <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
+                  Informasi Logistik &amp; Pengiriman (Otoritas SPI)
+                </h4>
+                {selectedOrder.status === 'Dikirim' ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs bg-white p-3.5 rounded-xl border border-[#E6DDD0]">
+                    <div>
+                      <span className="text-[#4A5666]">Kurir Pengiriman: </span>
+                      <strong className="text-[#12263A]">{selectedOrder.courier || 'JNE Express'}</strong>
+                    </div>
+                    <div>
+                      <span className="text-[#4A5666]">Nomor Resi: </span>
+                      <span className="font-mono font-bold text-[#8A6A2F]">{selectedOrder.trackingNumber || '-'}</span>
+                    </div>
+                  </div>
+                ) : selectedOrder.paymentStatus === 'PAID' ? (
+                  <p className="text-xs text-[#4A5666]">
+                    ✓ Pembayaran telah lunas. Pengambilan barang di brankas, pengemasan, dan input nomor resi pengiriman diproses oleh Satuan Pengawas Internal (SPI).
+                  </p>
+                ) : selectedOrder.status === 'Dibatalkan' ? (
+                  <p className="text-xs text-red-600 font-medium">
+                    Pesanan ini telah dibatalkan dan stok produk telah dikembalikan ke etalase toko.
+                  </p>
+                ) : (
+                  <p className="text-xs text-[#4A5666]">
+                    Pesanan masih menunggu pembayaran dari pelanggan. Setelah pelanggan mengunggah bukti transfer, pesanan akan masuk ke antrean tab "Verifikasi Pembayaran".
+                  </p>
                 )}
               </div>
             </div>
@@ -2006,7 +2079,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </thead>
               <tbody className="divide-y divide-[#E6DDD0]/60">
                 {orders
-                  .filter(o => orderStatusTab === 'Semua' ? true : o.status === orderStatusTab)
+                  .filter(o => {
+                    if (orderStatusTab === 'Verifikasi Pembayaran') {
+                      return o.paymentStatus === 'PAYMENT_REVIEW' || o.status === 'Menunggu Verifikasi';
+                    }
+                    if (orderStatusTab === 'Semua') return true;
+                    return o.status === orderStatusTab;
+                  })
                   .filter(o => orderSearch ? o.customerName.toLowerCase().includes(orderSearch.toLowerCase()) || o.id.includes(orderSearch) : true)
                   .map((order) => (
                     <tr
@@ -2895,6 +2974,102 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          MODAL: TOLAK PEMBAYARAN OLEH ADMIN
+         ======================================================== */}
+      {isRejectPaymentModalOpen && selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold">
+                <X className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                  Tolak Bukti Pembayaran
+                </h3>
+                <p className="text-xs text-[#4A5666]">
+                  Pesanan: <span className="font-mono font-bold text-[#12263A]">{selectedOrder.id}</span>
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#4A5666]">
+              Pesanan akan dikembalikan ke status <strong>Menunggu Pembayaran</strong> dan pembeli akan melihat alasan penolakan di akun mereka untuk mengunggah ulang bukti transfer.
+            </p>
+
+            <form onSubmit={handleRejectPaymentDirect} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                  Alasan Penolakan Pembayaran (Minimal 5 Karakter) <span className="text-red-600">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={rejectPaymentReason}
+                  onChange={(e) => setRejectPaymentReason(e.target.value)}
+                  placeholder="Contoh: Bukti transfer buram/tidak terbaca, nominal tidak cocok, atau mutasi bank belum masuk."
+                  className="w-full p-3 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#8A6A2F]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRejectPaymentModalOpen(false);
+                    setRejectPaymentReason('');
+                  }}
+                  className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isVerifyingPayment || rejectPaymentReason.trim().length < 5}
+                  className="min-h-[42px] px-6 rounded-full bg-red-600 text-white font-bold text-xs hover:bg-red-700 cursor-pointer disabled:opacity-50"
+                >
+                  {isVerifyingPayment ? 'Memproses...' : 'Tolak Pembayaran'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          MODAL: PRATINJAU BUKTI PEMBAYARAN PENUH
+         ======================================================== */}
+      {previewProofUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in"
+          onClick={() => setPreviewProofUrl(null)}
+        >
+          <div
+            className="relative max-w-2xl w-full bg-white rounded-3xl p-4 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0] mb-3">
+              <h4 className="font-semibold text-sm text-[#12263A]">Pratinjau Bukti Transfer</h4>
+              <button
+                type="button"
+                onClick={() => setPreviewProofUrl(null)}
+                className="p-1 rounded-full hover:bg-[#F4F1EB] text-[#4A5666] cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="max-h-[75vh] overflow-auto flex items-center justify-center bg-[#F4F1EB] rounded-2xl p-2">
+              <img
+                src={previewProofUrl}
+                alt="Bukti Transfer Penuh"
+                className="max-w-full max-h-[70vh] object-contain rounded-xl"
+              />
+            </div>
           </div>
         </div>
       )}

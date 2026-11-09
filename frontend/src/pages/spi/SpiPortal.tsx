@@ -173,6 +173,9 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
   const [updatingOrderStatus, setUpdatingOrderStatus] = useState(false);
   const [newOrderStatus, setNewOrderStatus] = useState('');
   const [orderStatusNotes, setOrderStatusNotes] = useState('');
+  const [spiCourier, setSpiCourier] = useState('JNE Express (Berasuransi)');
+  const [spiTrackingNumber, setSpiTrackingNumber] = useState('');
+  const [spiPreviewProofUrl, setSpiPreviewProofUrl] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     setLoadingOrders(true);
@@ -201,17 +204,31 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
   const handleUpdateOrderStatus = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOrder || !newOrderStatus) return;
+
+    if (newOrderStatus === 'SHIPPED') {
+      if (!spiTrackingNumber.trim()) {
+        showFeedback('error', 'Nomor resi pengiriman wajib diisi saat mengubah pesanan ke status SHIPPED.');
+        return;
+      }
+    }
+
     setUpdatingOrderStatus(true);
     try {
-      const res = await spiApi.updateOrderStatus(selectedOrder.id, {
+      const payload: any = {
         order_status: newOrderStatus,
         notes: orderStatusNotes.trim() || undefined,
-      });
+      };
+      if (newOrderStatus === 'SHIPPED') {
+        payload.tracking_number = spiTrackingNumber.trim();
+        payload.courier = spiCourier.trim() || 'JNE Express';
+      }
+      const res = await spiApi.updateOrderStatus(selectedOrder.id, payload);
       if (res.success) {
         showFeedback('success', res.message || 'Status pesanan berhasil diperbarui.');
         setSelectedOrder(null);
         setNewOrderStatus('');
         setOrderStatusNotes('');
+        setSpiTrackingNumber('');
         fetchOrders();
       }
     } catch (err: any) {
@@ -923,6 +940,8 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                         setSelectedOrder(ord);
                         setNewOrderStatus(ord.order_status);
                         setOrderStatusNotes('');
+                        setSpiCourier(ord.courier || 'JNE Express (Berasuransi)');
+                        setSpiTrackingNumber(ord.tracking_number || '');
                       }}
                       className="min-h-[34px] px-3.5 rounded-full bg-[#12263A] text-[#D9B877] hover:bg-[#1A3652] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
@@ -1006,10 +1025,37 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   </div>
                 </div>
 
+                {/* Audit Bukti Pembayaran (Read-Only untuk SPI) */}
+                {selectedOrder.payments && selectedOrder.payments.length > 0 && (
+                  <div className="p-3.5 rounded-xl bg-white border border-[#E6DDD0] text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-[#12263A]">Audit Bukti Pembayaran (Read-Only)</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${selectedOrder.payment_status === 'PAID' ? 'bg-[#E2F1E0] text-[#2B6330]' : 'bg-amber-100 text-amber-800'}`}>
+                        Status Bayar: {selectedOrder.payment_status}
+                      </span>
+                    </div>
+                    {selectedOrder.payments[0].proof_path && (
+                      <div className="flex items-center gap-3 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setSpiPreviewProofUrl(`/api/v1/orders/${selectedOrder.id}/payments/${selectedOrder.payments[0].id}/proof`)}
+                          className="px-3 py-1.5 rounded-lg bg-[#F4F1EB] hover:bg-[#EAE4D9] text-[#12263A] font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer border border-[#E6DDD0]"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-[#8A6A2F]" />
+                          <span>Lihat Berkas Bukti Transfer</span>
+                        </button>
+                        <span className="text-[11px] text-[#4A5666] truncate font-mono">
+                          {selectedOrder.payments[0].proof_path}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* State Machine Update Form */}
                 <form onSubmit={handleUpdateOrderStatus} className="space-y-3 pt-2 border-t border-[#E6DDD0] text-xs">
                   <h4 className="font-bold text-[#12263A] uppercase tracking-wider">
-                    Ubah Status Pesanan (State Machine SPI)
+                    Ubah Status Pesanan (State Machine Logistik SPI)
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -1038,6 +1084,38 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                     </div>
                   </div>
 
+                  {/* Input Resi & Kurir saat SPI memilih status SHIPPED */}
+                  {newOrderStatus === 'SHIPPED' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-blue-50/70 border border-blue-200">
+                      <div>
+                        <label className="block text-[#12263A] mb-1 font-semibold">
+                          Kurir Pengiriman <span className="text-red-600">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={spiCourier}
+                          onChange={(e) => setSpiCourier(e.target.value)}
+                          placeholder="Contoh: JNE Express, J&T, SiCepat"
+                          className="w-full min-h-[42px] px-3 rounded-xl bg-white border border-blue-300 text-xs text-[#12263A] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[#12263A] mb-1 font-semibold">
+                          Nomor Resi Pengiriman <span className="text-red-600">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={spiTrackingNumber}
+                          onChange={(e) => setSpiTrackingNumber(e.target.value)}
+                          placeholder="Contoh: JNE-9988221190"
+                          className="w-full min-h-[42px] px-3 rounded-xl bg-white border border-blue-300 text-xs font-mono font-bold text-[#12263A] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-end gap-3 pt-3">
                     <button
                       type="button"
@@ -1055,6 +1133,37 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Preview Bukti Transfer untuk SPI */}
+          {spiPreviewProofUrl && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in"
+              onClick={() => setSpiPreviewProofUrl(null)}
+            >
+              <div
+                className="relative max-w-2xl w-full bg-white rounded-3xl p-4 shadow-2xl overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0] mb-3">
+                  <h4 className="font-semibold text-sm text-[#12263A]">Audit Bukti Pembayaran</h4>
+                  <button
+                    type="button"
+                    onClick={() => setSpiPreviewProofUrl(null)}
+                    className="p-1 rounded-full hover:bg-[#F4F1EB] text-[#4A5666] cursor-pointer"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="max-h-[75vh] overflow-auto flex items-center justify-center bg-[#F4F1EB] rounded-2xl p-2">
+                  <img
+                    src={spiPreviewProofUrl}
+                    alt="Bukti Transfer Penuh"
+                    className="max-w-full max-h-[70vh] object-contain rounded-xl"
+                  />
+                </div>
               </div>
             </div>
           )}

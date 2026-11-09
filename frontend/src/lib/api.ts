@@ -363,6 +363,35 @@ export const orderApi = {
   async uploadProof(id: string | number, form: FormData) {
     return customerApi.uploadPaymentProof(id, form);
   },
+
+  async verifyPayment(id: string | number, notes?: string) {
+    const res = await apiClient.post(`/admin/orders/${id}/verify-payment`, { notes });
+    return res.data;
+  },
+
+  async rejectPayment(id: string | number, reason: string) {
+    const res = await apiClient.post(`/admin/orders/${id}/reject-payment`, { reason });
+    return res.data;
+  },
+
+  async spiProcessOrder(id: string | number, notes?: string) {
+    const res = await apiClient.post(`/spi/orders/${id}/process`, { notes });
+    return res.data;
+  },
+
+  async spiShipOrder(id: string | number, trackingNumber: string, courier: string, notes?: string) {
+    const res = await apiClient.post(`/spi/orders/${id}/ship`, {
+      tracking_number: trackingNumber,
+      courier,
+      notes,
+    });
+    return res.data;
+  },
+
+  async spiCompleteOrder(id: string | number, notes?: string) {
+    const res = await apiClient.post(`/spi/orders/${id}/complete`, { notes });
+    return res.data;
+  },
 };
 
 // ==========================================
@@ -776,7 +805,7 @@ export const spiApi = {
     return res.data;
   },
 
-  async updateOrderStatus(id: number | string, data: { order_status: string; notes?: string }) {
+  async updateOrderStatus(id: number | string, data: { order_status: string; notes?: string; tracking_number?: string; courier?: string }) {
     const res = await apiClient.post(`/spi/orders/${id}/status`, data);
     return res.data;
   },

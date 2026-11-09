@@ -72,7 +72,7 @@ class OrderController extends Controller
     {
         $user = $request->user('sanctum') ?? $request->user();
 
-        $orders = Order::with(['items', 'statusHistories'])
+        $orders = Order::with(['items', 'statusHistories', 'payments'])
             ->where('user_id', $user->id)
             ->latest()
             ->get();

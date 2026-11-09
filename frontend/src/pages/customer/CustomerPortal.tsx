@@ -200,38 +200,70 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       .then((res) => {
         const ords = res.data?.data || res.data;
         if (Array.isArray(ords)) {
-          const mappedOrders: MockOrder[] = ords.map((o: any) => ({
-            id: o.order_number || `#ORD-${o.id}`,
-            date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
-            customerName: o.customer_name || user?.name || 'Pelanggan Butik',
-            customerEmail: o.customer_email || user?.email || '',
-            customerPhone: o.customer_phone || '',
-            shippingAddress: o.customer_address || '',
-            city: o.city || 'Indonesia',
-            productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
-            items: (o.items || []).map((it: any) => ({
-              productId: it.product_id,
-              name: it.product?.name || it.product_name || 'Mutiara Lombok',
-              pearlSize: it.pearl_size || '12 mm',
-              metal: it.metal || 'Emas 18K',
-              price: Number(it.price) || 0,
-              quantity: Number(it.quantity) || 1,
-            })),
-            subtotal: Number(o.subtotal || o.total) || 0,
-            shippingCost: Number(o.shipping_cost) || 0,
-            insuranceCost: Number(o.insurance_cost) || 0,
-            total: Number(o.total) || 0,
-            paymentMethod: o.payment_method || 'TRANSFER_BANK',
-            status: o.order_status === 'DELIVERED' ? 'Selesai' : o.order_status === 'SHIPPED' ? 'Dikirim' : o.order_status === 'PROCESSING' ? 'Dikemas' : o.order_status === 'CANCELLED' ? 'Dibatalkan' : 'Menunggu Pembayaran',
-            trackingNumber: o.tracking_number,
-            courier: o.courier || 'JNE Express (Berasuransi)',
-            timeline: (o.status_histories || []).map((h: any) => ({
-              status: h.status,
-              date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
-              description: h.notes || '',
-              completed: true,
-            })),
-          }));
+          const mappedOrders: MockOrder[] = ords.map((o: any) => {
+            const rawPayment = Array.isArray(o.payments) && o.payments.length > 0 ? o.payments[0] : null;
+            const pStatus = (o.payment_status || rawPayment?.status || 'WAITING_PAYMENT').toUpperCase();
+            const oStatus = (o.order_status || 'PENDING').toUpperCase();
+
+            let displayStatus: MockOrder['status'] = 'Menunggu Pembayaran';
+            if (oStatus === 'CANCELLED') {
+              displayStatus = 'Dibatalkan';
+            } else if (oStatus === 'DELIVERED' || oStatus === 'COMPLETED') {
+              displayStatus = 'Selesai';
+            } else if (oStatus === 'SHIPPED') {
+              displayStatus = 'Dikirim';
+            } else if (oStatus === 'PROCESSING') {
+              displayStatus = 'Dikemas';
+            } else if (pStatus === 'PAYMENT_REVIEW') {
+              displayStatus = 'Menunggu Verifikasi';
+            } else if (pStatus === 'PAID') {
+              displayStatus = 'Lunas & Diproses';
+            } else {
+              displayStatus = 'Menunggu Pembayaran';
+            }
+
+            return {
+              id: o.order_number || `#ORD-${o.id}`,
+              rawId: o.id,
+              orderNumber: o.order_number,
+              date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+              customerName: o.customer_name || user?.name || 'Pelanggan Butik',
+              customerEmail: o.customer_email || user?.email || '',
+              customerPhone: o.customer_phone || '',
+              shippingAddress: o.customer_address || '',
+              city: o.city || 'Indonesia',
+              productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
+              items: (o.items || []).map((it: any) => ({
+                productId: it.product_id,
+                name: it.product?.name || it.product_name || 'Mutiara Lombok',
+                pearlSize: it.pearl_size || '12 mm',
+                metal: it.metal || 'Emas 18K',
+                price: Number(it.price) || 0,
+                quantity: Number(it.quantity) || 1,
+              })),
+              subtotal: Number(o.subtotal || o.total) || 0,
+              shippingCost: Number(o.shipping_cost) || 0,
+              insuranceCost: Number(o.insurance_cost) || 0,
+              total: Number(o.total) || 0,
+              paymentMethod: o.payment_method || 'TRANSFER_BANK',
+              paymentStatus: pStatus,
+              orderStatus: oStatus,
+              notes: o.notes || '',
+              rejectionReason: rawPayment?.notes || o.notes || '',
+              paymentProofPath: rawPayment?.proof_path || '',
+              paymentProofUrl: rawPayment ? `/api/v1/orders/${o.id}/payments/${rawPayment.id}/proof` : undefined,
+              payments: o.payments || [],
+              status: displayStatus,
+              trackingNumber: o.tracking_number,
+              courier: o.courier || 'JNE Express (Berasuransi)',
+              timeline: (o.status_histories || []).map((h: any) => ({
+                status: h.status,
+                date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
+                description: h.notes || '',
+                completed: true,
+              })),
+            };
+          });
           setOrders(mappedOrders);
         }
       })
@@ -933,6 +965,85 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 </div>
               </div>
 
+              {/* Linimasa Status Pesanan 5 Tahap */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#FBF8F3] border border-[#E6DDD0] space-y-3">
+                <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
+                  Linimasa Status Pesanan
+                </h4>
+                {selectedOrder.status === 'Dibatalkan' ? (
+                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+                    ✕ Pesanan ini telah dibatalkan. {selectedOrder.notes ? `Catatan: ${selectedOrder.notes}` : ''}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
+                    {[
+                      { step: 1, label: 'Menunggu Bayar', active: selectedOrder.status === 'Menunggu Pembayaran', done: selectedOrder.paymentStatus !== 'WAITING_PAYMENT' || selectedOrder.status !== 'Menunggu Pembayaran' },
+                      { step: 2, label: 'Verifikasi', active: selectedOrder.paymentStatus === 'PAYMENT_REVIEW' || selectedOrder.status === 'Menunggu Verifikasi', done: ['Lunas & Diproses', 'Dikemas', 'Dikirim', 'Selesai'].includes(selectedOrder.status) },
+                      { step: 3, label: 'Diproses / Lunas', active: selectedOrder.status === 'Lunas & Diproses' || selectedOrder.status === 'Dikemas', done: ['Dikirim', 'Selesai'].includes(selectedOrder.status) },
+                      { step: 4, label: 'Dikirim (Resi)', active: selectedOrder.status === 'Dikirim', done: selectedOrder.status === 'Selesai' },
+                      { step: 5, label: 'Selesai', active: selectedOrder.status === 'Selesai', done: selectedOrder.status === 'Selesai' },
+                    ].map((st) => (
+                      <div
+                        key={st.step}
+                        className={`p-2.5 rounded-xl border transition-all ${
+                          st.active
+                            ? 'bg-[#12263A] text-[#D9B877] border-[#12263A] font-bold shadow-xs'
+                            : st.done
+                            ? 'bg-[#E2F1E0] text-[#2B6330] border-[#C3E4C0] font-medium'
+                            : 'bg-white text-[#8A95A5] border-[#E6DDD0]'
+                        }`}
+                      >
+                        <div className="text-[10px] uppercase tracking-wider mb-0.5">Langkah {st.step}</div>
+                        <div className="text-xs truncate">{st.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Banner Penolakan Pembayaran (Jika Ada) */}
+                {selectedOrder.status === 'Menunggu Pembayaran' && (selectedOrder.rejectionReason || selectedOrder.notes?.toLowerCase().includes('ditolak')) && (
+                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-1">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <span>⚠️ Bukti Pembayaran Sebelumnya Ditolak</span>
+                    </p>
+                    <p className="text-[11px] text-red-700">
+                      Alasan: <strong>{selectedOrder.rejectionReason || selectedOrder.notes}</strong>
+                    </p>
+                    <p className="text-[11px] text-red-600">
+                      Silakan unggah ulang bukti transfer yang jelas dan sesuai nominal tagihan melalui tombol di bawah.
+                    </p>
+                  </div>
+                )}
+
+                {/* Info Verifikasi Sedang Berjalan */}
+                {(selectedOrder.paymentStatus === 'PAYMENT_REVIEW' || selectedOrder.status === 'Menunggu Verifikasi') && (
+                  <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                    <p className="font-semibold">✓ Bukti Transfer Telah Diterima</p>
+                    <p className="text-[11px] text-amber-800 mt-0.5">
+                      Tim kasir butik kami sedang memverifikasi mutasi bank. Status pesanan akan otomatis berganti ke "Diproses" setelah diverifikasi.
+                    </p>
+                  </div>
+                )}
+
+                {/* Info Pengiriman & Resi */}
+                {selectedOrder.status === 'Dikirim' && (
+                  <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">🚚 Pesanan Sedang Dikirim</p>
+                      <p className="text-[11px] text-blue-800 mt-0.5">
+                        Kurir: <strong>{selectedOrder.courier || 'JNE Express'}</strong>
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-blue-700">Nomor Resi: </span>
+                      <strong className="font-mono text-sm text-[#12263A] bg-white px-2.5 py-1 rounded-md border border-blue-300">
+                        {selectedOrder.trackingNumber || '-'}
+                      </strong>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Items */}
               <div className="space-y-3">
                 <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
@@ -1004,22 +1115,25 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
                 {selectedOrder.status === 'Menunggu Pembayaran' && (
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleCancelOrder}
-                      disabled={isCancellingOrder}
-                      className="min-h-[44px] px-5 rounded-full border border-red-300 text-red-600 hover:bg-red-50 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>{isCancellingOrder ? 'Membatalkan...' : 'Batalkan Pesanan'}</span>
-                    </button>
+                    {/* Batalkan hanya jika WAITING_PAYMENT */}
+                    {selectedOrder.paymentStatus === 'WAITING_PAYMENT' && (
+                      <button
+                        type="button"
+                        onClick={handleCancelOrder}
+                        disabled={isCancellingOrder}
+                        className="min-h-[44px] px-5 rounded-full border border-red-300 text-red-600 hover:bg-red-50 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>{isCancellingOrder ? 'Membatalkan...' : 'Batalkan Pesanan'}</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setIsProofModalOpen(true)}
                       className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] text-xs font-semibold inline-flex items-center gap-2 shadow-xs cursor-pointer"
                     >
                       <Upload className="w-4 h-4 text-[#D9B877]" />
-                      <span>Unggah Bukti Bayar</span>
+                      <span>{selectedOrder.rejectionReason ? 'Unggah Ulang Bukti Bayar' : 'Unggah Bukti Bayar'}</span>
                     </button>
                   </div>
                 )}

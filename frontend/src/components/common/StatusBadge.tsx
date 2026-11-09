@@ -2,6 +2,8 @@ import React from 'react';
 
 export type BadgeStatusType =
   | 'Menunggu Pembayaran'
+  | 'Menunggu Verifikasi'
+  | 'Lunas & Diproses'
   | 'Dikemas'
   | 'Dikirim'
   | 'Selesai'
@@ -32,12 +34,14 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 
   switch (status) {
     case 'Menunggu Pembayaran':
+    case 'Menunggu Verifikasi':
     case 'Menipis':
     case 'Perlu Review':
       bg = '#FBEFD5';
       text = '#7A5410';
       break;
 
+    case 'Lunas & Diproses':
     case 'Dikemas':
       bg = '#E1ECF7';
       text = '#1D4E7A';
