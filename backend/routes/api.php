@@ -219,7 +219,7 @@ Route::prefix('v1')->group(function () {
 });
 
 // S-1 Direct Root Alias /api/admin/products for Admin & SPI
-Route::middleware(['auth:sanctum', 'role:admin,spi'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'not_frozen', 'must_change_password', 'role:admin,spi'])->prefix('admin')->group(function () {
     Route::get('/products', [ProductAdminController::class, 'index']);
     Route::post('/products/upload-image', [ProductAdminController::class, 'uploadImage']);
     Route::post('/products', [ProductAdminController::class, 'store']);
@@ -228,7 +228,7 @@ Route::middleware(['auth:sanctum', 'role:admin,spi'])->prefix('admin')->group(fu
 });
 
 // S-2 Direct Root Alias /api/spi/* for SPI Exclusive
-Route::middleware(['auth:sanctum', 'role:spi'])->prefix('spi')->group(function () {
+Route::middleware(['auth:sanctum', 'not_frozen', 'must_change_password', 'role:spi'])->prefix('spi')->group(function () {
     Route::get('/summary', [SpiControlCenterController::class, 'summary']);
     Route::get('/orders', [SpiControlCenterController::class, 'orders']);
     Route::get('/orders/{id}', [SpiControlCenterController::class, 'orderDetail']);
