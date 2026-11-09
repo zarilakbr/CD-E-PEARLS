@@ -42,6 +42,8 @@ import { PageHeader } from '../../components/common/PageHeader';
 import { StatCard } from '../../components/common/StatCard';
 import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { ProofImage } from '../../components/common/ProofImage';
+import { getLatestPayment } from '../../lib/paymentUtils';
 import { ProductFormModal } from '../../components/admin/ProductFormModal';
 import { APPROVAL_RULES } from '../../config/approvalRules';
 import { reportApi, apiClient, categoryApi, orderApi, resolveMediaUrl, voucherAdminApi } from '../../lib/api';
@@ -318,7 +320,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         const ords = res.data?.data || res.data;
         if (Array.isArray(ords)) {
           const mappedOrders: MockOrder[] = ords.map((o: any) => {
-            const rawPayment = Array.isArray(o.payments) && o.payments.length > 0 ? o.payments[0] : null;
+            const rawPayment = getLatestPayment(o.payments);
             const pStatus = (o.payment_status || rawPayment?.status || 'WAITING_PAYMENT').toUpperCase();
             const oStatus = (o.order_status || 'PENDING').toUpperCase();
 
@@ -2144,8 +2146,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                         onClick={() => setPreviewProofUrl(selectedOrder.paymentProofUrl || null)}
                         className="w-20 h-20 rounded-lg overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 cursor-pointer shadow-xs hover:opacity-90"
                       >
-                        <img
+                        <ProofImage
                           src={selectedOrder.paymentProofUrl}
+                          orderId={selectedOrder.id}
+                          paymentId={getLatestPayment(selectedOrder.payments)?.id}
+                          proofPath={selectedOrder.paymentProofPath}
                           alt="Bukti Transfer"
                           className="w-full h-full object-cover"
                         />
@@ -3325,10 +3330,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </button>
             </div>
             <div className="max-h-[75vh] overflow-auto flex items-center justify-center bg-[#F4F1EB] rounded-2xl p-2">
-              <img
+              <ProofImage
                 src={previewProofUrl}
+                orderId={selectedOrder?.id}
+                paymentId={getLatestPayment(selectedOrder?.payments)?.id}
+                proofPath={selectedOrder?.paymentProofPath}
                 alt="Bukti Transfer Penuh"
                 className="max-w-full max-h-[70vh] object-contain rounded-xl"
+                skeletonClassName="h-[50vh] w-full"
               />
             </div>
           </div>

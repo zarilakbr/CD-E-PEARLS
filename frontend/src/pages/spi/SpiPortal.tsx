@@ -20,6 +20,8 @@ import { spiApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboardSync } from '../../hooks/useDashboardSync';
 import { resolveMediaUrl } from '../../lib/media';
+import { ProofImage } from '../../components/common/ProofImage';
+import { getLatestPayment } from '../../lib/paymentUtils';
 
 interface SpiPortalProps {
   onNavigateHome: () => void;
@@ -1041,31 +1043,35 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                 </div>
 
                 {/* Audit Bukti Pembayaran (Read-Only untuk SPI) */}
-                {selectedOrder.payments && selectedOrder.payments.length > 0 && (
-                  <div className="p-3.5 rounded-xl bg-white border border-[#E6DDD0] text-xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#12263A]">Audit Bukti Pembayaran (Read-Only)</span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${selectedOrder.payment_status === 'PAID' ? 'bg-[#E2F1E0] text-[#2B6330]' : 'bg-amber-100 text-amber-800'}`}>
-                        Status Bayar: {selectedOrder.payment_status}
-                      </span>
-                    </div>
-                    {selectedOrder.payments[0].proof_path && (
-                      <div className="flex items-center gap-3 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setSpiPreviewProofUrl(`/api/v1/orders/${selectedOrder.id}/payments/${selectedOrder.payments[0].id}/proof`)}
-                          className="px-3 py-1.5 rounded-lg bg-[#F4F1EB] hover:bg-[#EAE4D9] text-[#12263A] font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer border border-[#E6DDD0]"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-[#8A6A2F]" />
-                          <span>Lihat Berkas Bukti Transfer</span>
-                        </button>
-                        <span className="text-[11px] text-[#4A5666] truncate font-mono">
-                          {selectedOrder.payments[0].proof_path}
+                {(() => {
+                  const latestPayment = getLatestPayment(selectedOrder.payments);
+                  if (!latestPayment) return null;
+                  return (
+                    <div className="p-3.5 rounded-xl bg-white border border-[#E6DDD0] text-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-[#12263A]">Audit Bukti Pembayaran (Read-Only)</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${selectedOrder.payment_status === 'PAID' ? 'bg-[#E2F1E0] text-[#2B6330]' : 'bg-amber-100 text-amber-800'}`}>
+                          Status Bayar: {selectedOrder.payment_status}
                         </span>
                       </div>
-                    )}
-                  </div>
-                )}
+                      {latestPayment.proof_path && (
+                        <div className="flex items-center gap-3 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setSpiPreviewProofUrl(`/api/v1/orders/${selectedOrder.id}/payments/${latestPayment.id}/proof`)}
+                            className="px-3 py-1.5 rounded-lg bg-[#F4F1EB] hover:bg-[#EAE4D9] text-[#12263A] font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer border border-[#E6DDD0]"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-[#8A6A2F]" />
+                            <span>Lihat Berkas Bukti Transfer</span>
+                          </button>
+                          <span className="text-[11px] text-[#4A5666] truncate font-mono">
+                            {latestPayment.proof_path}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* State Machine Update Form */}
                 <form onSubmit={handleUpdateOrderStatus} className="space-y-3 pt-2 border-t border-[#E6DDD0] text-xs">
@@ -1173,10 +1179,14 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   </button>
                 </div>
                 <div className="max-h-[75vh] overflow-auto flex items-center justify-center bg-[#F4F1EB] rounded-2xl p-2">
-                  <img
+                  <ProofImage
                     src={spiPreviewProofUrl}
+                    orderId={selectedOrder?.id}
+                    paymentId={getLatestPayment(selectedOrder?.payments)?.id}
+                    proofPath={getLatestPayment(selectedOrder?.payments)?.proof_path}
                     alt="Bukti Transfer Penuh"
                     className="max-w-full max-h-[70vh] object-contain rounded-xl"
+                    skeletonClassName="h-[50vh] w-full"
                   />
                 </div>
               </div>

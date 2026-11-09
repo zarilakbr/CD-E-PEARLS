@@ -28,6 +28,8 @@ import { PageHeader } from '../../components/common/PageHeader';
 import { StatCard } from '../../components/common/StatCard';
 import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { ProofImage } from '../../components/common/ProofImage';
+import { getLatestPayment } from '../../lib/paymentUtils';
 import { Stepper } from '../../components/common/Stepper';
 import { ProductCard } from '../../components/common/ProductCard';
 import type { MockOrder, MockNotification } from '../../types/models';
@@ -217,7 +219,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         const ords = res.data?.data || res.data;
         if (Array.isArray(ords)) {
           const mappedOrders: MockOrder[] = ords.map((o: any) => {
-            const rawPayment = Array.isArray(o.payments) && o.payments.length > 0 ? o.payments[0] : null;
+            const rawPayment = getLatestPayment(o.payments);
             const pStatus = (o.payment_status || rawPayment?.status || 'WAITING_PAYMENT').toUpperCase();
             const oStatus = (o.order_status || 'PENDING').toUpperCase();
 
@@ -1077,6 +1079,28 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     <p className="text-[11px] text-amber-800 mt-0.5">
                       Tim kasir butik kami sedang memverifikasi mutasi bank. Status pesanan akan otomatis berganti ke "Diproses" setelah diverifikasi.
                     </p>
+                  </div>
+                )}
+
+                {/* Berkas Bukti Transfer Pelanggan (jika ada) */}
+                {selectedOrder.paymentProofUrl && (
+                  <div className="p-3.5 rounded-xl bg-white border border-[#E6DDD0] text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-[#12263A]">Bukti Transfer Pembayaran</span>
+                      <span className="text-[11px] text-[#8A6A2F]">
+                        {selectedOrder.paymentStatus === 'PAID' ? '✓ Telah Terverifikasi' : 'Sedang Ditinjau'}
+                      </span>
+                    </div>
+                    <div className="w-28 h-28 rounded-lg overflow-hidden border border-[#E6DDD0] bg-[#12263A] shadow-xs">
+                      <ProofImage
+                        src={selectedOrder.paymentProofUrl}
+                        orderId={selectedOrder.id}
+                        paymentId={getLatestPayment(selectedOrder.payments)?.id}
+                        proofPath={selectedOrder.paymentProofPath}
+                        alt="Bukti Transfer Anda"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   </div>
                 )}
 
