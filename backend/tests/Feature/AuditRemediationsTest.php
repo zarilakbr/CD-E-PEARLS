@@ -92,9 +92,9 @@ test('U-7.a: upload bukti transfer disimpan ke private disk dengan nama UUID dan
     $spiDownloadRes = $this->actingAs($this->spi)->get("/api/v1/orders/{$this->order->id}/payments/{$payment->id}/proof");
     $spiDownloadRes->assertStatus(200);
 
-    // Pengguna lain ditolak 403
+    // Pengguna lain ditolak 404
     $otherDownloadRes = $this->actingAs($this->otherCustomer)->get("/api/v1/orders/{$this->order->id}/payments/{$payment->id}/proof");
-    $otherDownloadRes->assertStatus(403);
+    $otherDownloadRes->assertStatus(404);
 });
 
 test('U-7.b: akun dibekukan (frozen) diblokir dari semua rute terotentikasi oleh EnsureAccountNotFrozen', function () {

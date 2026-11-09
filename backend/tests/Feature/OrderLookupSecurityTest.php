@@ -129,7 +129,7 @@ test('U-2: pemilik pesanan dan admin berhak melihat rincian pesanan', function (
     $adminResponse->assertJsonPath('data.order_number', 'CDE-2026-0001');
 });
 
-test('pelanggan A tidak bisa melihat, membatalkan, atau mengunggah bukti bayar pesanan pelanggan B, baik lewat id maupun order_number (403 atau 404)', function () {
+test('pelanggan A tidak bisa melihat, membatalkan, atau mengunggah bukti bayar pesanan pelanggan B, baik lewat id maupun order_number (404)', function () {
     // Pesanan milik Customer B
     $orderB = Order::create([
         'order_number' => 'CDE-2026-9999',
@@ -150,28 +150,86 @@ test('pelanggan A tidak bisa melihat, membatalkan, atau mengunggah bukti bayar p
 
     $file = \Illuminate\Http\UploadedFile::fake()->image('bukti.jpg');
 
-    // 1. Melihat pesanan (GET /orders/{id} & GET /orders/{order_number})
+    // 1. Melihat pesanan (GET /orders/{id} & GET /orders/{order_number}) -> 404
     $resShowId = $this->actingAs($this->customerA)->getJson("/api/v1/orders/{$orderB->id}");
-    expect(in_array($resShowId->status(), [403, 404]))->toBeTrue();
+    $resShowId->assertStatus(404);
 
     $resShowNum = $this->actingAs($this->customerA)->getJson("/api/v1/orders/{$orderB->order_number}");
-    expect(in_array($resShowNum->status(), [403, 404]))->toBeTrue();
+    $resShowNum->assertStatus(404);
 
-    // 2. Membatalkan pesanan (POST /orders/{id}/cancel & POST /orders/{order_number}/cancel)
+    // 2. Membatalkan pesanan (POST /orders/{id}/cancel & POST /orders/{order_number}/cancel) -> 404
     $resCancelId = $this->actingAs($this->customerA)->postJson("/api/v1/orders/{$orderB->id}/cancel");
-    expect(in_array($resCancelId->status(), [403, 404]))->toBeTrue();
+    $resCancelId->assertStatus(404);
 
     $resCancelNum = $this->actingAs($this->customerA)->postJson("/api/v1/orders/{$orderB->order_number}/cancel");
-    expect(in_array($resCancelNum->status(), [403, 404]))->toBeTrue();
+    $resCancelNum->assertStatus(404);
 
-    // 3. Mengunggah bukti bayar (POST /orders/{id}/payment-proof & POST /orders/{order_number}/payment-proof)
+    // 3. Mengunggah bukti bayar (POST /orders/{id}/payment-proof & POST /orders/{order_number}/payment-proof) -> 404
     $resProofId = $this->actingAs($this->customerA)->postJson("/api/v1/orders/{$orderB->id}/payment-proof", [
         'proof_image' => $file,
     ]);
-    expect(in_array($resProofId->status(), [403, 404]))->toBeTrue();
+    $resProofId->assertStatus(404);
 
     $resProofNum = $this->actingAs($this->customerA)->postJson("/api/v1/orders/{$orderB->order_number}/payment-proof", [
         'proof_image' => $file,
     ]);
-    expect(in_array($resProofNum->status(), [403, 404]))->toBeTrue();
+    $resProofNum->assertStatus(404);
+});
+
+test('pelanggan B tidak bisa lihat, batalkan, unggah bukti, atau unduh bukti pesanan pelanggan A (404)', function () {
+    // Siapkan payment untuk pesanan A milik customerA
+    $payment = \App\Models\Payment::create([
+        'order_id' => $this->order->id,
+        'amount' => $this->order->total,
+        'payment_method' => 'TRANSFER_BANK',
+        'proof_path' => 'payments/dummy-proof-order-a.jpg',
+        'status' => 'PENDING',
+    ]);
+
+    $file = \Illuminate\Http\UploadedFile::fake()->image('bukti-b.jpg');
+
+    // 1. Pelanggan B tidak bisa lihat pesanan Pelanggan A (id & order_number) -> 404
+    $this->actingAs($this->customerB)->getJson("/api/v1/orders/{$this->order->id}")
+        ->assertStatus(404);
+    $this->actingAs($this->customerB)->getJson("/api/v1/orders/{$this->order->order_number}")
+        ->assertStatus(404);
+
+    // 2. Pelanggan B tidak bisa batalkan pesanan Pelanggan A (id & order_number) -> 404
+    $this->actingAs($this->customerB)->postJson("/api/v1/orders/{$this->order->id}/cancel")
+        ->assertStatus(404);
+    $this->actingAs($this->customerB)->postJson("/api/v1/orders/{$this->order->order_number}/cancel")
+        ->assertStatus(404);
+
+    // 3. Pelanggan B tidak bisa unggah bukti pesanan Pelanggan A (id & order_number) -> 404
+    $this->actingAs($this->customerB)->postJson("/api/v1/orders/{$this->order->id}/upload-proof", ['proof_image' => $file])
+        ->assertStatus(404);
+    $this->actingAs($this->customerB)->postJson("/api/v1/orders/{$this->order->order_number}/upload-proof", ['proof_image' => $file])
+        ->assertStatus(404);
+
+    // 4. Pelanggan B tidak bisa unduh bukti pesanan Pelanggan A (id & order_number) -> 404
+    $this->actingAs($this->customerB)->get("/api/v1/orders/{$this->order->id}/payments/{$payment->id}/proof")
+        ->assertStatus(404);
+    $this->actingAs($this->customerB)->get("/api/v1/orders/{$this->order->order_number}/payments/{$payment->id}/proof")
+        ->assertStatus(404);
+});
+
+test('lookup publik tidak memuat payments atau alamat lengkap', function () {
+    // Siapkan payment untuk pesanan A
+    \App\Models\Payment::create([
+        'order_id' => $this->order->id,
+        'amount' => $this->order->total,
+        'payment_method' => 'TRANSFER_BANK',
+        'proof_path' => 'payments/dummy-proof-order-a.jpg',
+        'status' => 'PENDING',
+    ]);
+
+    // Permintaan tamu tanpa otentikasi
+    $lookupResponse = $this->getJson("/api/v1/orders/lookup/{$this->order->order_number}?tracking_token={$this->trackingToken}&phone_last4=5432");
+    $lookupResponse->assertStatus(200);
+
+    $lookupData = $lookupResponse->json('data');
+    expect($lookupData)->not->toHaveKey('payments');
+    expect($lookupData)->not->toHaveKey('customer_address');
+    expect($lookupData)->toHaveKey('city');
+    expect(json_encode($lookupData))->not->toContain('Jl. Kenanga No. 42 RT 03 RW 05');
 });

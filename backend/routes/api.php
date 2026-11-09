@@ -107,6 +107,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
         Route::post('/orders/{id}/upload-proof', [OrderController::class, 'uploadProof']);
+        Route::post('/orders/{id}/payment-proof', [OrderController::class, 'uploadProof']);
         Route::get('/orders/{id}/payments/{paymentId}/proof', [OrderController::class, 'downloadProof']);
 
         // Real-Time Dashboard Sync & ETag Polling (Tahap N2)

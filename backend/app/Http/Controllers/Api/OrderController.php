@@ -94,18 +94,6 @@ class OrderController extends Controller
 
         // IDOR Prevention: If regular user, they can ONLY view their own order
         if (! $order) {
-            $existsOther = Order::where(function ($q) use ($id) {
-                $q->where('id', $id)->orWhere('order_number', $id);
-            })->exists();
-
-            if ($existsOther && $user && $user->isUser()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda tidak memiliki hak akses untuk melihat pesanan ini.',
-                    'error' => 'FORBIDDEN',
-                ], Response::HTTP_FORBIDDEN);
-            }
-
             abort(Response::HTTP_NOT_FOUND, 'Pesanan tidak ditemukan.');
         }
 
@@ -379,17 +367,6 @@ class OrderController extends Controller
 
         // Must be own order if regular customer
         if (! $order) {
-            $existsOther = Order::where(function ($q) use ($id) {
-                $q->where('id', $id)->orWhere('order_number', $id);
-            })->exists();
-
-            if ($existsOther && $user && $user->isUser()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda tidak memiliki hak akses untuk membatalkan pesanan ini.',
-                ], Response::HTTP_FORBIDDEN);
-            }
-
             abort(Response::HTTP_NOT_FOUND, 'Pesanan tidak ditemukan.');
         }
 
@@ -481,17 +458,6 @@ class OrderController extends Controller
         $order = $query->first();
 
         if (! $order) {
-            $existsOther = Order::where(function ($q) use ($id) {
-                $q->where('id', $id)->orWhere('order_number', $id);
-            })->exists();
-
-            if ($existsOther && $user && $user->isUser()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda tidak memiliki hak akses untuk pesanan ini.',
-                ], Response::HTTP_FORBIDDEN);
-            }
-
             abort(Response::HTTP_NOT_FOUND, 'Pesanan tidak ditemukan.');
         }
 
@@ -565,10 +531,7 @@ class OrderController extends Controller
         $isPrivileged = $user && method_exists($user, 'isAdmin') && ($user->isAdmin() || $user->isSpi());
 
         if (! $isOwner && ! $isPrivileged) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki hak akses untuk mengunduh bukti transfer ini.',
-            ], Response::HTTP_FORBIDDEN);
+            abort(Response::HTTP_NOT_FOUND, 'Pesanan tidak ditemukan.');
         }
 
         $payment = Payment::where('order_id', $order->id)->where('id', $paymentId)->firstOrFail();
