@@ -143,6 +143,15 @@ Route::prefix('v1')->group(function () {
                 Route::post('/categories', [CategoryController::class, 'store']);
                 Route::put('/categories/{id}', [CategoryController::class, 'update']);
                 Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+
+                // Orders under /admin
+                Route::get('/orders', [OrderController::class, 'index']);
+                Route::post('/orders/{id}/verify-payment', [OrderController::class, 'verifyPayment']);
+                Route::post('/orders/{id}/reject-payment', [OrderController::class, 'rejectPayment']);
+                Route::put('/orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus']);
+                Route::put('/orders/{id}/order-status', [OrderController::class, 'updateOrderStatus']);
+                Route::put('/orders/{id}/tracking', [OrderController::class, 'updateTracking']);
+                Route::post('/orders/{id}/request-payment-confirmation', [OrderController::class, 'requestPaymentConfirmation']);
             });
 
             // Category Management
@@ -164,6 +173,8 @@ Route::prefix('v1')->group(function () {
 
             // Order Operations & Approval Gate
             Route::get('/orders', [OrderController::class, 'index']);
+            Route::post('/orders/{id}/verify-payment', [OrderController::class, 'verifyPayment']);
+            Route::post('/orders/{id}/reject-payment', [OrderController::class, 'rejectPayment']);
             Route::put('/orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus']);
             Route::put('/orders/{id}/order-status', [OrderController::class, 'updateOrderStatus']);
             Route::put('/orders/{id}/tracking', [OrderController::class, 'updateTracking']);
@@ -183,6 +194,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/orders', [SpiControlCenterController::class, 'orders']);
             Route::get('/orders/{id}', [SpiControlCenterController::class, 'orderDetail']);
             Route::match(['put', 'post'], '/orders/{id}/status', [SpiControlCenterController::class, 'updateOrderStatus']);
+            Route::post('/orders/{id}/process', [SpiControlCenterController::class, 'processOrder']);
+            Route::post('/orders/{id}/ship', [SpiControlCenterController::class, 'shipOrder']);
+            Route::post('/orders/{id}/complete', [SpiControlCenterController::class, 'completeOrder']);
             Route::get('/stock', [SpiControlCenterController::class, 'stock']);
             Route::post('/stock/{id}/adjust', [SpiControlCenterController::class, 'adjustStock']);
             Route::get('/users', [SpiControlCenterController::class, 'users']);

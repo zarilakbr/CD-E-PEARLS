@@ -10,9 +10,11 @@ use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\Payment;
 use App\Models\Product;
-use App\Models\StockMovement;
-use App\Models\Voucher;
 use App\Models\Setting;
+use App\Models\StockMovement;
+use App\Models\User;
+use App\Models\Voucher;
+use App\Services\OrderStateMachineService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +22,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class OrderController extends Controller
 {
+    protected OrderStateMachineService $stateMachine;
+
+    public function __construct(?OrderStateMachineService $stateMachine = null)
+    {
+        $this->stateMachine = $stateMachine ?? app(OrderStateMachineService::class);
+    }
     /**
      * List orders for Admin and SPI.
      */
@@ -370,74 +378,14 @@ class OrderController extends Controller
             abort(Response::HTTP_NOT_FOUND, 'Pesanan tidak ditemukan.');
         }
 
-        if (in_array($order->order_status, ['SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'])) {
-            return response()->json([
-                'success' => false,
-                'message' => "Pesanan dengan status {$order->order_status} tidak dapat dibatalkan langsung.",
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+        $reason = $request->input('notes') ?? 'Pesanan dibatalkan oleh pelanggan.';
+        $cancelledOrder = $this->stateMachine->cancelOrder($order, $user, $reason);
 
-        return DB::transaction(function () use ($order, $user, $request) {
-            // Restore inventory atomically
-            foreach ($order->items as $item) {
-                if ($item->product_id) {
-                    $product = Product::where('id', $item->product_id)->lockForUpdate()->first();
-                    if ($product) {
-                        $stockBefore = $product->stock;
-                        $stockAfter = $stockBefore + $item->quantity;
-                        $product->update([
-                            'stock' => $stockAfter,
-                            'stock_reserved' => max(0, ($product->stock_reserved ?? 0) - $item->quantity),
-                        ]);
-
-                        StockMovement::create([
-                            'product_id' => $product->id,
-                            'type' => 'in',
-                            'quantity' => $item->quantity,
-                            'stock_before' => $stockBefore,
-                            'stock_after' => $stockAfter,
-                            'reference_type' => 'order_cancelled',
-                            'reference_id' => $order->order_number,
-                            'notes' => "Pengembalian stok pembatalan pesanan {$order->order_number}",
-                            'created_by' => $user?->name ?? 'Pelanggan',
-                        ]);
-                    }
-                }
-            }
-
-            $oldStatus = $order->order_status;
-            $order->update([
-                'order_status' => 'CANCELLED',
-                'payment_status' => 'FAILED',
-            ]);
-
-            OrderStatusHistory::create([
-                'order_id' => $order->id,
-                'status' => 'CANCELLED',
-                'notes' => 'Pesanan dibatalkan oleh pelanggan. Stok otomatis dikembalikan ke katalog.',
-                'changed_by' => $user?->name ?? 'Pelanggan',
-            ]);
-
-            AuditLog::create([
-                'actor_id' => $user?->id,
-                'actor_name' => $user?->name ?? $order->customer_name,
-                'actor_role' => $user?->role ?? 'customer',
-                'action' => 'CANCEL_ORDER',
-                'target_type' => 'order',
-                'target_id' => $order->order_number,
-                'old_value' => ['order_status' => $oldStatus],
-                'new_value' => ['order_status' => 'CANCELLED'],
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'created_at' => now(),
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => "Pesanan {$order->order_number} berhasil dibatalkan dan stok dikembalikan ke etalase.",
-                'data' => $order->fresh(['items', 'statusHistories']),
-            ]);
-        });
+        return response()->json([
+            'success' => true,
+            'message' => "Pesanan {$cancelledOrder->order_number} berhasil dibatalkan dan stok dikembalikan ke etalase.",
+            'data' => $cancelledOrder->fresh(['items', 'statusHistories']),
+        ]);
     }
 
     /**
@@ -468,44 +416,7 @@ class OrderController extends Controller
         ]);
 
         $file = $request->file('proof_image');
-        $uuid = (string) \Illuminate\Support\Str::uuid();
-        $ext = $file->guessExtension() ?: $file->getClientOriginalExtension();
-        $filename = $uuid . '.' . $ext;
-        $path = $file->storeAs('payments', $filename, 'private');
-
-        $payment = Payment::create([
-            'order_id' => $order->id,
-            'amount' => $order->total,
-            'payment_method' => $validated['payment_method'] ?? $order->payment_method,
-            'proof_path' => $path,
-            'status' => 'PENDING',
-            'notes' => $validated['notes'] ?? 'Unggah bukti transfer pembayaran oleh pelanggan',
-        ]);
-
-        $order->update([
-            'payment_status' => 'PAYMENT_REVIEW',
-        ]);
-
-        OrderStatusHistory::create([
-            'order_id' => $order->id,
-            'status' => 'PAYMENT_REVIEW',
-            'notes' => 'Bukti transfer diunggah oleh pelanggan. Menunggu verifikasi tim kasir.',
-            'changed_by' => $user?->name ?? $order->customer_name,
-        ]);
-
-        AuditLog::create([
-            'actor_id' => $user?->id,
-            'actor_name' => $user?->name ?? $order->customer_name,
-            'actor_role' => $user?->role ?? 'customer',
-            'action' => 'UPLOAD_PAYMENT_PROOF',
-            'target_type' => 'order',
-            'target_id' => $order->order_number,
-            'old_value' => null,
-            'new_value' => ['payment_id' => $payment->id, 'proof_path' => $payment->proof_path],
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'created_at' => now(),
-        ]);
+        $payment = $this->stateMachine->uploadProof($order, $file, $validated['notes'] ?? null, $user);
 
         return response()->json([
             'success' => true,
@@ -706,7 +617,60 @@ class OrderController extends Controller
     }
 
     /**
-     * Update payment status (SPI can set PAID directly; Admin routes to approval).
+     * Admin memverifikasi pembayaran (Lunas).
+     */
+    public function verifyPayment(Request $request, $id): JsonResponse
+    {
+        $user = $request->user('sanctum') ?? $request->user();
+        if (! $user || (! $user->isAdmin() && ! $user->isSpi())) {
+            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin atau SPI yang berwenang memverifikasi pembayaran.');
+        }
+
+        $order = Order::where(function ($q) use ($id) {
+            $q->where('id', $id)->orWhere('order_number', $id);
+        })->firstOrFail();
+
+        $updatedOrder = $this->stateMachine->verifyPayment($order, $user, $request->input('notes'));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Pembayaran pesanan {$updatedOrder->order_number} berhasil diverifikasi Lunas.",
+            'data' => $updatedOrder,
+        ]);
+    }
+
+    /**
+     * Admin menolak bukti pembayaran dengan alasan wajib.
+     */
+    public function rejectPayment(Request $request, $id): JsonResponse
+    {
+        $user = $request->user('sanctum') ?? $request->user();
+        if (! $user || (! $user->isAdmin() && ! $user->isSpi())) {
+            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin atau SPI yang berwenang menolak bukti pembayaran.');
+        }
+
+        $request->validate([
+            'reason' => 'required|string|min:5',
+        ], [
+            'reason.required' => 'Alasan penolakan pembayaran wajib diisi.',
+            'reason.min' => 'Alasan penolakan pembayaran minimal 5 karakter.',
+        ]);
+
+        $order = Order::where(function ($q) use ($id) {
+            $q->where('id', $id)->orWhere('order_number', $id);
+        })->firstOrFail();
+
+        $updatedOrder = $this->stateMachine->rejectPayment($order, $user, $request->input('reason'));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Bukti pembayaran pesanan {$updatedOrder->order_number} berhasil ditolak.",
+            'data' => $updatedOrder,
+        ]);
+    }
+
+    /**
+     * Update payment status (mengarahkan ke state machine terpadu).
      */
     public function updatePaymentStatus(Request $request, $id): JsonResponse
     {
@@ -722,50 +686,24 @@ class OrderController extends Controller
 
         $newPaymentStatus = $request->payment_status;
 
-        // If Admin attempts to mark PAID directly -> route to Approval
-        if ($newPaymentStatus === 'PAID' && ! $user->isSpi()) {
-            return $this->requestPaymentConfirmation($request, $id);
+        if ($newPaymentStatus === 'PAID') {
+            $updatedOrder = $this->stateMachine->verifyPayment($order, $user, $request->input('notes'));
+        } elseif ($newPaymentStatus === 'WAITING_PAYMENT') {
+            $reason = $request->input('notes') ?: 'Bukti pembayaran ditolak oleh Admin.';
+            $updatedOrder = $this->stateMachine->rejectPayment($order, $user, $reason);
+        } else {
+            $updatedOrder = $this->stateMachine->transition($order, $newPaymentStatus, $user, $request->all());
         }
-
-        $oldStatus = $order->payment_status;
-        $order->payment_status = $newPaymentStatus;
-
-        if ($newPaymentStatus === 'PAID' && in_array($order->order_status, ['PENDING', 'WAITING_PAYMENT'])) {
-            $order->order_status = 'PROCESSING';
-        }
-
-        $order->save();
-
-        OrderStatusHistory::create([
-            'order_id' => $order->id,
-            'status' => $order->payment_status,
-            'notes' => $request->input('notes', "Status pembayaran diubah oleh {$user->name}"),
-            'changed_by' => $user->name,
-        ]);
-
-        AuditLog::create([
-            'actor_id' => $user->id,
-            'actor_name' => $user->name,
-            'actor_role' => $user->role,
-            'action' => 'UPDATE_PAYMENT_STATUS',
-            'target_type' => 'order',
-            'target_id' => $order->order_number,
-            'old_value' => ['payment_status' => $oldStatus],
-            'new_value' => ['payment_status' => $order->payment_status],
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'created_at' => now(),
-        ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Status pembayaran pesanan berhasil diperbarui.',
-            'data' => $order->fresh(['items', 'statusHistories']),
+            'data' => $updatedOrder,
         ]);
     }
 
     /**
-     * Update order workflow status (PROCESSING, READY_TO_SHIP, SHIPPED, DELIVERED, COMPLETED, CANCELLED).
+     * Update order workflow status (hanya SPI untuk status pengiriman).
      */
     public function updateOrderStatus(Request $request, $id): JsonResponse
     {
@@ -781,8 +719,14 @@ class OrderController extends Controller
 
         $newStatus = $request->order_status;
 
-        // Cancellation requires SPI approval if initiated by Admin
-        if ($newStatus === 'CANCELLED' && ! $user->isSpi()) {
+        if ($user->isAdmin() && ! $user->isSpi() && in_array($newStatus, ['PROCESSING', 'READY_TO_SHIP', 'SHIPPED', 'DELIVERED', 'COMPLETED'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'order_status' => ['Admin operasional hanya berwenang memverifikasi pembayaran. Pengaturan pengiriman dan penyelesaian pesanan hanya dapat dilakukan oleh SPI.'],
+            ]);
+        }
+
+        // Pembatalan oleh Admin mengajukan persetujuan SPI
+        if ($newStatus === 'CANCELLED' && $user->isAdmin() && ! $user->isSpi()) {
             $approval = Approval::create([
                 'type' => 'cancel_order',
                 'target_type' => 'order',
@@ -817,43 +761,27 @@ class OrderController extends Controller
             ], Response::HTTP_ACCEPTED);
         }
 
-        $oldStatus = $order->order_status;
-        $order->update(['order_status' => $newStatus]);
-
-        OrderStatusHistory::create([
-            'order_id' => $order->id,
-            'status' => $newStatus,
-            'notes' => $request->input('notes', "Status pesanan diubah ke {$newStatus}"),
-            'changed_by' => $user->name,
-        ]);
-
-        AuditLog::create([
-            'actor_id' => $user->id,
-            'actor_name' => $user->name,
-            'actor_role' => $user->role,
-            'action' => 'UPDATE_ORDER_STATUS',
-            'target_type' => 'order',
-            'target_id' => $order->order_number,
-            'old_value' => ['order_status' => $oldStatus],
-            'new_value' => ['order_status' => $newStatus],
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'created_at' => now(),
-        ]);
+        $updatedOrder = $this->stateMachine->transition($order, $newStatus, $user, $request->all());
 
         return response()->json([
             'success' => true,
-            'message' => 'Status pesanan berhasil diperbarui.',
-            'data' => $order->fresh(['items', 'statusHistories']),
+            'message' => "Status pesanan {$updatedOrder->order_number} berhasil diperbarui.",
+            'data' => $updatedOrder,
         ]);
     }
 
     /**
-     * Update tracking number & shipping courier.
+     * Update tracking number & shipping courier (Hanya SPI).
      */
     public function updateTracking(Request $request, $id): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user();
+        if ($user && $user->isAdmin() && ! $user->isSpi()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'role' => ['Admin operasional tidak berwenang mengatur nomor resi pengiriman. Pengaturan pengiriman hanya dapat dilakukan oleh SPI.'],
+            ]);
+        }
+
         $order = Order::where(function ($q) use ($id) {
             $q->where('id', $id)->orWhere('order_number', $id);
         })->firstOrFail();
@@ -863,38 +791,18 @@ class OrderController extends Controller
             'courier' => 'nullable|string|max:100',
         ]);
 
-        $order->tracking_number = $request->tracking_number;
-        if ($request->filled('courier')) {
-            $order->courier = $request->courier;
-        }
-        $order->order_status = 'SHIPPED';
-        $order->save();
-
-        OrderStatusHistory::create([
-            'order_id' => $order->id,
-            'status' => 'SHIPPED',
-            'notes' => "Resi {$order->tracking_number} ({$order->courier}) diinput oleh {$user->name}",
-            'changed_by' => $user->name,
-        ]);
-
-        AuditLog::create([
-            'actor_id' => $user->id,
-            'actor_name' => $user->name,
-            'actor_role' => $user->role,
-            'action' => 'UPDATE_TRACKING',
-            'target_type' => 'order',
-            'target_id' => $order->order_number,
-            'old_value' => null,
-            'new_value' => ['tracking_number' => $order->tracking_number, 'courier' => $order->courier],
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'created_at' => now(),
-        ]);
+        $updatedOrder = $this->stateMachine->shipOrder(
+            $order,
+            $user,
+            $request->input('tracking_number'),
+            $request->input('courier', 'JNE Express (Berasuransi)'),
+            $request->input('notes')
+        );
 
         return response()->json([
             'success' => true,
             'message' => 'Nomor resi pengiriman berhasil disimpan.',
-            'data' => $order->fresh(['items', 'statusHistories']),
+            'data' => $updatedOrder,
         ]);
     }
 }
