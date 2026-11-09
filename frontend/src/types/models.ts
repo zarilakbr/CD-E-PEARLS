@@ -48,6 +48,8 @@ export interface MockOrderItem {
 
 export interface MockOrder {
   id: string; // #[ORD-2026-081]
+  rawId?: number;
+  orderNumber?: string;
   date: string;
   customerName: string;
   customerEmail: string;
@@ -61,7 +63,14 @@ export interface MockOrder {
   insuranceCost: number;
   total: number;
   paymentMethod: string;
-  status: 'Menunggu Pembayaran' | 'Dikemas' | 'Dikirim' | 'Selesai' | 'Dibatalkan';
+  paymentStatus?: string;
+  orderStatus?: string;
+  notes?: string;
+  rejectionReason?: string;
+  paymentProofUrl?: string;
+  paymentProofPath?: string;
+  payments?: any[];
+  status: 'Menunggu Pembayaran' | 'Menunggu Verifikasi' | 'Lunas & Diproses' | 'Dikemas' | 'Dikirim' | 'Selesai' | 'Dibatalkan' | string;
   trackingNumber?: string;
   courier?: string;
   timeline: {
@@ -196,5 +205,29 @@ export interface MockStaffAccount {
   status: 'Aktif' | 'Dibekukan';
   lastActive: string;
   permissions: string[];
+}
+
+export interface MockVoucher {
+  id: number;
+  code: string;
+  type: 'fixed' | 'percent';
+  value: number;
+  quota?: number | null;
+  used_count: number;
+  min_spend: number;
+  starts_at?: string | null;
+  expires_at?: string | null;
+  is_active: boolean;
+}
+
+export interface MockNotification {
+  id: number;
+  user_id: number;
+  type: string;
+  title: string;
+  message: string;
+  data?: any;
+  read_at?: string | null;
+  created_at?: string;
 }
 

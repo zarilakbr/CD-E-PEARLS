@@ -24,6 +24,7 @@ import {
   X,
   Printer,
   ShieldCheck,
+  Tag,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -43,7 +44,7 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { ProductFormModal } from '../../components/admin/ProductFormModal';
 import { APPROVAL_RULES } from '../../config/approvalRules';
-import { reportApi, apiClient, categoryApi, resolveMediaUrl } from '../../lib/api';
+import { reportApi, apiClient, categoryApi, orderApi, resolveMediaUrl, voucherAdminApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboardSync } from '../../hooks/useDashboardSync';
 import type {
@@ -55,6 +56,7 @@ import type {
   MockStockMovement,
   MockCustomer,
   MockApprovalItem,
+  MockVoucher,
 } from '../../types/models';
 
 const bestsellers: Array<{ rank: number; name: string; category: string; sold: number; revenue: number }> = [];
@@ -122,7 +124,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       if (path === '/admin/stok') return 'stock';
       if (path === '/admin/sertifikat') return 'certificates';
       if (path === '/admin/laporan') return 'reports';
-      if (path === '/admin/pengaturan') return 'settings';
+      if (path === '/admin/pengaturan' || path === '/admin/voucher' || path === '/admin/vouchers') return 'settings';
 
       const params = new URLSearchParams(window.location.search);
       const m = params.get('menu');
@@ -219,8 +221,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [orderStatusTab, setOrderStatusTab] = useState('Semua');
   const [orderSearch, setOrderSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<MockOrder | null>(null);
-  const [inputResi, setInputResi] = useState('');
-  const [inputCourier, setInputCourier] = useState('JNE Express (Berasuransi)');
+  const [isRejectPaymentModalOpen, setIsRejectPaymentModalOpen] = useState(false);
+  const [rejectPaymentReason, setRejectPaymentReason] = useState('');
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [previewProofUrl, setPreviewProofUrl] = useState<string | null>(null);
 
   // Customers state
   const [customers, setCustomers] = useState<MockCustomer[]>([]);
@@ -313,38 +317,70 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       .then((res) => {
         const ords = res.data?.data || res.data;
         if (Array.isArray(ords)) {
-          const mappedOrders: MockOrder[] = ords.map((o: any) => ({
-            id: o.order_number || `#ORD-${o.id}`,
-            date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
-            customerName: o.customer_name || 'Pelanggan Butik',
-            customerEmail: o.customer_email || o.user?.email || '',
-            customerPhone: o.customer_phone || '',
-            shippingAddress: o.customer_address || '',
-            city: o.city || 'Indonesia',
-            productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
-            items: (o.items || []).map((it: any) => ({
-              productId: it.product_id,
-              name: it.product?.name || it.product_name || 'Mutiara Lombok',
-              pearlSize: it.pearl_size || '12 mm',
-              metal: it.metal || 'Emas 18K',
-              price: Number(it.price) || 0,
-              quantity: Number(it.quantity) || 1,
-            })),
-            subtotal: Number(o.subtotal || o.total) || 0,
-            shippingCost: Number(o.shipping_cost) || 0,
-            insuranceCost: Number(o.insurance_cost) || 0,
-            total: Number(o.total) || 0,
-            paymentMethod: o.payment_method || 'TRANSFER_BANK',
-            status: o.order_status === 'DELIVERED' ? 'Selesai' : o.order_status === 'SHIPPED' ? 'Dikirim' : o.order_status === 'PROCESSING' ? 'Dikemas' : o.order_status === 'CANCELLED' ? 'Dibatalkan' : 'Menunggu Pembayaran',
-            trackingNumber: o.tracking_number,
-            courier: o.courier || 'JNE Express (Berasuransi)',
-            timeline: (o.status_histories || []).map((h: any) => ({
-              status: h.status,
-              date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
-              description: h.notes || '',
-              completed: true,
-            })),
-          }));
+          const mappedOrders: MockOrder[] = ords.map((o: any) => {
+            const rawPayment = Array.isArray(o.payments) && o.payments.length > 0 ? o.payments[0] : null;
+            const pStatus = (o.payment_status || rawPayment?.status || 'WAITING_PAYMENT').toUpperCase();
+            const oStatus = (o.order_status || 'PENDING').toUpperCase();
+
+            let displayStatus: MockOrder['status'] = 'Menunggu Pembayaran';
+            if (oStatus === 'CANCELLED') {
+              displayStatus = 'Dibatalkan';
+            } else if (oStatus === 'DELIVERED' || oStatus === 'COMPLETED') {
+              displayStatus = 'Selesai';
+            } else if (oStatus === 'SHIPPED') {
+              displayStatus = 'Dikirim';
+            } else if (oStatus === 'PROCESSING') {
+              displayStatus = 'Dikemas';
+            } else if (pStatus === 'PAYMENT_REVIEW') {
+              displayStatus = 'Menunggu Verifikasi';
+            } else if (pStatus === 'PAID') {
+              displayStatus = 'Lunas & Diproses';
+            } else {
+              displayStatus = 'Menunggu Pembayaran';
+            }
+
+            return {
+              id: o.order_number || `#ORD-${o.id}`,
+              rawId: o.id,
+              orderNumber: o.order_number,
+              date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+              customerName: o.customer_name || 'Pelanggan Butik',
+              customerEmail: o.customer_email || o.user?.email || '',
+              customerPhone: o.customer_phone || '',
+              shippingAddress: o.customer_address || '',
+              city: o.city || 'Indonesia',
+              productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
+              items: (o.items || []).map((it: any) => ({
+                productId: it.product_id,
+                name: it.product?.name || it.product_name || 'Mutiara Lombok',
+                pearlSize: it.pearl_size || '12 mm',
+                metal: it.metal || 'Emas 18K',
+                price: Number(it.price) || 0,
+                quantity: Number(it.quantity) || 1,
+              })),
+              subtotal: Number(o.subtotal || o.total) || 0,
+              shippingCost: Number(o.shipping_cost) || 0,
+              insuranceCost: Number(o.insurance_cost) || 0,
+              total: Number(o.total) || 0,
+              paymentMethod: o.payment_method || 'TRANSFER_BANK',
+              paymentStatus: pStatus,
+              orderStatus: oStatus,
+              notes: o.notes || '',
+              rejectionReason: rawPayment?.notes || o.notes || '',
+              paymentProofPath: rawPayment?.proof_path || '',
+              paymentProofUrl: rawPayment ? `/api/v1/orders/${o.id}/payments/${rawPayment.id}/proof` : undefined,
+              payments: o.payments || [],
+              status: displayStatus,
+              trackingNumber: o.tracking_number,
+              courier: o.courier || 'JNE Express (Berasuransi)',
+              timeline: (o.status_histories || []).map((h: any) => ({
+                status: h.status,
+                date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
+                description: h.notes || '',
+                completed: true,
+              })),
+            };
+          });
           setOrders(mappedOrders);
         }
       })
@@ -452,13 +488,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     }
   }, [activeMenu, loadDashboardStats, loadProducts, loadOrders, loadCustomers, loadCategories, loadCertificates]);
 
-  // Real-time synchronization layer with 30s ETag polling (Tahap V2c)
+  const prevAdminOrdersVersionRef = React.useRef<string | null>(null);
+
+  // Real-time synchronization layer with 30s ETag polling (Tahap V2c & Tahap V3b)
   const { lastSyncLabel } = useDashboardSync({
     enabled: true,
     role: 'admin',
     intervalMs: 30000,
     onDataUpdated: (data) => {
-      if (data.total_orders !== undefined) {
+      if (data.orders_version && data.orders_version !== prevAdminOrdersVersionRef.current) {
+        prevAdminOrdersVersionRef.current = data.orders_version;
+        loadOrders();
+        loadDashboardStats();
+      } else if (data.total_orders !== undefined) {
         if (loadedTabs.current.has('orders')) {
           loadOrders();
         }
@@ -475,12 +517,166 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     },
   });
 
+  // Keep selectedOrder in sync when orders list is updated via polling
+  React.useEffect(() => {
+    if (selectedOrder) {
+      const refreshed = orders.find(o => o.id === selectedOrder.id || (selectedOrder.rawId && o.rawId === selectedOrder.rawId));
+      if (refreshed) {
+        setSelectedOrder(refreshed);
+      }
+    }
+  }, [orders]);
+
 
   // Reports state
   const [reportPeriod, setReportPeriod] = useState('30 hari');
 
   // Settings state
-  const [activeSettingsTab, setActiveSettingsTab] = useState('profile');
+  const [activeSettingsTab, setActiveSettingsTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path === '/admin/voucher' || path === '/admin/vouchers') return 'vouchers';
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'vouchers') return 'vouchers';
+    }
+    return 'profile';
+  });
+
+  // Voucher CRUD States (Tahap V3b)
+  const [vouchers, setVouchers] = useState<MockVoucher[]>([]);
+  const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
+  const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
+  const [editingVoucher, setEditingVoucher] = useState<MockVoucher | null>(null);
+  const [voucherFormData, setVoucherFormData] = useState({
+    code: '',
+    type: 'fixed' as 'fixed' | 'percent',
+    value: '',
+    quota: '',
+    min_spend: '0',
+    starts_at: '',
+    expires_at: '',
+    is_active: true,
+  });
+  const [isDeleteVoucherModalOpen, setIsDeleteVoucherModalOpen] = useState(false);
+  const [voucherToDelete, setVoucherToDelete] = useState<MockVoucher | null>(null);
+  const [isSavingVoucher, setIsSavingVoucher] = useState(false);
+  const [isDeletingVoucher, setIsDeletingVoucher] = useState(false);
+
+  const loadVouchers = React.useCallback(async () => {
+    setIsLoadingVouchers(true);
+    try {
+      const res = await voucherAdminApi.getVouchers();
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setVouchers(list);
+    } catch (err: any) {
+      console.error('Failed to load vouchers:', err);
+    } finally {
+      setIsLoadingVouchers(false);
+    }
+  }, []);
+
+  const openCreateVoucherModal = () => {
+    setEditingVoucher(null);
+    setVoucherFormData({
+      code: '',
+      type: 'fixed',
+      value: '',
+      quota: '',
+      min_spend: '0',
+      starts_at: '',
+      expires_at: '',
+      is_active: true,
+    });
+    setIsVoucherModalOpen(true);
+  };
+
+  const openEditVoucherModal = (voucher: MockVoucher) => {
+    setEditingVoucher(voucher);
+    setVoucherFormData({
+      code: voucher.code,
+      type: voucher.type,
+      value: String(voucher.value),
+      quota: voucher.quota !== null && voucher.quota !== undefined ? String(voucher.quota) : '',
+      min_spend: String(voucher.min_spend || 0),
+      starts_at: voucher.starts_at ? voucher.starts_at.slice(0, 16) : '',
+      expires_at: voucher.expires_at ? voucher.expires_at.slice(0, 16) : '',
+      is_active: voucher.is_active,
+    });
+    setIsVoucherModalOpen(true);
+  };
+
+  const handleSaveVoucher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!voucherFormData.code.trim()) {
+      toast.error('Kode voucher wajib diisi.');
+      return;
+    }
+    const numValue = Number(voucherFormData.value);
+    if (isNaN(numValue) || numValue <= 0) {
+      toast.error('Nilai potongan voucher harus lebih besar dari 0.');
+      return;
+    }
+    if (voucherFormData.type === 'percent' && numValue > 100) {
+      toast.error('Nilai persentase voucher tidak boleh melebihi 100%.');
+      return;
+    }
+
+    setIsSavingVoucher(true);
+    try {
+      const payload: any = {
+        code: voucherFormData.code.trim().toUpperCase(),
+        type: voucherFormData.type,
+        value: numValue,
+        min_spend: Number(voucherFormData.min_spend) || 0,
+        quota: voucherFormData.quota ? Number(voucherFormData.quota) : null,
+        starts_at: voucherFormData.starts_at ? new Date(voucherFormData.starts_at).toISOString() : null,
+        expires_at: voucherFormData.expires_at ? new Date(voucherFormData.expires_at).toISOString() : null,
+        is_active: voucherFormData.is_active,
+      };
+
+      if (editingVoucher) {
+        await voucherAdminApi.updateVoucher(editingVoucher.id, payload);
+        toast.success(`Voucher ${payload.code} berhasil diperbarui.`);
+      } else {
+        await voucherAdminApi.createVoucher(payload);
+        toast.success(`Voucher ${payload.code} berhasil dibuat.`);
+      }
+
+      setIsVoucherModalOpen(false);
+      loadVouchers();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menyimpan voucher.';
+      toast.error(msg);
+    } finally {
+      setIsSavingVoucher(false);
+    }
+  };
+
+  const handleDeleteVoucher = async () => {
+    if (!voucherToDelete) return;
+    setIsDeletingVoucher(true);
+    try {
+      await voucherAdminApi.deleteVoucher(voucherToDelete.id);
+      toast.success(`Voucher ${voucherToDelete.code} berhasil dihapus.`);
+      setIsDeleteVoucherModalOpen(false);
+      setVoucherToDelete(null);
+      loadVouchers();
+    } catch (err: any) {
+      if (err.response?.status === 409) {
+        toast.error(err.response?.data?.message || 'Voucher tidak dapat dihapus karena sudah pernah digunakan dalam transaksi pelanggan. Anda dapat menonaktifkan voucher ini.');
+      } else {
+        toast.error(err.response?.data?.message || 'Gagal menghapus voucher.');
+      }
+    } finally {
+      setIsDeletingVoucher(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (activeMenu === 'settings' && activeSettingsTab === 'vouchers') {
+      loadVouchers();
+    }
+  }, [activeMenu, activeSettingsTab, loadVouchers]);
 
   // SPI Approval Workflow States (Aksi Sensitif Diajukan ke SPI)
   const [isPaymentApprovalModalOpen, setIsPaymentApprovalModalOpen] = useState(false);
@@ -513,7 +709,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'products', label: 'Produk', icon: <Package className="w-4 h-4" />, badge: products.length },
     { id: 'categories', label: 'Kategori', icon: <Layers className="w-4 h-4" /> },
-    { id: 'orders', label: 'Pesanan', icon: <ShoppingBag className="w-4 h-4" />, badge: orders.filter(o => o.status === 'Menunggu Pembayaran' || o.status === 'Dikemas').length },
+    { id: 'orders', label: 'Pesanan', icon: <ShoppingBag className="w-4 h-4" />, badge: orders.filter(o => o.paymentStatus === 'PAYMENT_REVIEW' || o.status === 'Menunggu Verifikasi').length },
     { id: 'customers', label: 'Pelanggan', icon: <Users className="w-4 h-4" /> },
     { id: 'stock', label: 'Stok', icon: <Boxes className="w-4 h-4" />, badge: stockItems.filter(s => s.status !== 'Aman').length },
     { id: 'certificates', label: 'Sertifikat', icon: <Award className="w-4 h-4" /> },
@@ -708,6 +904,48 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     }
   };
 
+  // Verifikasi Pembayaran Lunas Langsung oleh Admin (POST /api/v1/admin/orders/{id}/verify-payment)
+  const handleVerifyPaymentDirect = async (notes?: string) => {
+    if (!selectedOrder) return;
+    const targetId = selectedOrder.rawId || selectedOrder.id;
+    setIsVerifyingPayment(true);
+    try {
+      await orderApi.verifyPayment(targetId, notes || 'Pembayaran transfer bank telah diverifikasi lunas oleh admin operasional.');
+      showAdminToast(`✓ Pembayaran pesanan ${selectedOrder.id} berhasil diverifikasi lunas.`);
+      setSelectedOrder(null);
+      loadOrders();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal memverifikasi pembayaran.';
+      showAdminToast(`✕ ${msg}`);
+    } finally {
+      setIsVerifyingPayment(false);
+    }
+  };
+
+  // Tolak Pembayaran oleh Admin (POST /api/v1/admin/orders/{id}/reject-payment)
+  const handleRejectPaymentDirect = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder || !rejectPaymentReason.trim() || rejectPaymentReason.trim().length < 5) {
+      showAdminToast('✕ Alasan penolakan wajib diisi minimal 5 karakter.');
+      return;
+    }
+    const targetId = selectedOrder.rawId || selectedOrder.id;
+    setIsVerifyingPayment(true);
+    try {
+      await orderApi.rejectPayment(targetId, rejectPaymentReason.trim());
+      showAdminToast(`✓ Pembayaran pesanan ${selectedOrder.id} ditolak dan alasan dikirim ke pembeli.`);
+      setIsRejectPaymentModalOpen(false);
+      setRejectPaymentReason('');
+      setSelectedOrder(null);
+      loadOrders();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menolak pembayaran.';
+      showAdminToast(`✕ ${msg}`);
+    } finally {
+      setIsVerifyingPayment(false);
+    }
+  };
+
   // Submit Payment Confirmation Approval to SPI (atau Eksekusi Langsung oleh SPI)
   const submitPaymentApproval = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -788,37 +1026,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       showAdminToast(`✕ ${msg}`);
       setIsAdjustStockOpen(false);
       setSelectedStockItem(null);
-    }
-  };
-
-  // Handle Order Status Update
-  const handleUpdateOrderStatus = async (newStatus: MockOrder['status']) => {
-    if (!selectedOrder) return;
-    try {
-      if (newStatus === 'Dikirim') {
-        await apiClient.put(`/orders/${selectedOrder.id}/tracking`, {
-          tracking_number: inputResi || selectedOrder.trackingNumber || 'JNE-REG-001',
-          courier: inputCourier || selectedOrder.courier || 'JNE Express (Berasuransi)',
-        });
-      } else {
-        const statusMap: Record<string, string> = {
-          'Menunggu Pembayaran': 'PENDING',
-          'Dikemas': 'PROCESSING',
-          'Dikirim': 'SHIPPED',
-          'Selesai': 'DELIVERED',
-          'Dibatalkan': 'CANCELLED',
-        };
-        const backendStatus = statusMap[newStatus] || 'PROCESSING';
-        await apiClient.put(`/orders/${selectedOrder.id}/order-status`, {
-          order_status: backendStatus,
-          notes: `Status pesanan diubah menjadi ${newStatus} oleh operasional`,
-        });
-      }
-      showAdminToast(`✓ Status pesanan ${selectedOrder.id} diperbarui menjadi "${newStatus}".`);
-      loadOrders();
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'Gagal memperbarui status pesanan.';
-      showAdminToast(`✕ ${msg}`);
     }
   };
 
@@ -1803,9 +2010,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
           {/* Tab Status Pesanan */}
           <div className="flex flex-wrap items-center gap-2 border-b border-[#E6DDD0] pb-3">
-            {['Semua', 'Menunggu Pembayaran', 'Dikemas', 'Dikirim', 'Selesai', 'Dibatalkan'].map((tab) => {
+            {['Semua', 'Verifikasi Pembayaran', 'Menunggu Pembayaran', 'Dikemas', 'Dikirim', 'Selesai', 'Dibatalkan'].map((tab) => {
               const isActive = orderStatusTab === tab;
-              const count = tab === 'Semua' ? orders.length : orders.filter(o => o.status === tab).length;
+              const count = tab === 'Semua'
+                ? orders.length
+                : tab === 'Verifikasi Pembayaran'
+                ? orders.filter(o => o.paymentStatus === 'PAYMENT_REVIEW' || o.status === 'Menunggu Verifikasi').length
+                : orders.filter(o => o.status === tab).length;
               return (
                 <button
                   key={tab}
@@ -1907,85 +2118,109 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 </div>
               </div>
 
-              {/* Input Resi, Kurir, Ubah Status */}
-              <div className="p-4 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0] space-y-4">
-                <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
-                  Logistik &amp; Perubahan Status
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">Kurir Pengiriman</label>
-                    <input
-                      type="text"
-                      value={inputCourier}
-                      onChange={(e) => setInputCourier(e.target.value)}
-                      className="w-full min-h-[44px] px-3 rounded-xl bg-white border border-[#E6DDD0] text-xs text-[#12263A]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">Nomor Resi Pengiriman</label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: JNE-YES-998823101"
-                      value={inputResi}
-                      onChange={(e) => setInputResi(e.target.value)}
-                      className="w-full min-h-[44px] px-3 rounded-xl bg-white border border-[#E6DDD0] text-xs font-mono text-[#12263A]"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 pt-2">
-                  <span className="text-xs font-semibold text-[#12263A] mr-2">Ubah Status Jadi:</span>
-                  {(['Menunggu Pembayaran', 'Dikemas', 'Dikirim', 'Selesai', 'Dibatalkan'] as const).map(st => (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={() => {
-                        if (st === 'Dibatalkan') {
-                          // Sensitive action: Pembatalan pesanan wajib diajukan ke SPI
-                          setCancelOrderCandidate(selectedOrder);
-                          setCancelOrderNotes('');
-                          setIsCancelOrderApprovalModalOpen(true);
-                        } else {
-                          handleUpdateOrderStatus(st);
-                        }
-                      }}
-                      className={`min-h-[38px] px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                        selectedOrder.status === st
-                          ? 'bg-[#12263A] text-white'
-                          : 'bg-white border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB]'
-                      }`}
-                    >
-                      {st}
-                    </button>
-                  ))}
-                </div>
-
-                {selectedOrder.status === 'Menunggu Pembayaran' && (
-                  <div className="mt-4 p-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-3">
+              {/* PANEL VERIFIKASI PEMBAYARAN (ADMIN EXCLUSIVE) */}
+              {(selectedOrder.paymentStatus === 'PAYMENT_REVIEW' || selectedOrder.status === 'Menunggu Verifikasi') && (
+                <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-4">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <FileText className="w-5 h-5 text-[#8A6A2F] shrink-0" />
+                      <ShieldCheck className="w-5 h-5 text-amber-700" />
                       <div>
-                        <p className="text-xs font-semibold text-[#12263A]">Status: Menunggu Pembayaran</p>
-                        <p className="text-[11px] text-[#4A5666]">
-                          Sudah menerima transfer manual atau pelunasan kasir? Ajukan konfirmasi pelunasan ke SPI untuk verifikasi.
+                        <h4 className="text-sm font-bold text-[#12263A]">
+                          Antrean Verifikasi Bukti Pembayaran
+                        </h4>
+                        <p className="text-xs text-[#4A5666]">
+                          Pelanggan telah mengunggah bukti transfer. Pastikan dana telah masuk mutasi bank sebelum memverifikasi lunas.
                         </p>
                       </div>
                     </div>
+                    <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-amber-200 text-amber-900">
+                      PAYMENT_REVIEW
+                    </span>
+                  </div>
+
+                  {selectedOrder.paymentProofUrl && (
+                    <div className="flex items-center gap-4 p-3.5 rounded-xl bg-white border border-amber-200">
+                      <div
+                        onClick={() => setPreviewProofUrl(selectedOrder.paymentProofUrl || null)}
+                        className="w-20 h-20 rounded-lg overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 cursor-pointer shadow-xs hover:opacity-90"
+                      >
+                        <img
+                          src={selectedOrder.paymentProofUrl}
+                          alt="Bukti Transfer"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-[#12263A]">Berkas Bukti Transfer Pelanggan</p>
+                        <p className="text-[11px] text-[#4A5666] mt-0.5 truncate">
+                          Jalur: {selectedOrder.paymentProofPath || 'private/payments/...'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewProofUrl(selectedOrder.paymentProofUrl || null)}
+                          className="mt-2 text-xs font-semibold text-[#8A6A2F] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Perbesar Bukti Gambar</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
                     <button
                       type="button"
                       onClick={() => {
-                        setPaymentApprovalOrder(selectedOrder);
-                        setPaymentApprovalNotes('');
-                        setIsPaymentApprovalModalOpen(true);
+                        setRejectPaymentReason('');
+                        setIsRejectPaymentModalOpen(true);
                       }}
-                      className="min-h-[40px] px-5 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] cursor-pointer inline-flex items-center gap-1.5 shadow-sm border border-[#D9B877]/40"
+                      disabled={isVerifyingPayment}
+                      className="min-h-[42px] px-5 rounded-full bg-red-50 text-red-700 border border-red-200 font-semibold text-xs hover:bg-red-100 cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <X className="w-4 h-4" />
+                      <span>Tolak Pembayaran</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleVerifyPaymentDirect()}
+                      disabled={isVerifyingPayment}
+                      className="min-h-[42px] px-6 rounded-full bg-[#12263A] text-[#D9B877] font-bold text-xs hover:bg-[#1A3652] cursor-pointer inline-flex items-center gap-1.5 shadow-sm border border-[#D9B877]/40 disabled:opacity-50"
                     >
                       <Check className="w-4 h-4 text-[#D9B877]" />
-                      <span>Ajukan Konfirmasi Pembayaran</span>
+                      <span>{isVerifyingPayment ? 'Memproses...' : 'Verifikasi Lunas (PAID)'}</span>
                     </button>
                   </div>
+                </div>
+              )}
+
+              {/* Status Logistik & Pengiriman (READ-ONLY untuk Admin - Pengiriman diatur SPI) */}
+              <div className="p-4 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0] space-y-3">
+                <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
+                  Informasi Logistik &amp; Pengiriman (Otoritas SPI)
+                </h4>
+                {selectedOrder.status === 'Dikirim' ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs bg-white p-3.5 rounded-xl border border-[#E6DDD0]">
+                    <div>
+                      <span className="text-[#4A5666]">Kurir Pengiriman: </span>
+                      <strong className="text-[#12263A]">{selectedOrder.courier || 'JNE Express'}</strong>
+                    </div>
+                    <div>
+                      <span className="text-[#4A5666]">Nomor Resi: </span>
+                      <span className="font-mono font-bold text-[#8A6A2F]">{selectedOrder.trackingNumber || '-'}</span>
+                    </div>
+                  </div>
+                ) : selectedOrder.paymentStatus === 'PAID' ? (
+                  <p className="text-xs text-[#4A5666]">
+                    ✓ Pembayaran telah lunas. Pengambilan barang di brankas, pengemasan, dan input nomor resi pengiriman diproses oleh Satuan Pengawas Internal (SPI).
+                  </p>
+                ) : selectedOrder.status === 'Dibatalkan' ? (
+                  <p className="text-xs text-red-600 font-medium">
+                    Pesanan ini telah dibatalkan dan stok produk telah dikembalikan ke etalase toko.
+                  </p>
+                ) : (
+                  <p className="text-xs text-[#4A5666]">
+                    Pesanan masih menunggu pembayaran dari pelanggan. Setelah pelanggan mengunggah bukti transfer, pesanan akan masuk ke antrean tab "Verifikasi Pembayaran".
+                  </p>
                 )}
               </div>
             </div>
@@ -2006,7 +2241,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </thead>
               <tbody className="divide-y divide-[#E6DDD0]/60">
                 {orders
-                  .filter(o => orderStatusTab === 'Semua' ? true : o.status === orderStatusTab)
+                  .filter(o => {
+                    if (orderStatusTab === 'Verifikasi Pembayaran') {
+                      return o.paymentStatus === 'PAYMENT_REVIEW' || o.status === 'Menunggu Verifikasi';
+                    }
+                    if (orderStatusTab === 'Semua') return true;
+                    return o.status === orderStatusTab;
+                  })
                   .filter(o => orderSearch ? o.customerName.toLowerCase().includes(orderSearch.toLowerCase()) || o.id.includes(orderSearch) : true)
                   .map((order) => (
                     <tr
@@ -2703,6 +2944,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               { id: 'shipping', label: 'Pengiriman & Asuransi' },
               { id: 'payment', label: 'Pembayaran' },
               { id: 'security', label: 'Akun & Keamanan' },
+              { id: 'vouchers', label: 'Voucher & Promo' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -2719,7 +2961,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             ))}
           </div>
 
-          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 lg:p-8 max-w-2xl">
+          <div className={`bg-white border border-[#E6DDD0] rounded-2xl p-6 lg:p-8 ${activeSettingsTab === 'vouchers' ? 'max-w-5xl w-full' : 'max-w-2xl'}`}>
             {activeSettingsTab === 'profile' && (
               <div className="space-y-4">
                 <h3 className="font-serif text-xl font-semibold text-[#12263A]">Profil Toko</h3>
@@ -2818,6 +3060,104 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 <button type="button" onClick={() => toast.success('Kredensial keamanan akun staf telah diperbarui.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Keamanan</button>
               </div>
             )}
+
+            {activeSettingsTab === 'vouchers' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h3 className="font-serif text-xl font-semibold text-[#12263A]">Voucher &amp; Promosi</h3>
+                    <p className="text-xs text-[#4A5666] mt-0.5">Kelola kupon diskon, kuota pemakaian, dan minimal belanja untuk pelanggan.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={openCreateVoucherModal}
+                    className="min-h-[40px] px-5 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652] transition-colors flex items-center gap-2 cursor-pointer shadow-xs shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Tambah Voucher</span>
+                  </button>
+                </div>
+
+                {isLoadingVouchers ? (
+                  <div className="p-8 text-center text-xs text-[#4A5666]">Memuat data voucher...</div>
+                ) : vouchers.length === 0 ? (
+                  <div className="p-8 text-center bg-[#F4F1EB] rounded-2xl border border-[#E6DDD0] space-y-2">
+                    <Tag className="w-8 h-8 text-[#A08A5B] mx-auto" />
+                    <p className="font-semibold text-sm text-[#12263A]">Belum Ada Voucher</p>
+                    <p className="text-xs text-[#4A5666]">Klik tombol "Tambah Voucher" untuk membuat kode diskon baru.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto -mx-2 sm:mx-0">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-[#E6DDD0] text-[#8A6A2F] uppercase text-[10px] tracking-wider">
+                          <th className="py-3 px-3">Kode</th>
+                          <th className="py-3 px-3">Potongan</th>
+                          <th className="py-3 px-3">Min. Belanja</th>
+                          <th className="py-3 px-3">Kuota / Terpakai</th>
+                          <th className="py-3 px-3">Status</th>
+                          <th className="py-3 px-3 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E6DDD0]">
+                        {vouchers.map((v) => (
+                          <tr key={v.id} className="hover:bg-[#FBF8F3] transition-colors">
+                            <td className="py-3 px-3 font-mono font-bold text-[#12263A]">
+                              <span className="px-2.5 py-1 bg-[#F4F1EB] rounded-lg border border-[#E6DDD0]">
+                                {v.code}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-[#12263A] font-semibold">
+                              {v.type === 'percent'
+                                ? `${v.value}%`
+                                : `Rp ${Number(v.value).toLocaleString('id-ID')}`}
+                            </td>
+                            <td className="py-3 px-3 text-[#4A5666]">
+                              Rp {Number(v.min_spend || 0).toLocaleString('id-ID')}
+                            </td>
+                            <td className="py-3 px-3 text-[#4A5666]">
+                              <span className="font-semibold text-[#12263A]">{v.used_count || 0}</span> / {v.quota ? v.quota : '∞'}
+                            </td>
+                            <td className="py-3 px-3">
+                              <span
+                                className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                  v.is_active
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : 'bg-zinc-100 text-zinc-500 border border-zinc-200'
+                                }`}
+                              >
+                                {v.is_active ? 'Aktif' : 'Nonaktif'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-right space-x-1 whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => openEditVoucherModal(v)}
+                                className="p-1.5 rounded-lg text-[#12263A] hover:bg-[#F4F1EB] cursor-pointer"
+                                title="Edit Voucher"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setVoucherToDelete(v);
+                                  setIsDeleteVoucherModalOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 cursor-pointer"
+                                title="Hapus Voucher"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -2895,6 +3235,102 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          MODAL: TOLAK PEMBAYARAN OLEH ADMIN
+         ======================================================== */}
+      {isRejectPaymentModalOpen && selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold">
+                <X className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                  Tolak Bukti Pembayaran
+                </h3>
+                <p className="text-xs text-[#4A5666]">
+                  Pesanan: <span className="font-mono font-bold text-[#12263A]">{selectedOrder.id}</span>
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#4A5666]">
+              Pesanan akan dikembalikan ke status <strong>Menunggu Pembayaran</strong> dan pembeli akan melihat alasan penolakan di akun mereka untuk mengunggah ulang bukti transfer.
+            </p>
+
+            <form onSubmit={handleRejectPaymentDirect} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                  Alasan Penolakan Pembayaran (Minimal 5 Karakter) <span className="text-red-600">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={rejectPaymentReason}
+                  onChange={(e) => setRejectPaymentReason(e.target.value)}
+                  placeholder="Contoh: Bukti transfer buram/tidak terbaca, nominal tidak cocok, atau mutasi bank belum masuk."
+                  className="w-full p-3 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#8A6A2F]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRejectPaymentModalOpen(false);
+                    setRejectPaymentReason('');
+                  }}
+                  className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isVerifyingPayment || rejectPaymentReason.trim().length < 5}
+                  className="min-h-[42px] px-6 rounded-full bg-red-600 text-white font-bold text-xs hover:bg-red-700 cursor-pointer disabled:opacity-50"
+                >
+                  {isVerifyingPayment ? 'Memproses...' : 'Tolak Pembayaran'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          MODAL: PRATINJAU BUKTI PEMBAYARAN PENUH
+         ======================================================== */}
+      {previewProofUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in"
+          onClick={() => setPreviewProofUrl(null)}
+        >
+          <div
+            className="relative max-w-2xl w-full bg-white rounded-3xl p-4 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0] mb-3">
+              <h4 className="font-semibold text-sm text-[#12263A]">Pratinjau Bukti Transfer</h4>
+              <button
+                type="button"
+                onClick={() => setPreviewProofUrl(null)}
+                className="p-1 rounded-full hover:bg-[#F4F1EB] text-[#4A5666] cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="max-h-[75vh] overflow-auto flex items-center justify-center bg-[#F4F1EB] rounded-2xl p-2">
+              <img
+                src={previewProofUrl}
+                alt="Bukti Transfer Penuh"
+                className="max-w-full max-h-[70vh] object-contain rounded-xl"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -3247,6 +3683,204 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 className="min-h-[40px] px-5 rounded-full bg-red-600 text-white text-xs font-semibold hover:bg-red-700"
               >
                 Ya, Cabut
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          MODAL: TAMBAH / EDIT VOUCHER (Tahap V3b)
+         ======================================================== */}
+      {isVoucherModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                  {editingVoucher ? 'Edit Voucher' : 'Tambah Voucher Baru'}
+                </h3>
+                <p className="text-xs text-[#4A5666] mt-0.5">
+                  Atur kode diskon dan parameter penggunaan promosi atelier.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsVoucherModalOpen(false)}
+                className="p-2 text-[#4A5666] hover:text-[#12263A] rounded-full hover:bg-[#F4F1EB]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveVoucher} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                  Kode Voucher <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={voucherFormData.code}
+                  onChange={(e) => setVoucherFormData({ ...voucherFormData, code: e.target.value.toUpperCase() })}
+                  placeholder="Misal: CDEKEMILAU10"
+                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] font-mono text-sm uppercase text-[#12263A]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                    Tipe Diskon <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={voucherFormData.type}
+                    onChange={(e) => setVoucherFormData({ ...voucherFormData, type: e.target.value as 'fixed' | 'percent' })}
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  >
+                    <option value="fixed">Nominal Tetap (Rp)</option>
+                    <option value="percent">Persentase (%)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                    Nilai Diskon <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={voucherFormData.value}
+                    onChange={(e) => setVoucherFormData({ ...voucherFormData, value: e.target.value })}
+                    placeholder={voucherFormData.type === 'percent' ? 'Contoh: 10' : 'Contoh: 50000'}
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                    Minimal Belanja (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={voucherFormData.min_spend}
+                    onChange={(e) => setVoucherFormData({ ...voucherFormData, min_spend: e.target.value })}
+                    placeholder="0 = Tanpa minimal"
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                    Kuota Penggunaan
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={voucherFormData.quota}
+                    onChange={(e) => setVoucherFormData({ ...voucherFormData, quota: e.target.value })}
+                    placeholder="Kosongkan jika tak terbatas"
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                    Mulai Berlaku
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={voucherFormData.starts_at}
+                    onChange={(e) => setVoucherFormData({ ...voucherFormData, starts_at: e.target.value })}
+                    className="w-full min-h-[44px] px-2 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                    Berakhir Pada
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={voucherFormData.expires_at}
+                    onChange={(e) => setVoucherFormData({ ...voucherFormData, expires_at: e.target.value })}
+                    className="w-full min-h-[44px] px-2 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-1">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-[#12263A] font-semibold">
+                  <input
+                    type="checkbox"
+                    checked={voucherFormData.is_active}
+                    onChange={(e) => setVoucherFormData({ ...voucherFormData, is_active: e.target.checked })}
+                    className="w-4 h-4 rounded-sm border-[#E6DDD0] accent-[#12263A]"
+                  />
+                  <span>Voucher Aktif &amp; Dapat Digunakan</span>
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#E6DDD0]">
+                <button
+                  type="button"
+                  onClick={() => setIsVoucherModalOpen(false)}
+                  className="min-h-[42px] px-5 rounded-full border border-[#12263A] text-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB] cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingVoucher}
+                  className="min-h-[42px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652] cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingVoucher ? 'Menyimpan...' : editingVoucher ? 'Simpan Perubahan' : 'Buat Voucher'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          MODAL: KONFIRMASI HAPUS VOUCHER (Tahap V3b)
+         ======================================================== */}
+      {isDeleteVoucherModalOpen && voucherToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4 animate-in zoom-in-95">
+            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-serif text-lg font-semibold text-[#12263A]">Hapus Voucher?</h3>
+              <p className="text-xs text-[#4A5666] mt-1">
+                Apakah Anda yakin ingin menghapus voucher <strong className="font-mono text-[#12263A]">{voucherToDelete.code}</strong>? Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+            <div className="flex justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteVoucherModalOpen(false);
+                  setVoucherToDelete(null);
+                }}
+                className="min-h-[40px] px-5 rounded-full border border-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB] cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingVoucher}
+                onClick={handleDeleteVoucher}
+                className="min-h-[40px] px-5 rounded-full bg-red-600 text-white text-xs font-semibold hover:bg-red-700 cursor-pointer disabled:opacity-50"
+              >
+                {isDeletingVoucher ? 'Menghapus...' : 'Ya, Hapus'}
               </button>
             </div>
           </div>

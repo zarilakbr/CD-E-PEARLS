@@ -363,6 +363,35 @@ export const orderApi = {
   async uploadProof(id: string | number, form: FormData) {
     return customerApi.uploadPaymentProof(id, form);
   },
+
+  async verifyPayment(id: string | number, notes?: string) {
+    const res = await apiClient.post(`/admin/orders/${id}/verify-payment`, { notes });
+    return res.data;
+  },
+
+  async rejectPayment(id: string | number, reason: string) {
+    const res = await apiClient.post(`/admin/orders/${id}/reject-payment`, { reason });
+    return res.data;
+  },
+
+  async spiProcessOrder(id: string | number, notes?: string) {
+    const res = await apiClient.post(`/spi/orders/${id}/process`, { notes });
+    return res.data;
+  },
+
+  async spiShipOrder(id: string | number, trackingNumber: string, courier: string, notes?: string) {
+    const res = await apiClient.post(`/spi/orders/${id}/ship`, {
+      tracking_number: trackingNumber,
+      courier,
+      notes,
+    });
+    return res.data;
+  },
+
+  async spiCompleteOrder(id: string | number, notes?: string) {
+    const res = await apiClient.post(`/spi/orders/${id}/complete`, { notes });
+    return res.data;
+  },
 };
 
 // ==========================================
@@ -517,13 +546,72 @@ export const notificationApi = {
     return res.data;
   },
 
-  async markRead(id: number) {
+  async markRead(id: number | string) {
     const res = await apiClient.patch(`/notifications/${id}/read`);
     return res.data;
   },
 
   async markAllRead() {
     const res = await apiClient.post('/notifications/mark-all-read');
+    return res.data;
+  },
+
+  async deleteNotification(id: number | string) {
+    const res = await apiClient.delete(`/notifications/${id}`);
+    return res.data;
+  },
+
+  async clearNotifications() {
+    const res = await apiClient.delete('/notifications');
+    return res.data;
+  },
+};
+
+// ==========================================
+// VOUCHER ADMIN APIs (Tahap V3b)
+// ==========================================
+
+export const voucherAdminApi = {
+  async getVouchers(params?: { search?: string; is_active?: boolean; page?: number; per_page?: number }) {
+    const res = await apiClient.get('/admin/vouchers', { params });
+    return res.data;
+  },
+
+  async getVoucher(id: number | string) {
+    const res = await apiClient.get(`/admin/vouchers/${id}`);
+    return res.data?.data || res.data;
+  },
+
+  async createVoucher(data: {
+    code: string;
+    type: 'fixed' | 'percent';
+    value: number;
+    quota?: number | null;
+    min_spend?: number;
+    starts_at?: string | null;
+    expires_at?: string | null;
+    is_active?: boolean;
+  }) {
+    const res = await apiClient.post('/admin/vouchers', data);
+    return res.data;
+  },
+
+  async updateVoucher(id: number | string, data: Partial<{
+    code: string;
+    type: 'fixed' | 'percent';
+    value: number;
+    quota?: number | null;
+    min_spend?: number;
+    starts_at?: string | null;
+    expires_at?: string | null;
+    is_active?: boolean;
+  }>) {
+    const res = await apiClient.put(`/admin/vouchers/${id}`, data);
+    return res.data;
+  },
+
+  async deleteVoucher(id: number | string) {
+    const res = await apiClient.delete(`/admin/vouchers/${id}`);
     return res.data;
   },
 };
@@ -776,7 +864,7 @@ export const spiApi = {
     return res.data;
   },
 
-  async updateOrderStatus(id: number | string, data: { order_status: string; notes?: string }) {
+  async updateOrderStatus(id: number | string, data: { order_status: string; notes?: string; tracking_number?: string; courier?: string }) {
     const res = await apiClient.post(`/spi/orders/${id}/status`, data);
     return res.data;
   },

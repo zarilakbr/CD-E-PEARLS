@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\StockMovement;
 use App\Models\User;
+use App\Services\OrderStateMachineService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SpiControlCenterController extends Controller
 {
+    protected OrderStateMachineService $stateMachine;
+
+    public function __construct(?OrderStateMachineService $stateMachine = null)
+    {
+        $this->stateMachine = $stateMachine ?? app(OrderStateMachineService::class);
+    }
     /**
      * S-2.1 Ringkasan KPI Database Nyata.
      */
@@ -93,7 +100,7 @@ class SpiControlCenterController extends Controller
      */
     public function orders(Request $request): JsonResponse
     {
-        $query = Order::with(['items', 'user']);
+        $query = Order::with(['items.product', 'user', 'payments', 'statusHistories']);
 
         if ($request->filled('status') && $request->status !== 'all' && $request->status !== 'Semua') {
             $query->where('order_status', $request->status);
@@ -133,7 +140,7 @@ class SpiControlCenterController extends Controller
 
     public function orderDetail($id): JsonResponse
     {
-        $order = Order::with(['items.product', 'user'])->findOrFail($id);
+        $order = Order::with(['items.product', 'user', 'payments', 'statusHistories'])->findOrFail($id);
 
         return response()->json([
             'success' => true,
@@ -156,9 +163,7 @@ class SpiControlCenterController extends Controller
         ]);
 
         $oldStatus = $order->order_status;
-        $order->update([
-            'order_status' => $validated['order_status'],
-        ]);
+        $updatedOrder = $this->stateMachine->transition($order, $validated['order_status'], $user, $request->all());
 
         AuditLog::create([
             'actor_id' => $user->id,
@@ -169,7 +174,7 @@ class SpiControlCenterController extends Controller
             'target_id' => (string) $order->id,
             'old_value' => ['order_status' => $oldStatus],
             'new_value' => [
-                'order_status' => $order->order_status,
+                'order_status' => $updatedOrder->order_status,
                 'notes' => $validated['notes'] ?? null,
             ],
             'ip_address' => $request->ip(),
@@ -179,8 +184,73 @@ class SpiControlCenterController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Status pesanan {$order->order_number} berhasil diperbarui ke {$order->order_status}.",
-            'data' => $order,
+            'message' => "Status pesanan {$updatedOrder->order_number} berhasil diperbarui ke {$updatedOrder->order_status}.",
+            'data' => $updatedOrder,
+        ]);
+    }
+
+    /**
+     * SPI: Proses pesanan (PAID -> PROCESSING).
+     */
+    public function processOrder(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        $order = Order::findOrFail($id);
+
+        $updatedOrder = $this->stateMachine->processOrder($order, $user, $request->input('notes'));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Pesanan {$updatedOrder->order_number} berhasil diproses.",
+            'data' => $updatedOrder,
+        ]);
+    }
+
+    /**
+     * SPI: Kirim pesanan (PROCESSING -> SHIPPED).
+     */
+    public function shipOrder(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        $order = Order::findOrFail($id);
+
+        $request->validate([
+            'tracking_number' => 'required|string',
+            'courier' => 'required|string',
+        ], [
+            'tracking_number.required' => 'Nomor resi pengiriman wajib diisi.',
+            'courier.required' => 'Kurir pengiriman wajib diisi.',
+        ]);
+
+        $updatedOrder = $this->stateMachine->shipOrder(
+            $order,
+            $user,
+            $request->input('tracking_number'),
+            $request->input('courier'),
+            $request->input('notes')
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "Pesanan {$updatedOrder->order_number} berhasil dikirim.",
+            'data' => $updatedOrder,
+        ]);
+    }
+
+    /**
+     * SPI: Selesaikan pesanan (SHIPPED -> COMPLETED).
+     */
+    public function completeOrder(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        $order = Order::findOrFail($id);
+
+        $updatedOrder = $this->stateMachine->completeOrder($order, $user, $request->input('notes'));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Pesanan {$updatedOrder->order_number} telah diselesaikan.",
+            'data' => $updatedOrder,
         ]);
     }
 

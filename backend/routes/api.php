@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\Admin\ProductAdminController;
+use App\Http\Controllers\Api\Admin\VoucherAdminController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
@@ -101,6 +102,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
         Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+        Route::delete('/notifications', [NotificationController::class, 'clear']);
 
         // Customer Own Orders & Actions (Strict IDOR Protected)
         Route::get('/user/orders', [OrderController::class, 'userOrders']);
@@ -143,6 +146,22 @@ Route::prefix('v1')->group(function () {
                 Route::post('/categories', [CategoryController::class, 'store']);
                 Route::put('/categories/{id}', [CategoryController::class, 'update']);
                 Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+
+                // Orders under /admin
+                Route::get('/orders', [OrderController::class, 'index']);
+                Route::post('/orders/{id}/verify-payment', [OrderController::class, 'verifyPayment']);
+                Route::post('/orders/{id}/reject-payment', [OrderController::class, 'rejectPayment']);
+                Route::put('/orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus']);
+                Route::put('/orders/{id}/order-status', [OrderController::class, 'updateOrderStatus']);
+                Route::put('/orders/{id}/tracking', [OrderController::class, 'updateTracking']);
+                Route::post('/orders/{id}/request-payment-confirmation', [OrderController::class, 'requestPaymentConfirmation']);
+
+                // Vouchers under /admin
+                Route::get('/vouchers', [VoucherAdminController::class, 'index']);
+                Route::post('/vouchers', [VoucherAdminController::class, 'store']);
+                Route::get('/vouchers/{id}', [VoucherAdminController::class, 'show']);
+                Route::put('/vouchers/{id}', [VoucherAdminController::class, 'update']);
+                Route::delete('/vouchers/{id}', [VoucherAdminController::class, 'destroy']);
             });
 
             // Category Management
@@ -164,6 +183,8 @@ Route::prefix('v1')->group(function () {
 
             // Order Operations & Approval Gate
             Route::get('/orders', [OrderController::class, 'index']);
+            Route::post('/orders/{id}/verify-payment', [OrderController::class, 'verifyPayment']);
+            Route::post('/orders/{id}/reject-payment', [OrderController::class, 'rejectPayment']);
             Route::put('/orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus']);
             Route::put('/orders/{id}/order-status', [OrderController::class, 'updateOrderStatus']);
             Route::put('/orders/{id}/tracking', [OrderController::class, 'updateTracking']);
@@ -183,6 +204,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/orders', [SpiControlCenterController::class, 'orders']);
             Route::get('/orders/{id}', [SpiControlCenterController::class, 'orderDetail']);
             Route::match(['put', 'post'], '/orders/{id}/status', [SpiControlCenterController::class, 'updateOrderStatus']);
+            Route::post('/orders/{id}/process', [SpiControlCenterController::class, 'processOrder']);
+            Route::post('/orders/{id}/ship', [SpiControlCenterController::class, 'shipOrder']);
+            Route::post('/orders/{id}/complete', [SpiControlCenterController::class, 'completeOrder']);
             Route::get('/stock', [SpiControlCenterController::class, 'stock']);
             Route::post('/stock/{id}/adjust', [SpiControlCenterController::class, 'adjustStock']);
             Route::get('/users', [SpiControlCenterController::class, 'users']);

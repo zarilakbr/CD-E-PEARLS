@@ -20,6 +20,8 @@ import {
   HelpCircle,
   Settings,
   Upload,
+  Bell,
+  CheckCheck,
 } from 'lucide-react';
 import { DashboardLayout, type DashboardMenuItem } from '../../layouts/DashboardLayout';
 import { PageHeader } from '../../components/common/PageHeader';
@@ -28,8 +30,8 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Stepper } from '../../components/common/Stepper';
 import { ProductCard } from '../../components/common/ProductCard';
-import type { MockOrder } from '../../types/models';
-import { authApi, apiClient, addressApi, orderApi } from '../../lib/api';
+import type { MockOrder, MockNotification } from '../../types/models';
+import { authApi, apiClient, addressApi, orderApi, notificationApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
@@ -69,7 +71,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     if (initialMenu) return initialMenu === 'orders' ? 'my_orders' : initialMenu;
     const path = typeof window !== 'undefined' ? window.location.pathname : '';
     if (path === '/akun/pesanan') return 'my_orders';
-    if (path === '/akun/status-pengiriman') return 'tracking';
+    if (path === '/akun/status-pengiriman') return 'shipping_status';
+    if (path === '/akun/notifikasi') return 'notifications';
     if (path === '/akun/favorit') return 'wishlist';
     if (path === '/akun/alamat') return 'addresses';
     if (path === '/akun/profil') return 'profile';
@@ -81,6 +84,77 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       setActiveMenu(initialMenu === 'orders' ? 'my_orders' : initialMenu);
     }
   }, [initialMenu]);
+
+  // Notifications State (Tahap V3b)
+  const [notifications, setNotifications] = useState<MockNotification[]>([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+  const loadNotifications = React.useCallback(async () => {
+    setIsLoadingNotifications(true);
+    try {
+      const res = await notificationApi.getNotifications();
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setNotifications(list);
+      setUnreadNotificationsCount(list.filter((n: MockNotification) => !n.read_at).length);
+    } catch (err: any) {
+      console.error('Failed to load notifications:', err);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  }, []);
+
+  const handleMarkAsRead = async (id: number | string) => {
+    try {
+      await notificationApi.markRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
+      );
+      setUnreadNotificationsCount((prev) => Math.max(0, prev - 1));
+      toast.success('Notifikasi ditandai sudah dibaca.');
+    } catch (err) {
+      toast.error('Gagal memperbarui status notifikasi.');
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationApi.markAllRead();
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
+      );
+      setUnreadNotificationsCount(0);
+      toast.success('Semua notifikasi ditandai sudah dibaca.');
+    } catch (err) {
+      toast.error('Gagal memperbarui notifikasi.');
+    }
+  };
+
+  const handleDeleteNotification = async (id: number | string) => {
+    try {
+      await notificationApi.deleteNotification(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      setUnreadNotificationsCount((prev) => {
+        const target = notifications.find((n) => n.id === id);
+        return target && !target.read_at ? Math.max(0, prev - 1) : prev;
+      });
+      toast.success('Notifikasi berhasil dihapus.');
+    } catch (err) {
+      toast.error('Gagal menghapus notifikasi.');
+    }
+  };
+
+  const handleClearAllNotifications = async () => {
+    if (!window.confirm('Hapus semua riwayat notifikasi dari akun Anda?')) return;
+    try {
+      await notificationApi.clearNotifications();
+      setNotifications([]);
+      setUnreadNotificationsCount(0);
+      toast.success('Semua notifikasi berhasil dibersihkan.');
+    } catch (err) {
+      toast.error('Gagal membersihkan notifikasi.');
+    }
+  };
 
   // Customer Orders State
   const [orders, setOrders] = useState<MockOrder[]>([]);
@@ -133,65 +207,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   const [newPasswordConfirmation, setNewPasswordConfirmation] = useState('');
   const [passwordUpdateMessage, setPasswordUpdateMessage] = useState<string | null>(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-
-  // Real-time synchronization layer with 60s ETag polling (Tahap V2c)
-  const { lastSyncLabel } = useDashboardSync({
-    enabled: !!user,
-    role: 'customer',
-    intervalMs: 60000,
-    onStatusChange: (_newStatus, _oldStatus, latestOrder) => {
-      if (latestOrder) {
-        setOrders((prev) =>
-          prev.map((o) => {
-            if (o.id === latestOrder.order_number || o.id === latestOrder.id) {
-              const s = (latestOrder.order_status || '').toUpperCase();
-              return {
-                ...o,
-                status:
-                  s === 'DELIVERED'
-                    ? 'Selesai'
-                    : s === 'SHIPPED'
-                    ? 'Dikirim'
-                    : s === 'PROCESSING'
-                    ? 'Dikemas'
-                    : s === 'CANCELLED'
-                    ? 'Dibatalkan'
-                    : 'Menunggu Pembayaran',
-                trackingNumber: latestOrder.tracking_number || o.trackingNumber,
-              };
-            }
-            return o;
-          })
-        );
-      }
-    },
-    onDataUpdated: (data) => {
-      if (data.latest_order) {
-        setOrders((prev) =>
-          prev.map((o) => {
-            if (o.id === data.latest_order?.order_number || o.id === data.latest_order?.id) {
-              const s = (data.latest_order.order_status || '').toUpperCase();
-              return {
-                ...o,
-                status:
-                  s === 'DELIVERED'
-                    ? 'Selesai'
-                    : s === 'SHIPPED'
-                    ? 'Dikirim'
-                    : s === 'PROCESSING'
-                    ? 'Dikemas'
-                    : s === 'CANCELLED'
-                    ? 'Dibatalkan'
-                    : 'Menunggu Pembayaran',
-                trackingNumber: data.latest_order.tracking_number || o.trackingNumber,
-              };
-            }
-            return o;
-          })
-        );
-      }
-    },
-  });
+  const prevCustomerOrdersVersionRef = React.useRef<string | null>(null);
 
   // Load customer orders from server
   const loadCustomerOrders = React.useCallback(() => {
@@ -200,43 +216,103 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       .then((res) => {
         const ords = res.data?.data || res.data;
         if (Array.isArray(ords)) {
-          const mappedOrders: MockOrder[] = ords.map((o: any) => ({
-            id: o.order_number || `#ORD-${o.id}`,
-            date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
-            customerName: o.customer_name || user?.name || 'Pelanggan Butik',
-            customerEmail: o.customer_email || user?.email || '',
-            customerPhone: o.customer_phone || '',
-            shippingAddress: o.customer_address || '',
-            city: o.city || 'Indonesia',
-            productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
-            items: (o.items || []).map((it: any) => ({
-              productId: it.product_id,
-              name: it.product?.name || it.product_name || 'Mutiara Lombok',
-              pearlSize: it.pearl_size || '12 mm',
-              metal: it.metal || 'Emas 18K',
-              price: Number(it.price) || 0,
-              quantity: Number(it.quantity) || 1,
-            })),
-            subtotal: Number(o.subtotal || o.total) || 0,
-            shippingCost: Number(o.shipping_cost) || 0,
-            insuranceCost: Number(o.insurance_cost) || 0,
-            total: Number(o.total) || 0,
-            paymentMethod: o.payment_method || 'TRANSFER_BANK',
-            status: o.order_status === 'DELIVERED' ? 'Selesai' : o.order_status === 'SHIPPED' ? 'Dikirim' : o.order_status === 'PROCESSING' ? 'Dikemas' : o.order_status === 'CANCELLED' ? 'Dibatalkan' : 'Menunggu Pembayaran',
-            trackingNumber: o.tracking_number,
-            courier: o.courier || 'JNE Express (Berasuransi)',
-            timeline: (o.status_histories || []).map((h: any) => ({
-              status: h.status,
-              date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
-              description: h.notes || '',
-              completed: true,
-            })),
-          }));
+          const mappedOrders: MockOrder[] = ords.map((o: any) => {
+            const rawPayment = Array.isArray(o.payments) && o.payments.length > 0 ? o.payments[0] : null;
+            const pStatus = (o.payment_status || rawPayment?.status || 'WAITING_PAYMENT').toUpperCase();
+            const oStatus = (o.order_status || 'PENDING').toUpperCase();
+
+            let displayStatus: MockOrder['status'] = 'Menunggu Pembayaran';
+            if (oStatus === 'CANCELLED') {
+              displayStatus = 'Dibatalkan';
+            } else if (oStatus === 'DELIVERED' || oStatus === 'COMPLETED') {
+              displayStatus = 'Selesai';
+            } else if (oStatus === 'SHIPPED') {
+              displayStatus = 'Dikirim';
+            } else if (oStatus === 'PROCESSING') {
+              displayStatus = 'Dikemas';
+            } else if (pStatus === 'PAYMENT_REVIEW') {
+              displayStatus = 'Menunggu Verifikasi';
+            } else if (pStatus === 'PAID') {
+              displayStatus = 'Lunas & Diproses';
+            } else {
+              displayStatus = 'Menunggu Pembayaran';
+            }
+
+            return {
+              id: o.order_number || `#ORD-${o.id}`,
+              rawId: o.id,
+              orderNumber: o.order_number,
+              date: o.created_at ? new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+              customerName: o.customer_name || user?.name || 'Pelanggan Butik',
+              customerEmail: o.customer_email || user?.email || '',
+              customerPhone: o.customer_phone || '',
+              shippingAddress: o.customer_address || '',
+              city: o.city || 'Indonesia',
+              productSummary: o.items?.map((it: any) => it.product?.name || it.product_name).join(', ') || 'Perhiasan Mutiara',
+              items: (o.items || []).map((it: any) => ({
+                productId: it.product_id,
+                name: it.product?.name || it.product_name || 'Mutiara Lombok',
+                pearlSize: it.pearl_size || '12 mm',
+                metal: it.metal || 'Emas 18K',
+                price: Number(it.price) || 0,
+                quantity: Number(it.quantity) || 1,
+              })),
+              subtotal: Number(o.subtotal || o.total) || 0,
+              shippingCost: Number(o.shipping_cost) || 0,
+              insuranceCost: Number(o.insurance_cost) || 0,
+              total: Number(o.total) || 0,
+              paymentMethod: o.payment_method || 'TRANSFER_BANK',
+              paymentStatus: pStatus,
+              orderStatus: oStatus,
+              notes: o.notes || '',
+              rejectionReason: rawPayment?.notes || o.notes || '',
+              paymentProofPath: rawPayment?.proof_path || '',
+              paymentProofUrl: rawPayment ? `/api/v1/orders/${o.id}/payments/${rawPayment.id}/proof` : undefined,
+              payments: o.payments || [],
+              status: displayStatus,
+              trackingNumber: o.tracking_number,
+              courier: o.courier || 'JNE Express (Berasuransi)',
+              timeline: (o.status_histories || []).map((h: any) => ({
+                status: h.status,
+                date: h.created_at ? new Date(h.created_at).toLocaleString('id-ID') : '',
+                description: h.notes || '',
+                completed: true,
+              })),
+            };
+          });
           setOrders(mappedOrders);
         }
       })
       .catch(() => {});
   }, [user]);
+
+  // Real-time synchronization layer with 60s ETag polling (Tahap V2c & Tahap V3b)
+  const { lastSyncLabel } = useDashboardSync({
+    enabled: !!user,
+    role: 'customer',
+    intervalMs: 60000,
+    onStatusChange: (_newStatus, _oldStatus, _latestOrder) => {
+      loadCustomerOrders();
+    },
+    onDataUpdated: (data) => {
+      if (data.orders_version && data.orders_version !== prevCustomerOrdersVersionRef.current) {
+        prevCustomerOrdersVersionRef.current = data.orders_version;
+        loadCustomerOrders();
+      } else if (data.latest_order) {
+        loadCustomerOrders();
+      }
+    },
+  });
+
+  // Keep selectedOrder in sync when orders list is updated via polling
+  useEffect(() => {
+    if (selectedOrder) {
+      const refreshed = orders.find(o => o.id === selectedOrder.id || (selectedOrder.rawId && o.rawId === selectedOrder.rawId));
+      if (refreshed) {
+        setSelectedOrder(refreshed);
+      }
+    }
+  }, [orders]);
 
   // Load customer shipping addresses
   const loadAddresses = React.useCallback(() => {
@@ -263,8 +339,15 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       loadCustomerOrders();
       loadAddresses();
       refreshWishlist();
+      loadNotifications();
     }
-  }, [user, loadCustomerOrders, loadAddresses, refreshWishlist]);
+  }, [user, loadCustomerOrders, loadAddresses, refreshWishlist, loadNotifications]);
+
+  useEffect(() => {
+    if (activeMenu === 'notifications') {
+      loadNotifications();
+    }
+  }, [activeMenu, loadNotifications]);
 
   // Logout Dialog State
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
@@ -274,6 +357,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     { id: 'summary', label: 'Ringkasan', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'my_orders', label: 'Pesanan Saya', icon: <ShoppingBag className="w-4 h-4" />, badge: orders.length },
     { id: 'shipping_status', label: 'Status Pengiriman', icon: <Truck className="w-4 h-4" /> },
+    { id: 'notifications', label: 'Notifikasi', icon: <Bell className="w-4 h-4" />, badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined },
     { id: 'wishlist', label: 'Koleksi Favorit', icon: <Heart className="w-4 h-4" />, badge: wishlistProducts.length },
     { id: 'addresses', label: 'Alamat', icon: <MapPin className="w-4 h-4" /> },
     { id: 'profile', label: 'Profil Akun', icon: <UserIcon className="w-4 h-4" /> },
@@ -283,8 +367,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     setActiveMenu(id);
     const pathMap: Record<string, string> = {
       summary: '/akun',
+      my_orders: '/akun/pesanan',
       orders: '/akun/pesanan',
+      shipping_status: '/akun/status-pengiriman',
       tracking: '/akun/status-pengiriman',
+      notifications: '/akun/notifikasi',
       wishlist: '/akun/favorit',
       addresses: '/akun/alamat',
       profile: '/akun/profil',
@@ -933,6 +1020,85 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 </div>
               </div>
 
+              {/* Linimasa Status Pesanan 5 Tahap */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#FBF8F3] border border-[#E6DDD0] space-y-3">
+                <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
+                  Linimasa Status Pesanan
+                </h4>
+                {selectedOrder.status === 'Dibatalkan' ? (
+                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+                    ✕ Pesanan ini telah dibatalkan. {selectedOrder.notes ? `Catatan: ${selectedOrder.notes}` : ''}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
+                    {[
+                      { step: 1, label: 'Menunggu Bayar', active: selectedOrder.status === 'Menunggu Pembayaran', done: selectedOrder.paymentStatus !== 'WAITING_PAYMENT' || selectedOrder.status !== 'Menunggu Pembayaran' },
+                      { step: 2, label: 'Verifikasi', active: selectedOrder.paymentStatus === 'PAYMENT_REVIEW' || selectedOrder.status === 'Menunggu Verifikasi', done: ['Lunas & Diproses', 'Dikemas', 'Dikirim', 'Selesai'].includes(selectedOrder.status) },
+                      { step: 3, label: 'Diproses / Lunas', active: selectedOrder.status === 'Lunas & Diproses' || selectedOrder.status === 'Dikemas', done: ['Dikirim', 'Selesai'].includes(selectedOrder.status) },
+                      { step: 4, label: 'Dikirim (Resi)', active: selectedOrder.status === 'Dikirim', done: selectedOrder.status === 'Selesai' },
+                      { step: 5, label: 'Selesai', active: selectedOrder.status === 'Selesai', done: selectedOrder.status === 'Selesai' },
+                    ].map((st) => (
+                      <div
+                        key={st.step}
+                        className={`p-2.5 rounded-xl border transition-all ${
+                          st.active
+                            ? 'bg-[#12263A] text-[#D9B877] border-[#12263A] font-bold shadow-xs'
+                            : st.done
+                            ? 'bg-[#E2F1E0] text-[#2B6330] border-[#C3E4C0] font-medium'
+                            : 'bg-white text-[#8A95A5] border-[#E6DDD0]'
+                        }`}
+                      >
+                        <div className="text-[10px] uppercase tracking-wider mb-0.5">Langkah {st.step}</div>
+                        <div className="text-xs truncate">{st.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Banner Penolakan Pembayaran (Jika Ada) */}
+                {selectedOrder.status === 'Menunggu Pembayaran' && (selectedOrder.rejectionReason || selectedOrder.notes?.toLowerCase().includes('ditolak')) && (
+                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-1">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <span>⚠️ Bukti Pembayaran Sebelumnya Ditolak</span>
+                    </p>
+                    <p className="text-[11px] text-red-700">
+                      Alasan: <strong>{selectedOrder.rejectionReason || selectedOrder.notes}</strong>
+                    </p>
+                    <p className="text-[11px] text-red-600">
+                      Silakan unggah ulang bukti transfer yang jelas dan sesuai nominal tagihan melalui tombol di bawah.
+                    </p>
+                  </div>
+                )}
+
+                {/* Info Verifikasi Sedang Berjalan */}
+                {(selectedOrder.paymentStatus === 'PAYMENT_REVIEW' || selectedOrder.status === 'Menunggu Verifikasi') && (
+                  <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                    <p className="font-semibold">✓ Bukti Transfer Telah Diterima</p>
+                    <p className="text-[11px] text-amber-800 mt-0.5">
+                      Tim kasir butik kami sedang memverifikasi mutasi bank. Status pesanan akan otomatis berganti ke "Diproses" setelah diverifikasi.
+                    </p>
+                  </div>
+                )}
+
+                {/* Info Pengiriman & Resi */}
+                {selectedOrder.status === 'Dikirim' && (
+                  <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">🚚 Pesanan Sedang Dikirim</p>
+                      <p className="text-[11px] text-blue-800 mt-0.5">
+                        Kurir: <strong>{selectedOrder.courier || 'JNE Express'}</strong>
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-blue-700">Nomor Resi: </span>
+                      <strong className="font-mono text-sm text-[#12263A] bg-white px-2.5 py-1 rounded-md border border-blue-300">
+                        {selectedOrder.trackingNumber || '-'}
+                      </strong>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Items */}
               <div className="space-y-3">
                 <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
@@ -1004,22 +1170,25 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
                 {selectedOrder.status === 'Menunggu Pembayaran' && (
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleCancelOrder}
-                      disabled={isCancellingOrder}
-                      className="min-h-[44px] px-5 rounded-full border border-red-300 text-red-600 hover:bg-red-50 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>{isCancellingOrder ? 'Membatalkan...' : 'Batalkan Pesanan'}</span>
-                    </button>
+                    {/* Batalkan hanya jika WAITING_PAYMENT */}
+                    {selectedOrder.paymentStatus === 'WAITING_PAYMENT' && (
+                      <button
+                        type="button"
+                        onClick={handleCancelOrder}
+                        disabled={isCancellingOrder}
+                        className="min-h-[44px] px-5 rounded-full border border-red-300 text-red-600 hover:bg-red-50 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>{isCancellingOrder ? 'Membatalkan...' : 'Batalkan Pesanan'}</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setIsProofModalOpen(true)}
                       className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] text-xs font-semibold inline-flex items-center gap-2 shadow-xs cursor-pointer"
                     >
                       <Upload className="w-4 h-4 text-[#D9B877]" />
-                      <span>Unggah Bukti Bayar</span>
+                      <span>{selectedOrder.rejectionReason ? 'Unggah Ulang Bukti Bayar' : 'Unggah Bukti Bayar'}</span>
                     </button>
                   </div>
                 )}
@@ -1536,6 +1705,114 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   </div>
                 </form>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================
+          4.5b NOTIFIKASI SAYA (Tahap V3b)
+         ======================================================== */}
+      {activeMenu === 'notifications' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <PageHeader
+              title="Notifikasi Saya"
+              description="Pembaruan status pesanan, pembayaran, pengiriman, dan informasi atelier resmi."
+            />
+            <div className="flex items-center gap-2">
+              {unreadNotificationsCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllAsRead}
+                  className="min-h-[40px] px-4 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652] transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCheck className="w-3.5 h-3.5" />
+                  <span>Tandai Semua Dibaca</span>
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllNotifications}
+                  className="min-h-[40px] px-4 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Bersihkan Semua</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {isLoadingNotifications ? (
+            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-12 text-center text-[#4A5666] text-sm">
+              Memuat notifikasi...
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-12 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-[#F4F1EB] text-[#12263A] flex items-center justify-center mx-auto">
+                <Bell className="w-6 h-6 text-[#A08A5B]" />
+              </div>
+              <h3 className="font-serif text-lg font-semibold text-[#12263A]">Belum Ada Notifikasi</h3>
+              <p className="text-xs text-[#4A5666] max-w-sm mx-auto">
+                Pembaruan status pesanan, verifikasi pembayaran, dan resi pengiriman Anda akan muncul di sini.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {notifications.map((notif) => (
+                <div
+                  key={notif.id}
+                  className={`bg-white border rounded-2xl p-4 sm:p-5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                    notif.read_at ? 'border-[#E6DDD0] opacity-80' : 'border-[#D9B877] shadow-xs bg-[#FBF8F3]/40'
+                  }`}
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                      notif.read_at ? 'bg-[#F4F1EB] text-[#4A5666]' : 'bg-[#12263A] text-[#D9B877]'
+                    }`}>
+                      <Bell className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-[#12263A]">{notif.title}</h4>
+                        {!notif.read_at && (
+                          <span className="w-2 h-2 rounded-full bg-[#D9B877] inline-block" />
+                        )}
+                      </div>
+                      <p className="text-xs text-[#4A5666] mt-0.5 leading-relaxed">{notif.message}</p>
+                      {notif.created_at && (
+                        <p className="text-[11px] text-[#A08A5B] mt-1.5 font-mono">
+                          {new Date(notif.created_at).toLocaleString('id-ID', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    {!notif.read_at && (
+                      <button
+                        type="button"
+                        onClick={() => handleMarkAsRead(notif.id)}
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#F4F1EB] hover:bg-[#E6DDD0] text-[#12263A] cursor-pointer"
+                      >
+                        Tandai Dibaca
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteNotification(notif.id)}
+                      title="Hapus Notifikasi"
+                      className="p-2 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
