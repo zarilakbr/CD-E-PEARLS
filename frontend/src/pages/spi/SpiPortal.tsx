@@ -20,6 +20,7 @@ import { spiApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboardSync } from '../../hooks/useDashboardSync';
 import { resolveMediaUrl } from '../../lib/media';
+import { ProofImage } from '../../components/common/ProofImage';
 
 interface SpiPortalProps {
   onNavigateHome: () => void;
@@ -1173,10 +1174,14 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   </button>
                 </div>
                 <div className="max-h-[75vh] overflow-auto flex items-center justify-center bg-[#F4F1EB] rounded-2xl p-2">
-                  <img
+                  <ProofImage
                     src={spiPreviewProofUrl}
+                    orderId={selectedOrder?.id}
+                    paymentId={selectedOrder?.payments?.[0]?.id}
+                    proofPath={selectedOrder?.payments?.[0]?.proof_path}
                     alt="Bukti Transfer Penuh"
                     className="max-w-full max-h-[70vh] object-contain rounded-xl"
+                    skeletonClassName="h-[50vh] w-full"
                   />
                 </div>
               </div>
