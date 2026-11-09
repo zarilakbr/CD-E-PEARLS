@@ -217,6 +217,7 @@ class DatabaseSeeder extends Seeder
         }
 
         // 6. Products (Hanya dijalankan di lingkungan non-produksi atau jika SEED_TEST_PRODUCTS=true secara eksplisit)
+        $firstProduct = null;
         $shouldSeedProducts = !app()->isProduction() || env('SEED_TEST_PRODUCTS', false);
 
         if ($shouldSeedProducts) {

@@ -77,6 +77,11 @@ export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
   const isMountedRef = useRef<boolean>(true);
   const isExecutingRef = useRef<boolean>(false);
 
+  const onStatusChangeRef = useRef(onStatusChange);
+  onStatusChangeRef.current = onStatusChange;
+  const onDataUpdatedRef = useRef(onDataUpdated);
+  onDataUpdatedRef.current = onDataUpdated;
+
   // Second ticker to update "diperbarui X detik lalu"
   useEffect(() => {
     const ticker = setInterval(() => {
@@ -138,7 +143,7 @@ export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
             toast.info(`Status pesanan ${currentNum} kini: ${currentStatus}`, {
               duration: 5000,
             });
-            onStatusChange?.(currentStatus, prevOrderRef.current.status, data.latest_order);
+            onStatusChangeRef.current?.(currentStatus, prevOrderRef.current.status, data.latest_order);
           }
 
           prevOrderRef.current = {
@@ -148,7 +153,7 @@ export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
         }
 
         setSyncData(data);
-        onDataUpdated?.(data);
+        onDataUpdatedRef.current?.(data);
       }
     } catch (err: any) {
       if (!isMountedRef.current) return;
@@ -174,7 +179,7 @@ export function useDashboardSync(options: UseDashboardSyncOptions = {}) {
         setIsSyncing(false);
       }
     }
-  }, [enabled, onStatusChange, onDataUpdated]);
+  }, [enabled]);
 
   // Polling loop with visibility checking, tab pause, and exponential backoff
   useEffect(() => {
