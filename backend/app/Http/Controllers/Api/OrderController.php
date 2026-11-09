@@ -622,8 +622,8 @@ class OrderController extends Controller
     public function verifyPayment(Request $request, $id): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user();
-        if (! $user || (! $user->isAdmin() && ! $user->isSpi())) {
-            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin atau SPI yang berwenang memverifikasi pembayaran.');
+        if (! $user || $user->role !== 'admin') {
+            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin yang berwenang memverifikasi pembayaran.');
         }
 
         $order = Order::where(function ($q) use ($id) {
@@ -645,8 +645,8 @@ class OrderController extends Controller
     public function rejectPayment(Request $request, $id): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user();
-        if (! $user || (! $user->isAdmin() && ! $user->isSpi())) {
-            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin atau SPI yang berwenang menolak bukti pembayaran.');
+        if (! $user || $user->role !== 'admin') {
+            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin yang berwenang menolak bukti pembayaran.');
         }
 
         $request->validate([
@@ -675,6 +675,10 @@ class OrderController extends Controller
     public function updatePaymentStatus(Request $request, $id): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user();
+        if (! $user || $user->role !== 'admin') {
+            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin operasional yang berwenang mengubah status pembayaran.');
+        }
+
         $order = Order::where(function ($q) use ($id) {
             $q->where('id', $id)->orWhere('order_number', $id);
         })->firstOrFail();
@@ -719,10 +723,8 @@ class OrderController extends Controller
 
         $newStatus = $request->order_status;
 
-        if ($user->isAdmin() && ! $user->isSpi() && in_array($newStatus, ['PROCESSING', 'READY_TO_SHIP', 'SHIPPED', 'DELIVERED', 'COMPLETED'])) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'order_status' => ['Admin operasional hanya berwenang memverifikasi pembayaran. Pengaturan pengiriman dan penyelesaian pesanan hanya dapat dilakukan oleh SPI.'],
-            ]);
+        if ($user && ! $user->isSpi() && in_array($newStatus, ['PROCESSING', 'READY_TO_SHIP', 'SHIPPED', 'DELIVERED', 'COMPLETED'])) {
+            abort(Response::HTTP_FORBIDDEN, 'Admin operasional tidak berwenang memproses, mengirim, atau menyelesaikan pesanan. Wewenang ini khusus untuk SPI.');
         }
 
         // Pembatalan oleh Admin mengajukan persetujuan SPI
@@ -776,10 +778,8 @@ class OrderController extends Controller
     public function updateTracking(Request $request, $id): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user();
-        if ($user && $user->isAdmin() && ! $user->isSpi()) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'role' => ['Admin operasional tidak berwenang mengatur nomor resi pengiriman. Pengaturan pengiriman hanya dapat dilakukan oleh SPI.'],
-            ]);
+        if ($user && ! $user->isSpi()) {
+            abort(Response::HTTP_FORBIDDEN, 'Admin operasional tidak berwenang mengatur nomor resi pengiriman. Pengaturan pengiriman hanya dapat dilakukan oleh SPI.');
         }
 
         $order = Order::where(function ($q) use ($id) {

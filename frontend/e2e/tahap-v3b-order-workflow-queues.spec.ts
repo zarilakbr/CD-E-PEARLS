@@ -46,7 +46,7 @@ test.describe('Tahap V3b: Full Cross-Role Order Sync & CRUD Workflow on MySQL cd
     });
   };
 
-  test('1. Skenario Alur Pesanan Lengkap: Pelanggan Beli -> Unggah Bukti -> Admin Verifikasi -> SPI Kirim Resi -> Pelanggan Notifikasi', async ({ browser }) => {
+  test('1. Skenario Alur Pesanan Lengkap: Pelanggan Beli -> Unggah Bukti -> Admin Tolak -> Unggah Ulang -> Admin Verifikasi -> SPI Kirim Resi -> Pelanggan Notifikasi', async ({ browser }) => {
     test.setTimeout(120000);
 
     // ==========================================
@@ -110,10 +110,14 @@ test.describe('Tahap V3b: Full Cross-Role Order Sync & CRUD Workflow on MySQL cd
     await expect(custPage.locator(':visible:has-text("berhasil diunggah")').first()).toBeVisible({ timeout: 15000 });
 
     // ==========================================
-    // TAHAP 2: ADMIN VERIFIKASI PEMBAYARAN LUNAS (PAID)
+    // TAHAP 2: ADMIN TOLAK BUKTI BAYAR AWAL (Bukti Buram)
     // ==========================================
     const adminContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const adminPage = await adminContext.newPage();
+    adminPage.on('pageerror', err => console.log('ADMIN PAGE ERROR:', err.message));
+    adminPage.on('console', msg => {
+      if (msg.type() === 'error') console.log('ADMIN CONSOLE ERROR:', msg.text());
+    });
     await routeToLocalBackend(adminPage);
     await adminPage.addInitScript((token) => {
       localStorage.setItem('cde_auth_token', token);
@@ -133,6 +137,47 @@ test.describe('Tahap V3b: Full Cross-Role Order Sync & CRUD Workflow on MySQL cd
     await expect(adminOrderRow).toBeVisible({ timeout: 15000 });
     await adminOrderRow.click();
 
+    // Admin tolak pembayaran dengan alasan valid
+    const rejectBtn = adminPage.locator('button:has-text("Tolak Pembayaran"):visible').first();
+    await expect(rejectBtn).toBeVisible({ timeout: 10000 });
+    await rejectBtn.click();
+
+    const reasonInput = adminPage.locator('textarea[placeholder*="Contoh: Bukti transfer buram"]').first();
+    await expect(reasonInput).toBeVisible({ timeout: 5000 });
+    await reasonInput.fill('Foto bukti buram dan nominal tidak terlihat jelas.');
+    await adminPage.locator('button[type="submit"]:has-text("Tolak Pembayaran"):visible').first().click();
+    await expect(adminPage.locator(':visible:has-text("ditolak dan alasan dikirim")').first()).toBeVisible({ timeout: 15000 });
+
+    // ==========================================
+    // TAHAP 3: PELANGGAN LIHAT PENOLAKAN & UNGGAH ULANG BUKTI
+    // ==========================================
+    await custPage.goto('/akun/pesanan');
+    const rejectedRow = custPage.locator(`tr:has-text("${createdOrderNumber}")`).first();
+    await expect(rejectedRow).toBeVisible({ timeout: 15000 });
+    await rejectedRow.click();
+
+    // Banner penolakan tampil dengan alasan admin
+    await expect(custPage.locator(':visible:has-text("Bukti Pembayaran Sebelumnya Ditolak")').first()).toBeVisible({ timeout: 10000 });
+    await expect(custPage.locator(':visible:has-text("Foto bukti buram")').first()).toBeVisible({ timeout: 10000 });
+
+    // Pelanggan unggah ulang bukti yang benar
+    const reuploadBtn = custPage.locator('button:has-text("Unggah Ulang Bukti Bayar"):visible').first();
+    await expect(reuploadBtn).toBeVisible({ timeout: 10000 });
+    await reuploadBtn.click();
+
+    await custPage.setInputFiles('input[type="file"]', testImagePath);
+    await custPage.locator('button:has-text("Kirim Bukti Pembayaran"):visible').first().click();
+    await expect(custPage.locator(':visible:has-text("berhasil diunggah")').first()).toBeVisible({ timeout: 15000 });
+
+    // ==========================================
+    // TAHAP 4: ADMIN VERIFIKASI PEMBAYARAN LUNAS (PAID)
+    // ==========================================
+    await adminPage.goto('/admin/pesanan');
+    await adminPage.locator('button:has-text("Verifikasi Pembayaran"):visible').first().click();
+    const reAdminRow = adminPage.locator(`tr:has-text("${createdOrderNumber}")`).first();
+    await expect(reAdminRow).toBeVisible({ timeout: 15000 });
+    await reAdminRow.click();
+
     // Verifikasi panel bukti transfer dan tombol Verifikasi Lunas tersedia
     const verifyPaidBtn = adminPage.locator('button:has-text("Verifikasi Lunas (PAID)"):visible').first();
     await expect(verifyPaidBtn).toBeVisible({ timeout: 10000 });
@@ -145,7 +190,7 @@ test.describe('Tahap V3b: Full Cross-Role Order Sync & CRUD Workflow on MySQL cd
     await expect(adminPage.locator(':visible:has-text("berhasil diverifikasi lunas")').first()).toBeVisible({ timeout: 15000 });
 
     // ==========================================
-    // TAHAP 3: SPI MEMPROSES & MENGIRIM PESANAN
+    // TAHAP 5: SPI MEMPROSES & MENGIRIM PESANAN
     // ==========================================
     const spiContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const spiPage = await spiContext.newPage();

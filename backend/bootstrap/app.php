@@ -16,19 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: (require __DIR__.'/../config/trustedproxy.php')['proxies']);
         $middleware->prepend(\App\Http\Middleware\TrustCloudflareProxies::class);
         $middleware->statefulApi();
-        $currentEnv = $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? getenv('APP_ENV');
-        if (! $currentEnv && file_exists(dirname(__DIR__).'/.env')) {
-            $lines = @file(dirname(__DIR__).'/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
-            foreach ($lines as $line) {
-                if (str_starts_with(trim($line), 'APP_ENV=')) {
-                    $parts = explode('=', $line, 2);
-                    $currentEnv = trim($parts[1] ?? '', "\"' ");
-                    break;
-                }
-            }
-        }
-        $currentEnv = $currentEnv ?: 'production';
-        if (in_array($currentEnv, ['local', 'testing'])) {
+        if (in_array(env('APP_ENV', 'production'), ['local', 'testing'])) {
             $middleware->validateCsrfTokens(except: [
                 'api/*',
             ]);

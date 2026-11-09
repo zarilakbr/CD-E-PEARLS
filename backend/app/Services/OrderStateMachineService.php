@@ -102,13 +102,13 @@ class OrderStateMachineService
      */
     public function verifyPayment(Order $order, User $actor, ?string $notes = null): Order
     {
-        if (! $actor->isAdmin() && ! $actor->isSpi()) {
-            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin atau SPI yang berwenang memverifikasi pembayaran.');
+        if ($actor->role !== 'admin') {
+            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin operasional yang berwenang memverifikasi pembayaran.');
         }
 
-        if ($order->order_status === 'CANCELLED') {
+        if ($order->order_status === 'CANCELLED' || $order->order_status === 'COMPLETED') {
             throw ValidationException::withMessages([
-                'order' => ['Pesanan telah dibatalkan dan tidak dapat diverifikasi pembayarannya.'],
+                'order' => ["Pesanan telah berstatus {$order->order_status} dan tidak dapat diverifikasi pembayarannya."],
             ]);
         }
 
@@ -190,8 +190,8 @@ class OrderStateMachineService
      */
     public function rejectPayment(Order $order, User $actor, string $reason): Order
     {
-        if (! $actor->isAdmin() && ! $actor->isSpi()) {
-            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin atau SPI yang berwenang menolak bukti pembayaran.');
+        if ($actor->role !== 'admin') {
+            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin operasional yang berwenang menolak bukti pembayaran.');
         }
 
         $trimmedReason = trim($reason);
@@ -201,9 +201,9 @@ class OrderStateMachineService
             ]);
         }
 
-        if ($order->order_status === 'CANCELLED') {
+        if ($order->order_status === 'CANCELLED' || $order->order_status === 'COMPLETED') {
             throw ValidationException::withMessages([
-                'order' => ['Pesanan telah dibatalkan.'],
+                'order' => ["Pesanan telah berstatus {$order->order_status}."],
             ]);
         }
 
@@ -277,14 +277,12 @@ class OrderStateMachineService
     public function processOrder(Order $order, User $actor, ?string $notes = null): Order
     {
         if (! $actor->isSpi()) {
-            throw ValidationException::withMessages([
-                'role' => ['Admin operasional hanya berwenang memverifikasi pembayaran. Pemrosesan dan pengaturan pengiriman pesanan hanya dapat dilakukan oleh SPI.'],
-            ]);
+            abort(Response::HTTP_FORBIDDEN, 'Admin operasional hanya berwenang memverifikasi pembayaran. Pemrosesan dan pengaturan pengiriman pesanan hanya dapat dilakukan oleh SPI.');
         }
 
-        if ($order->order_status === 'CANCELLED') {
+        if ($order->order_status === 'CANCELLED' || $order->order_status === 'COMPLETED') {
             throw ValidationException::withMessages([
-                'order' => ['Pesanan telah dibatalkan dan tidak dapat diproses.'],
+                'order' => ["Pesanan telah berstatus {$order->order_status} dan tidak dapat diproses."],
             ]);
         }
 
@@ -351,9 +349,7 @@ class OrderStateMachineService
     public function shipOrder(Order $order, User $actor, string $trackingNumber, string $courier, ?string $notes = null): Order
     {
         if (! $actor->isSpi()) {
-            throw ValidationException::withMessages([
-                'role' => ['Admin operasional tidak berwenang mengirim pesanan. Pengaturan pengiriman dan penginputan nomor resi hanya dapat dilakukan oleh SPI.'],
-            ]);
+            abort(Response::HTTP_FORBIDDEN, 'Admin operasional tidak berwenang mengirim pesanan. Pengaturan pengiriman dan penginputan nomor resi hanya dapat dilakukan oleh SPI.');
         }
 
         $trimmedResi = trim($trackingNumber);
@@ -371,9 +367,9 @@ class OrderStateMachineService
             ]);
         }
 
-        if ($order->order_status === 'CANCELLED') {
+        if (! in_array($order->order_status, ['PAID', 'PROCESSING', 'READY_TO_SHIP'])) {
             throw ValidationException::withMessages([
-                'order' => ['Pesanan telah dibatalkan dan tidak dapat dikirim.'],
+                'order_status' => ["Pesanan hanya dapat dikirim jika sudah berstatus 'PAID', 'PROCESSING', atau 'READY_TO_SHIP'. Status saat ini: {$order->order_status}."],
             ]);
         }
 
@@ -437,9 +433,7 @@ class OrderStateMachineService
     public function completeOrder(Order $order, User $actor, ?string $notes = null): Order
     {
         if (! $actor->isSpi()) {
-            throw ValidationException::withMessages([
-                'role' => ['Admin operasional tidak berwenang menyelesaikan pesanan. Penyelesaian pesanan hanya dapat dilakukan oleh SPI.'],
-            ]);
+            abort(Response::HTTP_FORBIDDEN, 'Admin operasional tidak berwenang menyelesaikan pesanan. Penyelesaian pesanan hanya dapat dilakukan oleh SPI.');
         }
 
         if ($order->order_status !== 'SHIPPED') {
@@ -611,6 +605,24 @@ class OrderStateMachineService
 
         $target = $map[$normalizedStatus] ?? $normalizedStatus;
 
+        if ($target === 'PAID') {
+            if ($actor->role !== 'admin') {
+                abort(Response::HTTP_FORBIDDEN, 'Hanya Admin operasional yang berwenang memverifikasi pembayaran.');
+            }
+            return $this->verifyPayment($order, $actor, $payload['notes'] ?? null);
+        }
+
+        if ($target === 'WAITING_PAYMENT' && $order->payment_status === 'PAYMENT_REVIEW') {
+            if ($actor->role !== 'admin') {
+                abort(Response::HTTP_FORBIDDEN, 'Hanya Admin operasional yang berwenang menolak pembayaran.');
+            }
+            return $this->rejectPayment($order, $actor, $payload['notes'] ?? $payload['reason'] ?? 'Bukti pembayaran ditolak oleh Admin.');
+        }
+
+        if (in_array($target, ['PROCESSING', 'READY_TO_SHIP', 'SHIPPED', 'COMPLETED']) && ! $actor->isSpi()) {
+            abort(Response::HTTP_FORBIDDEN, 'Admin operasional tidak berwenang mengubah status ke tahap logistik/pengiriman. Wewenang ini khusus untuk SPI.');
+        }
+
         return match ($target) {
             'PAID' => $this->verifyPayment($order, $actor, $payload['notes'] ?? null),
             'PROCESSING' => $this->processOrder($order, $actor, $payload['notes'] ?? null),
@@ -636,9 +648,7 @@ class OrderStateMachineService
     public function readyToShipOrder(Order $order, User $actor, ?string $notes = null): Order
     {
         if (! $actor->isSpi()) {
-            throw ValidationException::withMessages([
-                'role' => ['Hanya SPI yang berwenang mengatur status pengiriman pesanan.'],
-            ]);
+            abort(Response::HTTP_FORBIDDEN, 'Hanya SPI yang berwenang mengatur status pengiriman pesanan.');
         }
 
         return DB::transaction(function () use ($order, $actor, $notes) {
