@@ -110,11 +110,11 @@ test('U-2: tamu dengan token dan 4 digit telepon valid hanya menerima ringkasan 
     expect($data['customer_phone_masked'] ?? '')->toContain('****');
 });
 
-test('U-2: pelanggan terautentikasi lain ditolak 403 saat mencoba melihat pesanan orang lain', function () {
+test('U-2: pelanggan terautentikasi lain ditolak 404 saat mencoba melihat pesanan orang lain', function () {
     $response = $this->actingAs($this->customerB)
         ->getJson('/api/v1/orders/lookup/CDE-2026-0001');
 
-    $response->assertStatus(403);
+    $response->assertStatus(404);
 });
 
 test('U-2: pemilik pesanan dan admin berhak melihat rincian pesanan', function () {

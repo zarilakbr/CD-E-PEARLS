@@ -586,8 +586,8 @@ class OrderController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Anda tidak memiliki hak akses untuk melihat pesanan ini.',
-            ], Response::HTTP_FORBIDDEN);
+                'message' => 'Pesanan tidak ditemukan atau otorisasi tidak valid.',
+            ], Response::HTTP_NOT_FOUND);
         }
 
         $trackingToken = (string) ($request->query('tracking_token') ?? $request->input('tracking_token') ?? $request->header('X-Tracking-Token') ?? '');
