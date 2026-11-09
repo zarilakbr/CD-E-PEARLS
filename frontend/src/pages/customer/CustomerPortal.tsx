@@ -29,6 +29,7 @@ import { StatCard } from '../../components/common/StatCard';
 import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { ProofImage } from '../../components/common/ProofImage';
+import { getLatestPayment } from '../../lib/paymentUtils';
 import { Stepper } from '../../components/common/Stepper';
 import { ProductCard } from '../../components/common/ProductCard';
 import type { MockOrder, MockNotification } from '../../types/models';
@@ -218,7 +219,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         const ords = res.data?.data || res.data;
         if (Array.isArray(ords)) {
           const mappedOrders: MockOrder[] = ords.map((o: any) => {
-            const rawPayment = Array.isArray(o.payments) && o.payments.length > 0 ? o.payments[0] : null;
+            const rawPayment = getLatestPayment(o.payments);
             const pStatus = (o.payment_status || rawPayment?.status || 'WAITING_PAYMENT').toUpperCase();
             const oStatus = (o.order_status || 'PENDING').toUpperCase();
 
@@ -1094,7 +1095,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       <ProofImage
                         src={selectedOrder.paymentProofUrl}
                         orderId={selectedOrder.id}
-                        paymentId={selectedOrder.payments?.[0]?.id}
+                        paymentId={getLatestPayment(selectedOrder.payments)?.id}
                         proofPath={selectedOrder.paymentProofPath}
                         alt="Bukti Transfer Anda"
                         className="w-full h-full object-cover"
