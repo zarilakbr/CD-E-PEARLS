@@ -71,7 +71,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, open, onOpe
                 }}
               />
             </picture>
-            {product.discount_percent > 0 && (
+            {Boolean(product.discount_percent && product.discount_percent > 0) && (
               <span className="absolute top-4 left-4 rounded-full bg-[#BA4E4E] text-white text-[11px] font-bold px-3 py-1 shadow-md">
                 HEMAT {product.discount_percent}%
               </span>

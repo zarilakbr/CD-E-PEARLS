@@ -51,7 +51,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenDetail 
       </button>
 
       {/* Discount Tag */}
-      {product.discount_percent > 0 && (
+      {Boolean(product.discount_percent && product.discount_percent > 0) && (
         <span className="absolute top-3.5 sm:top-4 left-3.5 sm:left-4 z-10 rounded-full bg-[#BA4E4E] text-white px-2 sm:px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider shadow-sm">
           -{product.discount_percent}% OFF
         </span>

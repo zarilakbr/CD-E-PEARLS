@@ -54,6 +54,7 @@ Route::prefix('v1')->group(function () {
 
     // 2. Public Catalog & Content
     Route::get('/categories', [CategoryController::class, 'index']);
+    Route::get('/categories/{id}', [CategoryController::class, 'show']);
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{id}', [ProductController::class, 'show']);
     Route::get('/certificates/lookup/{code}', [CertificateController::class, 'lookup']);
@@ -106,6 +107,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
         Route::post('/orders/{id}/upload-proof', [OrderController::class, 'uploadProof']);
+        Route::post('/orders/{id}/payment-proof', [OrderController::class, 'uploadProof']);
         Route::get('/orders/{id}/payments/{paymentId}/proof', [OrderController::class, 'downloadProof']);
 
         // Real-Time Dashboard Sync & ETag Polling (Tahap N2)
@@ -135,6 +137,12 @@ Route::prefix('v1')->group(function () {
                 Route::post('/certificates', [CertificateController::class, 'store']);
                 Route::put('/certificates/{id}', [CertificateController::class, 'update']);
                 Route::delete('/certificates/{id}', [CertificateController::class, 'destroy']);
+
+                // Categories under /admin
+                Route::get('/categories', [CategoryController::class, 'index']);
+                Route::post('/categories', [CategoryController::class, 'store']);
+                Route::put('/categories/{id}', [CategoryController::class, 'update']);
+                Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
             });
 
             // Category Management
@@ -211,7 +219,7 @@ Route::prefix('v1')->group(function () {
 });
 
 // S-1 Direct Root Alias /api/admin/products for Admin & SPI
-Route::middleware(['auth:sanctum', 'role:admin,spi'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'not_frozen', 'must_change_password', 'role:admin,spi'])->prefix('admin')->group(function () {
     Route::get('/products', [ProductAdminController::class, 'index']);
     Route::post('/products/upload-image', [ProductAdminController::class, 'uploadImage']);
     Route::post('/products', [ProductAdminController::class, 'store']);
@@ -220,7 +228,7 @@ Route::middleware(['auth:sanctum', 'role:admin,spi'])->prefix('admin')->group(fu
 });
 
 // S-2 Direct Root Alias /api/spi/* for SPI Exclusive
-Route::middleware(['auth:sanctum', 'role:spi'])->prefix('spi')->group(function () {
+Route::middleware(['auth:sanctum', 'not_frozen', 'must_change_password', 'role:spi'])->prefix('spi')->group(function () {
     Route::get('/summary', [SpiControlCenterController::class, 'summary']);
     Route::get('/orders', [SpiControlCenterController::class, 'orders']);
     Route::get('/orders/{id}', [SpiControlCenterController::class, 'orderDetail']);

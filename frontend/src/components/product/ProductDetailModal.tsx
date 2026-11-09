@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Award, ShoppingBag, MessageCircle, ShieldCheck, Sparkles } from 'lucide-react';
 import type { MockProduct } from '../../types/models';
 import { resolveMediaUrl, resolveWebpUrl } from '../../lib/media';
+import { useCart } from '../../context/CartContext';
 
 interface ProductDetailModalProps {
   product: MockProduct | null;
@@ -26,6 +27,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onClose,
   onAddToCart,
 }) => {
+  const { addToCart } = useCart();
   if (!isOpen || !product) return null;
 
   return (
@@ -145,14 +147,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <div className="mt-6 pt-3 border-t border-[#E6DDD0] sticky bottom-0 bg-white/95 backdrop-blur-xs flex flex-col gap-2.5">
             <button
               type="button"
-              onClick={() => {
-                onAddToCart(product.name);
-                onClose();
+              disabled={product.stock !== undefined && product.stock <= 0}
+              onClick={async () => {
+                const added = await addToCart(product);
+                if (added) {
+                  onAddToCart(product.name);
+                  onClose();
+                }
               }}
-              className="w-full min-h-[44px] rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] active:scale-95 transition-all text-xs font-semibold inline-flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              className="w-full min-h-[44px] rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] active:scale-95 transition-all text-xs font-semibold inline-flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
             >
               <ShoppingBag className="w-4 h-4 text-[#D9B877]" />
-              <span>Tambah ke Keranjang Belanja</span>
+              <span>{product.stock !== undefined && product.stock <= 0 ? 'Stok Habis' : 'Tambah ke Keranjang Belanja'}</span>
             </button>
 
             <a

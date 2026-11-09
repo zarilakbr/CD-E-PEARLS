@@ -206,9 +206,45 @@ ls -la /home/USERNAME/cdepearls/backend/public/storage
 
 ---
 
-## 9. Inisialisasi & Optimasi Laravel (via PHP 8.4)
+## 9. Prosedur Migrasi Database Produksi
 
-Jalankan perintah inisialisasi menggunakan binary PHP 8.4:
+Sebelum menerapkan migrasi skema tabel baru di server produksi, patuhi prosedur keamanan database berikut:
+
+### A. Cadangkan Database Terlebih Dahulu (Wajib)
+Selalu lakukan pencadangan (*backup*) penuh database sebelum menjalankan migrasi apa pun. Pencadangan dapat dilakukan melalui dua cara:
+1. **Via SSH Terminal (`mysqldump`)**:
+   ```bash
+   mysqldump -u DB_USERNAME -p DB_DATABASE > ~/backup_cde_$(date +%Y%m%d_%H%M%S).sql
+   ```
+   *(Sistem akan meminta kata sandi database secara interaktif tanpa mengeksposnya dalam riwayat terminal).*
+2. **Via Menu Backup hPanel**:
+   Buka **hPanel -> Database -> Manajemen Database -> phpMyAdmin -> Export** (atau gunakan menu **Cadangan / Backups** di hPanel Hostinger).
+
+### B. Periksa Status Migrasi yang Tertunda
+Periksa berkas migrasi mana saja yang belum teraplikasikan ke database produksi:
+```bash
+cd /home/USERNAME/cdepearls/backend
+/opt/alt/php84/usr/bin/php artisan migrate:status
+```
+
+### C. Eksekusi Migrasi dengan Bendera `--force`
+Pada lingkungan produksi (`APP_ENV=production`), Laravel secara otomatis memblokir eksekusi migrasi tanpa konfirmasi kecuali bendera `--force` disertakan:
+```bash
+cd /home/USERNAME/cdepearls/backend
+/opt/alt/php84/usr/bin/php artisan migrate --force
+```
+
+### D. Verifikasi Pasca Migrasi
+Pastikan seluruh batch migrasi telah berstatus `Ran`:
+```bash
+/opt/alt/php84/usr/bin/php artisan migrate:status
+```
+
+---
+
+## 10. Inisialisasi & Optimasi Laravel (via PHP 8.4)
+
+Jalankan perintah inisialisasi dan kompilasi cache menggunakan binary PHP 8.4:
 
 ```bash
 cd /home/USERNAME/cdepearls/backend
@@ -216,16 +252,13 @@ cd /home/USERNAME/cdepearls/backend
 # 1. Generate App Key (bila pertama kali)
 /opt/alt/php84/usr/bin/php artisan key:generate --force
 
-# 2. Migrasi Database Produksi
-/opt/alt/php84/usr/bin/php artisan migrate --force
-
-# 3. Optimasi Cache Konfigurasi, Event, Rute, & Tampilan
+# 2. Optimasi Cache Konfigurasi, Event, Rute, & Tampilan
 /opt/alt/php84/usr/bin/php artisan optimize
 ```
 
 ---
 
-## 10. Seed Akun Resmi (Role-Based Seeding)
+## 11. Seed Akun Resmi (Role-Based Seeding)
 
 Inisialisasi akun resmi untuk operasional sistem (Admin, Pengawas Internal SPI, dan Pelanggan awal) dilakukan menggunakan variabel lingkungan spesifik:
 
@@ -255,7 +288,7 @@ export SEED_USER_PASSWORD="KATA_SANDI_USER_KUAT_MIN_12_KARAKTER"
 
 ---
 
-## 11. Konfigurasi Cron Job Laravel Scheduler (Tiap Menit)
+## 12. Konfigurasi Cron Job Laravel Scheduler (Tiap Menit)
 
 Laravel Scheduler bertugas menangani pembersihan pesanan kedaluwarsa, pelepasan kuota stok yang tidak diselesaikan, dan rekonsiliasi berkala.
 
@@ -270,7 +303,7 @@ Laravel Scheduler bertugas menangani pembersihan pesanan kedaluwarsa, pelepasan 
 
 ---
 
-## 12. Aturan Unggah Gambar Produk & Konversi WebP
+## 13. Aturan Unggah Gambar Produk & Konversi WebP
 
 Sistem backend mengimplementasikan kebijakan ketat untuk manajemen citra produk:
 - **Otorisasi**: Hanya peran `admin` atau `spi` yang diizinkan mengunggah gambar produk (pelanggan ditolak HTTP 403).
@@ -286,7 +319,7 @@ Sistem backend mengimplementasikan kebijakan ketat untuk manajemen citra produk:
 
 ---
 
-## 13. Kebijakan Keamanan Autentikasi (Anti-Enumeration)
+## 14. Kebijakan Keamanan Autentikasi (Anti-Enumeration)
 
 1. **Respons Seragam Kredensial**:
    - Kata sandi salah untuk email terdaftar maupun email belum terdaftar menghasilkan respon **HTTP 401** seragam: `Email atau kata sandi tidak valid. Silakan periksa kembali.` (mencegah penyerang mendeteksi keberadaan akun pengguna).
@@ -298,7 +331,7 @@ Sistem backend mengimplementasikan kebijakan ketat untuk manajemen citra produk:
 
 ---
 
-## 14. Endpoint Health Check Publik
+## 15. Endpoint Health Check Publik
 
 Backend menyediakan endpoint pemantauan ketersediaan sistem:
 - **URL**: `GET https://api.cdepearlslombok.id/api/v1/health`
@@ -315,7 +348,7 @@ Backend menyediakan endpoint pemantauan ketersediaan sistem:
 
 ---
 
-## 15. Deploy Frontend ke Cloudflare WORKERS
+## 16. Deploy Frontend ke Cloudflare WORKERS
 
 Frontend di-deploy menggunakan platform **Cloudflare Workers** (Static Assets):
 
@@ -333,7 +366,7 @@ Frontend di-deploy menggunakan platform **Cloudflare Workers** (Static Assets):
 
 ---
 
-## 16. Alur Pembaruan Produksi (Production Update Workflow)
+## 17. Alur Pembaruan Produksi (Production Update Workflow)
 
 Setiap kali ada pembaruan kode baru yang di-merge ke branch `main`, lakukan langkah pembaruan berikut pada server Hostinger via SSH:
 
@@ -357,7 +390,7 @@ cd backend
 
 ---
 
-## 17. Verifikasi Pasca Deploy
+## 18. Verifikasi Pasca Deploy
 
 > [!CAUTION]
 > **JANGAN jalankan `artisan test` di produksi!**

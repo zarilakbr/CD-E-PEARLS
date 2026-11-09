@@ -166,7 +166,7 @@ test.describe('Tahap V2: Unggah Gambar Produk & Tampilan Multi-Halaman', () => {
 
     const catalogImg = page.locator(`img[src*="${uploadedImageUrl}"], img[src*="cde-ratu-sire-gold-luxury"]`).first();
     await expect(catalogImg).toBeAttached();
-    await expect(catalogImg).toHaveAttribute('src', uploadedImageUrl);
+    await expect(catalogImg).toHaveAttribute('src', new RegExp(uploadedImageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 
     // 3. Verifikasi di Detail Produk (buka /produk/991)
     await page.goto('/produk/991');
@@ -174,6 +174,7 @@ test.describe('Tahap V2: Unggah Gambar Produk & Tampilan Multi-Halaman', () => {
     await expect(detailItem).toBeAttached();
     const detailImg = page.locator(`img[src*="${uploadedImageUrl}"], img[src*="cde-ratu-sire-gold-luxury"]`).first();
     await expect(detailImg).toBeAttached();
+    await expect(detailImg).toHaveAttribute('src', new RegExp(uploadedImageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 
     // 4. Verifikasi di Dashboard SPI (/spi)
     await page.addInitScript(() => {

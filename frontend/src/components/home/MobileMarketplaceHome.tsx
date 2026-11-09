@@ -82,13 +82,13 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
     };
   }, [carouselApi]);
 
-  // 2. Baris Ikon Kategori (5 Kategori, Foto Bulat 56px, Label 1 Kata)
+  // 2. Baris Kategori (5 Kategori resmi perhiasan mutiara air laut)
   const categoryIcons = [
-    { slug: 'kalung', name: 'Kalung', image: '/images/hero_pearl_shell.jpg' },
-    { slug: 'cincin', name: 'Cincin', image: '/images/placeholder_jewelry.svg' },
-    { slug: 'anting', name: 'Anting', image: '/images/terroir_pearl_plate_left.jpg' },
-    { slug: 'gelang', name: 'Gelang', image: '/images/placeholder_jewelry.svg' },
-    { slug: 'bros', name: 'Bros', image: '/images/placeholder_jewelry.svg' },
+    { slug: 'kalung', name: 'Kalung' },
+    { slug: 'cincin', name: 'Cincin' },
+    { slug: 'anting', name: 'Anting' },
+    { slug: 'gelang', name: 'Gelang' },
+    { slug: 'bros', name: 'Bros' },
   ];
 
   const activeProducts = products || [];
@@ -177,27 +177,15 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
             Lihat Semua
           </button>
         </div>
-        <div className="flex items-center gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar py-1">
+        <div className="flex items-center gap-2.5 overflow-x-auto snap-x snap-mandatory no-scrollbar py-1">
           {categoryIcons.map((cat) => (
             <button
               key={cat.slug}
               type="button"
               onClick={() => navigate(`/katalog?category=${cat.slug}`)}
-              className="flex flex-col items-center gap-1.5 shrink-0 snap-start touch-feedback cursor-pointer group"
+              className="flex items-center justify-center min-h-[40px] px-4 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:border-[#8A6A2F] text-[12px] font-semibold text-[var(--text)] shrink-0 snap-start touch-feedback cursor-pointer shadow-2xs transition-all"
             >
-              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[var(--border)] group-hover:border-[#8A6A2F] dark:group-hover:border-[#D9B877] p-0.5 bg-[var(--surface)] shadow-2xs transition-colors">
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  width={56}
-                  height={56}
-                  className="w-full h-full object-cover rounded-full"
-                  loading="lazy"
-                />
-              </div>
-              <span className="text-[11px] font-medium text-[var(--text)] truncate max-w-[64px] text-center">
-                {cat.name}
-              </span>
+              <span>{cat.name}</span>
             </button>
           ))}
         </div>

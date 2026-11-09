@@ -152,11 +152,11 @@ test('U-11.3: command storage:migrate-proofs-private memindahkan file bukti tran
     // Buktikan file telah berpindah ke disk privat
     expect(Storage::disk('private')->exists($legacyFilePath))->toBeTrue();
 
-    // Pengguna lain (tamu / customer lain) ditolak 401/403
+    // Pengguna lain (tamu / customer lain) ditolak 404
     $stranger = User::factory()->create(['role' => 'user', 'status' => 'active']);
     $this->actingAs($stranger)
         ->getJson("/api/v1/orders/{$order->id}/payments/{$payment->id}/proof")
-        ->assertStatus(403);
+        ->assertStatus(404);
 
     // Pemilik pesanan sah berhak mengunduh bukti transfer
     $ownerRes = $this->actingAs($this->customer)

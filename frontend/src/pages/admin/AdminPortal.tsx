@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import {
   LayoutDashboard,
   Package,
@@ -42,7 +43,7 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { ProductFormModal } from '../../components/admin/ProductFormModal';
 import { APPROVAL_RULES } from '../../config/approvalRules';
-import { reportApi, apiClient, catalogApi, resolveMediaUrl } from '../../lib/api';
+import { reportApi, apiClient, categoryApi, resolveMediaUrl } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboardSync } from '../../hooks/useDashboardSync';
 import type {
@@ -204,6 +205,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [isCategoryEditModalOpen, setIsCategoryEditModalOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [newCatSubtitle, setNewCatSubtitle] = useState('');
+  const [newCatImage, setNewCatImage] = useState<File | null>(null);
+  const [editingCatImage, setEditingCatImage] = useState<File | null>(null);
+  const [categoryModalError, setCategoryModalError] = useState<string | null>(null);
+  const [isCategorySubmitting, setIsCategorySubmitting] = useState(false);
   const [editingCategory, setEditingCategory] = useState<MockCategory | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<MockCategory | null>(null);
 
@@ -369,17 +374,20 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   }, []);
 
   const loadCategories = React.useCallback(() => {
-    catalogApi.getCategories()
+    categoryApi.getCategories()
       .then((cats) => {
         if (Array.isArray(cats)) {
           const mappedCats: MockCategory[] = cats.map((cat: any) => ({
             id: cat.id,
             name: cat.name,
-            subtitle: cat.subtitle || 'Koleksi Mutiara Air Laut Lombok',
+            subtitle: cat.description || cat.subtitle || 'Koleksi Mutiara Air Laut Lombok',
             slug: cat.slug,
-            productsCount: cat.products_count || 0,
+            productsCount: cat.products_count !== undefined ? cat.products_count : (cat.productsCount || 0),
             order: cat.order || cat.id,
-            status: 'Aktif',
+            status: cat.is_active === false ? 'Nonaktif' : 'Aktif',
+            image: cat.image || undefined,
+            webp_url: cat.webp_url || undefined,
+            description: cat.description || '',
           }));
           setCategories(mappedCats);
         }
@@ -681,266 +689,259 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   };
 
   // Submit Delete Product Approval to SPI (atau Eksekusi Langsung oleh SPI)
-  const submitDeleteProductApproval = (e: React.FormEvent) => {
+  const submitDeleteProductApproval = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!deleteProductCandidate || !deleteProductNotes.trim()) return;
 
-    if (userRole === 'spi') {
-      setProducts(prev => prev.filter(p => p.id !== deleteProductCandidate.id));
-      onLogActivity?.(
-        'Penghapusan Produk',
-        deleteProductCandidate.name,
-        `Status: Tersedia (Stok: ${deleteProductCandidate.stock}, Harga: ${deleteProductCandidate.formattedPrice})`,
-        `Dihapus Permanen - Alasan: ${deleteProductNotes.trim()} [Dieksekusi langsung oleh SPI]`
-      );
+    try {
+      await apiClient.delete(`/admin/products/${deleteProductCandidate.id}`);
+      showAdminToast(`✓ Produk "${deleteProductCandidate.name}" berhasil dinonaktifkan (diarsipkan).`);
       setDeleteProductCandidate(null);
       setDeleteProductNotes('');
-      showAdminToast('✓ Produk berhasil dihapus dari katalog langsung oleh SPI.');
-      return;
+      setProductToDelete(null);
+      loadProducts();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menghapus produk.';
+      showAdminToast(`✕ ${msg}`);
+      setDeleteProductCandidate(null);
+      setProductToDelete(null);
     }
-
-    onAddApproval?.({
-      type: 'HAPUS_PRODUK',
-      title: 'Penghapusan Produk dari Katalog',
-      target: deleteProductCandidate.name,
-      targetId: deleteProductCandidate.id,
-      requestedBy: 'Budi Santoso (Admin)',
-      notes: deleteProductNotes.trim(),
-      oldValue: `Status: Tersedia (Stok: ${deleteProductCandidate.stock}, Harga: ${deleteProductCandidate.formattedPrice})`,
-      newValue: 'Status: Dihapus Permanen dari Katalog',
-      payload: {
-        productId: deleteProductCandidate.id,
-        productName: deleteProductCandidate.name,
-      },
-    });
-
-    setDeleteProductCandidate(null);
-    setDeleteProductNotes('');
-    showAdminToast('✓ Pengajuan hapus produk telah diteruskan ke SPI untuk persetujuan.');
   };
 
   // Submit Payment Confirmation Approval to SPI (atau Eksekusi Langsung oleh SPI)
-  const submitPaymentApproval = (e: React.FormEvent) => {
+  const submitPaymentApproval = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!paymentApprovalOrder || !paymentApprovalNotes.trim()) return;
 
-    if (userRole === 'spi') {
-      setOrders(prev =>
-        prev.map(o => (o.id === paymentApprovalOrder.id ? { ...o, status: 'Dikemas' as const } : o))
-      );
-      onLogActivity?.(
-        'Konfirmasi Pembayaran Lunas',
-        `Pesanan ${paymentApprovalOrder.id}`,
-        `Status: ${paymentApprovalOrder.status} (${paymentApprovalOrder.paymentMethod})`,
-        `Status: Dikemas - Alasan: ${paymentApprovalNotes.trim()} [Dieksekusi langsung oleh SPI]`
-      );
+    try {
+      const res = await apiClient.put(`/orders/${paymentApprovalOrder.id}/payment-status`, {
+        payment_status: 'PAID',
+        notes: paymentApprovalNotes.trim(),
+      });
+      if (res.status === 202) {
+        showAdminToast('✓ Pengajuan konfirmasi pembayaran dikirim ke SPI untuk disetujui.');
+      } else {
+        showAdminToast('✓ Pembayaran pesanan diverifikasi lunas.');
+      }
       setIsPaymentApprovalModalOpen(false);
       setPaymentApprovalOrder(null);
       setPaymentApprovalNotes('');
-      showAdminToast('✓ Pembayaran pesanan diverifikasi lunas & dieksekusi langsung oleh SPI.');
-      return;
+      loadOrders();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal memproses verifikasi pembayaran.';
+      showAdminToast(`✕ ${msg}`);
+      setIsPaymentApprovalModalOpen(false);
+      setPaymentApprovalOrder(null);
     }
-
-    onAddApproval?.({
-      type: 'KONFIRMASI_PEMBAYARAN',
-      title: 'Konfirmasi Pelunasan Pembayaran Transfer Manual',
-      target: `Pesanan ${paymentApprovalOrder.id}`,
-      targetId: paymentApprovalOrder.id,
-      requestedBy: 'Budi Santoso (Admin)',
-      notes: paymentApprovalNotes.trim(),
-      oldValue: `Status: ${paymentApprovalOrder.status} (${paymentApprovalOrder.paymentMethod})`,
-      newValue: 'Status: Dikemas (Telah Diverifikasi Lunas)',
-      payload: {
-        orderId: paymentApprovalOrder.id,
-        newStatus: 'Dikemas',
-        paymentMethodDetail: `${paymentApprovalOrder.paymentMethod} (Disetujui SPI)`,
-      },
-    });
-
-    setIsPaymentApprovalModalOpen(false);
-    setPaymentApprovalOrder(null);
-    setPaymentApprovalNotes('');
-    showAdminToast('✓ Pengajuan konfirmasi pembayaran dikirim ke SPI untuk disetujui.');
   };
 
   // Submit Cancel Order Approval to SPI (atau Eksekusi Langsung oleh SPI)
-  const submitCancelOrderApproval = (e: React.FormEvent) => {
+  const submitCancelOrderApproval = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cancelOrderCandidate || !cancelOrderNotes.trim()) return;
 
-    if (userRole === 'spi') {
-      setOrders(prev =>
-        prev.map(o => (o.id === cancelOrderCandidate.id ? { ...o, status: 'Dibatalkan' as const } : o))
-      );
-      onLogActivity?.(
-        'Pembatalan Pesanan',
-        `Pesanan ${cancelOrderCandidate.id}`,
-        `Status: ${cancelOrderCandidate.status}`,
-        `Status: Dibatalkan - Alasan: ${cancelOrderNotes.trim()} [Dieksekusi langsung oleh SPI]`
-      );
+    try {
+      const res = await apiClient.put(`/orders/${cancelOrderCandidate.id}/order-status`, {
+        order_status: 'CANCELLED',
+        notes: cancelOrderNotes.trim(),
+      });
+      if (res.status === 202) {
+        showAdminToast('✓ Pengajuan pembatalan pesanan dikirim ke SPI untuk otorisasi.');
+      } else {
+        showAdminToast('✓ Pesanan berhasil dibatalkan.');
+      }
       setIsCancelOrderApprovalModalOpen(false);
       setCancelOrderCandidate(null);
       setCancelOrderNotes('');
-      showAdminToast('✓ Pesanan berhasil dibatalkan langsung oleh SPI.');
-      return;
+      loadOrders();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal membatalkan pesanan.';
+      showAdminToast(`✕ ${msg}`);
+      setIsCancelOrderApprovalModalOpen(false);
+      setCancelOrderCandidate(null);
     }
-
-    onAddApproval?.({
-      type: 'PEMBATALAN_PESANAN',
-      title: 'Pembatalan Pesanan Pelanggan',
-      target: `Pesanan ${cancelOrderCandidate.id}`,
-      targetId: cancelOrderCandidate.id,
-      requestedBy: 'Budi Santoso (Admin)',
-      notes: cancelOrderNotes.trim(),
-      oldValue: `Status: ${cancelOrderCandidate.status} (Total: Rp ${cancelOrderCandidate.total.toLocaleString('id-ID')})`,
-      newValue: 'Status: Dibatalkan',
-      payload: {
-        orderId: cancelOrderCandidate.id,
-        newStatus: 'Dibatalkan',
-      },
-    });
-
-    setIsCancelOrderApprovalModalOpen(false);
-    setCancelOrderCandidate(null);
-    setCancelOrderNotes('');
-    showAdminToast('✓ Pengajuan pembatalan pesanan dikirim ke SPI untuk otorisasi.');
   };
 
   // Submit Stock Adjustment Approval to SPI (atau Eksekusi Langsung oleh SPI)
-  const submitStockAdjustmentApproval = (e: React.FormEvent) => {
+  const submitStockAdjustmentApproval = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStockItem || !stockAdjustNotes.trim()) return;
 
     const diff = stockAdjustQty - selectedStockItem.stock;
-    const sign = diff > 0 ? '+' : '';
 
-    if (userRole === 'spi') {
-      const targetQty = stockAdjustQty;
-      setStockItems(prev =>
-        prev.map(s =>
-          s.id === selectedStockItem.id
-            ? {
-                ...s,
-                stock: targetQty,
-                status: targetQty === 0 ? 'Habis' : targetQty <= 5 ? 'Menipis' : 'Aman',
-              }
-            : s
-        )
-      );
-      onLogActivity?.(
-        'Penyesuaian Manual Stok Gudang',
-        selectedStockItem.productName,
-        `Stok: ${selectedStockItem.stock} butir`,
-        `Stok: ${targetQty} butir (${sign}${diff} butir) - Alasan: ${stockAdjustNotes.trim()} [Dieksekusi langsung oleh SPI]`
-      );
+    try {
+      const res = await apiClient.post(`/products/${selectedStockItem.id}/stock`, {
+        delta: diff,
+        reason: stockAdjustNotes.trim() || 'Penyesuaian stok opname fisik oleh operasional',
+      });
+      if (res.status === 202) {
+        showAdminToast('✓ Pengajuan penyesuaian stok manual dikirim ke antrean Persetujuan SPI.');
+      } else {
+        showAdminToast('✓ Penyesuaian stok berhasil diterapkan ke inventaris.');
+      }
       setIsAdjustStockOpen(false);
       setSelectedStockItem(null);
       setStockAdjustNotes('');
-      showAdminToast('✓ Penyesuaian stok berhasil diterapkan langsung oleh SPI.');
-      return;
+      loadProducts();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menyesuaikan stok produk.';
+      showAdminToast(`✕ ${msg}`);
+      setIsAdjustStockOpen(false);
+      setSelectedStockItem(null);
     }
-
-    onAddApproval?.({
-      type: 'PENYESUAIAN_STOK',
-      title: 'Penyesuaian Manual Stok Gudang',
-      target: selectedStockItem.productName,
-      targetId: selectedStockItem.id,
-      requestedBy: 'Budi Santoso (Admin)',
-      notes: stockAdjustNotes.trim(),
-      oldValue: `Stok: ${selectedStockItem.stock} butir`,
-      newValue: `Stok: ${stockAdjustQty} butir (${sign}${diff} butir)`,
-      payload: {
-        stockId: selectedStockItem.id,
-        newStock: stockAdjustQty,
-        qtyChange: diff,
-        type: diff > 0 ? 'Masuk' : 'Keluar',
-      },
-    });
-
-    setIsAdjustStockOpen(false);
-    setSelectedStockItem(null);
-    setStockAdjustNotes('');
-    showAdminToast('✓ Pengajuan penyesuaian stok manual dikirim ke antrean Persetujuan SPI.');
   };
 
   // Handle Order Status Update
-  const handleUpdateOrderStatus = (newStatus: MockOrder['status']) => {
+  const handleUpdateOrderStatus = async (newStatus: MockOrder['status']) => {
     if (!selectedOrder) return;
-    const updated: MockOrder = {
-      ...selectedOrder,
-      status: newStatus,
-      trackingNumber: inputResi || selectedOrder.trackingNumber,
-      courier: inputCourier || selectedOrder.courier,
-    };
-    setSelectedOrder(updated);
-    setOrders(prev => prev.map(o => (o.id === selectedOrder.id ? updated : o)));
-    showAdminToast(`✓ Status pesanan ${selectedOrder.id} diperbarui menjadi "${newStatus}".`);
+    try {
+      if (newStatus === 'Dikirim') {
+        await apiClient.put(`/orders/${selectedOrder.id}/tracking`, {
+          tracking_number: inputResi || selectedOrder.trackingNumber || 'JNE-REG-001',
+          courier: inputCourier || selectedOrder.courier || 'JNE Express (Berasuransi)',
+        });
+      } else {
+        const statusMap: Record<string, string> = {
+          'Menunggu Pembayaran': 'PENDING',
+          'Dikemas': 'PROCESSING',
+          'Dikirim': 'SHIPPED',
+          'Selesai': 'DELIVERED',
+          'Dibatalkan': 'CANCELLED',
+        };
+        const backendStatus = statusMap[newStatus] || 'PROCESSING';
+        await apiClient.put(`/orders/${selectedOrder.id}/order-status`, {
+          order_status: backendStatus,
+          notes: `Status pesanan diubah menjadi ${newStatus} oleh operasional`,
+        });
+      }
+      showAdminToast(`✓ Status pesanan ${selectedOrder.id} diperbarui menjadi "${newStatus}".`);
+      loadOrders();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal memperbarui status pesanan.';
+      showAdminToast(`✕ ${msg}`);
+    }
   };
 
   // Handle Issue Certificate
-  const handleIssueCertificate = (e: React.FormEvent) => {
+  const handleIssueCertificate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCertNumber.trim()) return;
-    const newCert: MockCertificate = {
-      id: Date.now(),
-      certNumber: newCertNumber.trim(),
-      productName: newCertProduct,
-      issuingLab: newCertLab,
-      grade: newCertGrade,
-      pearlSize: newCertPearlSize,
-      issueDate: '29 Okt 2026',
-      pdfFileUrl: `#[PDF-${newCertNumber.trim()}]`,
-    };
-    setCertificates(prev => [newCert, ...prev]);
-    setNewCertNumber('');
-    setIsCertModalOpen(false);
+    try {
+      await apiClient.post('/admin/certificates', {
+        nomor: newCertNumber.trim(),
+        lab: newCertLab || 'Laboratorium Gemologi Independen',
+        grade: newCertGrade || 'AAA',
+        ukuran: newCertPearlSize || '11-12 mm',
+        tanggal: new Date().toISOString().split('T')[0],
+      });
+      showAdminToast(`✓ Sertifikat keaslian gemologi ${newCertNumber.trim()} berhasil diterbitkan.`);
+      setNewCertNumber('');
+      setIsCertModalOpen(false);
+      loadCertificates();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menerbitkan sertifikat gemologi.';
+      showAdminToast(`✕ ${msg}`);
+    }
   };
 
   // Handle Delete Certificate
-  const handleConfirmDeleteCert = () => {
-    if (certToDelete) {
-      setCertificates(prev => prev.filter(c => c.id !== certToDelete.id));
+  const handleConfirmDeleteCert = async () => {
+    if (!certToDelete) return;
+    try {
+      await apiClient.delete(`/admin/certificates/${certToDelete.id}`);
+      showAdminToast(`✓ Sertifikat ${certToDelete.certNumber} telah berhasil dihapus.`);
+      setCertToDelete(null);
+      loadCertificates();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menghapus sertifikat.';
+      showAdminToast(`✕ ${msg}`);
       setCertToDelete(null);
     }
   };
 
-  // Handle Category Create
-  const handleCreateCategory = (e: React.FormEvent) => {
+  // Handle Category Create (API-backed with mandatory image upload)
+  const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
-    const newCat: MockCategory = {
-      id: Date.now(),
-      name: newCatName.trim(),
-      subtitle: newCatSubtitle.trim() || 'Koleksi Perhiasan Mutiara Samudera',
-      slug: newCatName.toLowerCase().replace(/\s+/g, '-'),
-      productsCount: 0,
-      order: categories.length + 1,
-      status: 'Aktif',
-    };
-    setCategories(prev => [...prev, newCat]);
-    setNewCatName('');
-    setNewCatSubtitle('');
-    setIsCategoryModalOpen(false);
-    showAdminToast(`✓ Kategori "${newCat.name}" berhasil dibuat.`);
+    if (!newCatImage) {
+      setCategoryModalError('Foto kategori perhiasan mutiara wajib diunggah.');
+      return;
+    }
+    setIsCategorySubmitting(true);
+    setCategoryModalError(null);
+    try {
+      const fd = new FormData();
+      fd.append('name', newCatName.trim());
+      if (newCatSubtitle.trim()) {
+        fd.append('description', newCatSubtitle.trim());
+      }
+      fd.append('image', newCatImage);
+
+      const res = await categoryApi.createCategory(fd);
+      showAdminToast(res.message || `✓ Kategori "${newCatName.trim()}" berhasil dibuat.`);
+      setNewCatName('');
+      setNewCatSubtitle('');
+      setNewCatImage(null);
+      setIsCategoryModalOpen(false);
+      loadCategories();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.response?.data?.errors?.image?.[0] || 'Gagal menambahkan kategori.';
+      setCategoryModalError(msg);
+      showAdminToast(`✕ ${msg}`);
+    } finally {
+      setIsCategorySubmitting(false);
+    }
   };
 
-  // Handle Category Update
-  const handleUpdateCategory = (e: React.FormEvent) => {
+  // Handle Category Update (API-backed with conditional image upload)
+  const handleUpdateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingCategory?.name.trim()) return;
-    setCategories(prev =>
-      prev.map(c => (c.id === editingCategory.id ? editingCategory : c))
-    );
-    setIsCategoryEditModalOpen(false);
-    setEditingCategory(null);
-    showAdminToast(`✓ Kategori "${editingCategory.name}" berhasil diperbarui.`);
+    if (!editingCategory.image && !editingCatImage) {
+      setCategoryModalError('Foto kategori perhiasan mutiara wajib diunggah karena kategori belum memiliki gambar.');
+      return;
+    }
+    setIsCategorySubmitting(true);
+    setCategoryModalError(null);
+    try {
+      const fd = new FormData();
+      fd.append('name', editingCategory.name.trim());
+      if (editingCategory.subtitle) {
+        fd.append('description', editingCategory.subtitle);
+      }
+      if (editingCategory.status) {
+        fd.append('is_active', editingCategory.status === 'Aktif' ? '1' : '0');
+      }
+      if (editingCatImage) {
+        fd.append('image', editingCatImage);
+      }
+
+      const res = await categoryApi.updateCategory(editingCategory.id, fd);
+      showAdminToast(res.message || `✓ Kategori "${editingCategory.name}" berhasil diperbarui.`);
+      setIsCategoryEditModalOpen(false);
+      setEditingCategory(null);
+      setEditingCatImage(null);
+      loadCategories();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.response?.data?.errors?.image?.[0] || 'Gagal memperbarui kategori.';
+      setCategoryModalError(msg);
+      showAdminToast(`✕ ${msg}`);
+    } finally {
+      setIsCategorySubmitting(false);
+    }
   };
 
-  // Handle Category Delete
-  const handleConfirmDeleteCategory = () => {
-    if (categoryToDelete) {
-      setCategories(prev => prev.filter(c => c.id !== categoryToDelete.id));
-      showAdminToast(`✓ Kategori "${categoryToDelete.name}" telah dihapus.`);
+  // Handle Category Delete (API-backed with 409 conflict protection)
+  const handleConfirmDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+    try {
+      const res = await categoryApi.deleteCategory(categoryToDelete.id);
+      showAdminToast(res.message || `✓ Kategori "${categoryToDelete.name}" telah dihapus.`);
+      setCategoryToDelete(null);
+      loadCategories();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menghapus kategori.';
+      showAdminToast(`✕ ${msg}`);
       setCategoryToDelete(null);
     }
   };
@@ -1496,13 +1497,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               {categories.map((cat) => (
                 <tr key={cat.id} className="hover:bg-[#F4F1EB]/60 transition-colors">
                   <td className="py-3 px-4">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
-                      <img
-                        src={getAdminProductImage(cat.name)}
-                        alt={cat.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    {cat.image ? (
+                      <div className="w-10 h-10 rounded-lg overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
+                        <img
+                          src={resolveMediaUrl(cat.image)}
+                          alt={cat.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                        Belum ada gambar, wajib diunggah
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 px-4 font-medium text-[#12263A]">{cat.name}</td>
                   <td className="py-3 px-4 text-xs text-[#4A5666]">{cat.subtitle}</td>
@@ -1547,10 +1554,24 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
                     Tambah Kategori Baru
                   </h3>
-                  <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="p-1 rounded-full hover:bg-[#F4F1EB]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCategoryModalOpen(false);
+                      setCategoryModalError(null);
+                      setNewCatImage(null);
+                    }}
+                    className="p-1 rounded-full hover:bg-[#F4F1EB]"
+                  >
                     <X className="w-5 h-5 text-[#4A5666]" />
                   </button>
                 </div>
+
+                {categoryModalError && (
+                  <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+                    {categoryModalError}
+                  </div>
+                )}
 
                 <form onSubmit={handleCreateCategory} className="space-y-4">
                   <div>
@@ -1582,33 +1603,42 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
                   <div>
                     <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                      Banner Ilustrasi Kategori
+                      Foto Kategori (Wajib)
                     </label>
-                    <div className="h-[90px] rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] relative">
-                      <img
-                        src="/images/hero_pearl_shell.jpg"
-                        alt="Banner Kategori"
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent flex items-end p-2.5">
-                        <span className="text-white text-xs font-medium">Pratinjau Banner Koleksi</span>
-                      </div>
-                    </div>
+                    <input
+                      type="file"
+                      required
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setNewCatImage(file);
+                        setCategoryModalError(null);
+                      }}
+                      className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#12263A] file:text-white hover:file:bg-[#1A3652]"
+                    />
+                    <p className="text-[11px] text-[#4A5666] mt-1">
+                      Maksimal 5 MB, maks. 4000 px sisi terpanjang. Format JPG, PNG, atau WebP. Versi WebP akan dibuat otomatis dan EXIF dibersihkan.
+                    </p>
                   </div>
 
                   <div className="flex justify-end gap-3 pt-4 border-t border-[#E6DDD0]">
                     <button
                       type="button"
-                      onClick={() => setIsCategoryModalOpen(false)}
+                      onClick={() => {
+                        setIsCategoryModalOpen(false);
+                        setCategoryModalError(null);
+                        setNewCatImage(null);
+                      }}
                       className="min-h-[44px] px-5 rounded-full border border-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB]"
                     >
                       Batal
                     </button>
                     <button
                       type="submit"
-                      className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652]"
+                      disabled={isCategorySubmitting}
+                      className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652] disabled:opacity-50"
                     >
-                      Simpan Kategori
+                      {isCategorySubmitting ? 'Menyimpan...' : 'Simpan Kategori'}
                     </button>
                   </div>
                 </form>
@@ -1624,10 +1654,24 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
                     Ubah Data Kategori
                   </h3>
-                  <button type="button" onClick={() => setIsCategoryEditModalOpen(false)} className="p-1 rounded-full hover:bg-[#F4F1EB]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCategoryEditModalOpen(false);
+                      setCategoryModalError(null);
+                      setEditingCatImage(null);
+                    }}
+                    className="p-1 rounded-full hover:bg-[#F4F1EB]"
+                  >
                     <X className="w-5 h-5 text-[#4A5666]" />
                   </button>
                 </div>
+
+                {categoryModalError && (
+                  <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+                    {categoryModalError}
+                  </div>
+                )}
 
                 <form onSubmit={handleUpdateCategory} className="space-y-4">
                   <div>
@@ -1653,6 +1697,44 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       onChange={(e) => setEditingCategory({ ...editingCategory, subtitle: e.target.value })}
                       className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none focus:border-[#12263A]"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                      Foto Kategori {!editingCategory.image ? '(Wajib - Belum ada gambar)' : '(Opsional - Ganti Gambar)'}
+                    </label>
+                    {editingCategory.image ? (
+                      <div className="mb-2 flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0">
+                          <img
+                            src={resolveMediaUrl(editingCategory.image)}
+                            alt={editingCategory.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <span className="text-[11px] text-[#4A5666]">Gambar saat ini aktif. Unggah berkas baru bila ingin menggantinya.</span>
+                      </div>
+                    ) : (
+                      <div className="mb-2">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                          Belum ada gambar, wajib diunggah
+                        </span>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      required={!editingCategory.image}
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setEditingCatImage(file);
+                        setCategoryModalError(null);
+                      }}
+                      className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#12263A] file:text-white hover:file:bg-[#1A3652]"
+                    />
+                    <p className="text-[11px] text-[#4A5666] mt-1">
+                      Maks. 5 MB, maks. 4000 px sisi terpanjang. Mengganti gambar akan menghapus gambar lama secara permanen.
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -1685,16 +1767,21 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <div className="flex justify-end gap-3 pt-4 border-t border-[#E6DDD0]">
                     <button
                       type="button"
-                      onClick={() => setIsCategoryEditModalOpen(false)}
+                      onClick={() => {
+                        setIsCategoryEditModalOpen(false);
+                        setCategoryModalError(null);
+                        setEditingCatImage(null);
+                      }}
                       className="min-h-[44px] px-5 rounded-full border border-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB]"
                     >
                       Batal
                     </button>
                     <button
                       type="submit"
-                      className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652]"
+                      disabled={isCategorySubmitting}
+                      className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652] disabled:opacity-50"
                     >
-                      Perbarui Kategori
+                      {isCategorySubmitting ? 'Memperbarui...' : 'Perbarui Kategori'}
                     </button>
                   </div>
                 </form>
@@ -2654,7 +2741,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <label className="block text-xs font-semibold text-[#12263A] mb-1">Deskripsi Singkat</label>
                   <textarea rows={3} defaultValue="Atelier mutiara air laut selatan pilihan dari Lombok dengan kilau cermin alami dan sertifikasi gemologi resmi." className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
                 </div>
-                <button type="button" onClick={() => alert('Perubahan profil tersimpan')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
+                <button type="button" onClick={() => toast.success('Perubahan profil toko perhiasan berhasil disimpan.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
               </div>
             )}
 
@@ -2673,7 +2760,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <label className="block text-xs font-semibold text-[#12263A] mb-1">Alamat Atelier</label>
                   <textarea rows={2} defaultValue="Kawasan Pesisir Sire, Tanjung, Kabupaten Lombok Utara, Nusa Tenggara Barat 83352" className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
                 </div>
-                <button type="button" onClick={() => alert('Perubahan kontak tersimpan')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
+                <button type="button" onClick={() => toast.success('Pengaturan kontak concierge berhasil disimpan.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
               </div>
             )}
 
@@ -2694,7 +2781,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     <span>Wajibkan Asuransi Penuh untuk Nilai Tinggi</span>
                   </label>
                 </div>
-                <button type="button" onClick={() => alert('Pengaturan kurir tersimpan')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
+                <button type="button" onClick={() => toast.success('Konfigurasi pengiriman dan asuransi diperbarui.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
               </div>
             )}
 
@@ -2709,7 +2796,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <p className="font-semibold text-[#12263A]">Rekening Mandiri Bisnis:</p>
                   <p className="font-mono text-[#12263A]">142-00-9922881-0 a.n. CD'E Pearls Official</p>
                 </div>
-                <button type="button" onClick={() => alert('Rekening bank tersimpan')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Perbarui Rekening</button>
+                <button type="button" onClick={() => toast.success('Informasi rekening pembayaran bank berhasil diperbarui.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Perbarui Rekening</button>
               </div>
             )}
 
@@ -2728,7 +2815,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <label className="block text-xs font-semibold text-[#12263A] mb-1">Kata Sandi Baru</label>
                   <input type="password" placeholder="••••••••••••" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
                 </div>
-                <button type="button" onClick={() => alert('Kata sandi diperbarui')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Keamanan</button>
+                <button type="button" onClick={() => toast.success('Kredensial keamanan akun staf telah diperbarui.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Keamanan</button>
               </div>
             )}
           </div>

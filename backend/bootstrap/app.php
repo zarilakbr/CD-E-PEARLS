@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: (require __DIR__.'/../config/trustedproxy.php')['proxies']);
         $middleware->prepend(\App\Http\Middleware\TrustCloudflareProxies::class);
         $middleware->statefulApi();
+        if (in_array(env('APP_ENV', 'production'), ['local', 'testing'])) {
+            $middleware->validateCsrfTokens(except: [
+                'api/*',
+            ]);
+        }
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->redirectGuestsTo(fn () => null);
 

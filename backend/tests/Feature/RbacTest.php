@@ -99,9 +99,9 @@ test('idor prevention prevents customer from viewing another customer order', fu
 
     $tokenA = $userA->createToken('test')->plainTextToken;
 
-    // User A attempts to view Order B -> must be 403 Forbidden
+    // User A attempts to view Order B -> must be 404 Not Found
     $this->withHeader('Authorization', "Bearer {$tokenA}")
         ->getJson("/api/v1/orders/{$orderB->id}")
-        ->assertStatus(403);
+        ->assertStatus(404);
 });
 

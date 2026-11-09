@@ -24,6 +24,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../components/u
 import { Slider } from '../../components/ui/slider';
 import { catalogApi } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
+import { useWishlist } from '../../context/WishlistContext';
+import { useCart } from '../../context/CartContext';
 import type { MockProduct } from '../../types/models';
 
 interface CatalogPageProps {
@@ -60,7 +62,8 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
   const [sortBy, setSortBy] = useState<string>(paramSort);
   const [maxPrice, setMaxPrice] = useState<number>(paramMaxPrice);
   const [readyOnly, setReadyOnly] = useState<boolean>(paramReady);
-  const [wishlistIds, setWishlistIds] = useState<number[]>([]);
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const { addToCart } = useCart();
   const [gridColumns, setGridColumns] = useState<'3' | '4'>('4');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
@@ -199,12 +202,6 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
     maxPrice < 50000000 ? 1 : 0,
     readyOnly ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
-
-  const toggleWishlist = (id: number) => {
-    setWishlistIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
 
   const handleSimulateReload = () => {
     setIsLoading(true);
@@ -476,9 +473,12 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                     price={p.price}
                     formattedPrice={p.formattedPrice}
                     image={resolveMediaUrl(p.image)}
-                    isWishlisted={wishlistIds.includes(p.id)}
-                    onToggleWishlist={() => toggleWishlist(p.id)}
-                    onAddToCart={() => onAddToCart(p.name)}
+                    isWishlisted={isInWishlist(p.id)}
+                    onToggleWishlist={() => toggleWishlist(p)}
+                    onAddToCart={() => {
+                      addToCart(p);
+                      onAddToCart(p.name);
+                    }}
                     onSelect={() => onSelectProduct(p)}
                   />
                 ))}
@@ -1039,9 +1039,13 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                       price={p.price}
                       formattedPrice={p.formattedPrice}
                       image={resolveMediaUrl(p.image)}
-                      isWishlisted={wishlistIds.includes(p.id)}
-                      onToggleWishlist={() => toggleWishlist(p.id)}
-                      onAddToCart={() => onAddToCart(p.name)}
+                      isSoldOut={p.stock !== undefined && p.stock <= 0}
+                      isWishlisted={isInWishlist(p.id)}
+                      onToggleWishlist={() => toggleWishlist(p)}
+                      onAddToCart={() => {
+                        addToCart(p);
+                        onAddToCart(p.name);
+                      }}
                       onSelect={() => onSelectProduct(p)}
                     />
                   ))}

@@ -43,11 +43,22 @@ class CartController extends Controller
             $lineTotal = $price * $item->quantity;
             $subtotal += $lineTotal;
 
+            $appUrl = rtrim(config('app.url'), '/');
+            $imgAbs = null;
+            $webpAbs = null;
+            if (! empty($product->image)) {
+                $imgAbs = (str_starts_with($product->image, 'http://') || str_starts_with($product->image, 'https://'))
+                    ? $product->image
+                    : $appUrl . '/' . ltrim($product->image, '/');
+                $webpAbs = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $imgAbs);
+            }
+
             $itemsData[] = [
                 'id' => $item->id,
                 'product_id' => $product->id,
                 'product_name' => $product->name,
-                'product_image' => $product->image,
+                'product_image' => $imgAbs,
+                'webp_url' => $webpAbs,
                 'price' => $price,
                 'original_price' => (float) ($product->original_price ?? $price),
                 'stock' => $product->stock,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Models\Wishlist;
 use Illuminate\Http\JsonResponse;
@@ -25,9 +26,11 @@ class WishlistController extends Controller
             ->latest()
             ->get();
 
+        $products = $wishlists->pluck('product')->filter()->values();
+
         return response()->json([
             'success' => true,
-            'data' => $wishlists->pluck('product')->filter()->values(),
+            'data' => ProductResource::collection($products),
             'total' => $wishlists->count(),
         ]);
     }

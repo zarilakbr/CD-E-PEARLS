@@ -14,6 +14,8 @@ class Category extends Model
         'name',
         'description',
         'icon',
+        'image',
+        'webp_url',
         'is_active',
     ];
 

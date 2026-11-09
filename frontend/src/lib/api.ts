@@ -29,6 +29,11 @@ export const apiClient = axios.create({
 
 // Attach Bearer token fallback if present in storage
 apiClient.interceptors.request.use((config) => {
+  if (import.meta.env.DEV || import.meta.env.MODE === 'test' || import.meta.env.VITE_E2E === 'true') {
+    if (typeof window !== 'undefined' && (window as any).__CDE_API_URL__) {
+      config.baseURL = (window as any).__CDE_API_URL__;
+    }
+  }
   const token = localStorage.getItem('cde_auth_token');
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -357,6 +362,42 @@ export const orderApi = {
 
   async uploadProof(id: string | number, form: FormData) {
     return customerApi.uploadPaymentProof(id, form);
+  },
+};
+
+// ==========================================
+// CATEGORY CRUD APIs (Admin & Public)
+// ==========================================
+
+export const categoryApi = {
+  async getCategories() {
+    const res = await apiClient.get('/categories');
+    return res.data?.data || res.data;
+  },
+
+  async getCategory(id: string | number) {
+    const res = await apiClient.get(`/categories/${id}`);
+    return res.data?.data || res.data;
+  },
+
+  async createCategory(formData: FormData) {
+    const res = await apiClient.post('/categories', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
+  async updateCategory(id: string | number, formData: FormData) {
+    formData.append('_method', 'PUT');
+    const res = await apiClient.post(`/categories/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
+  async deleteCategory(id: string | number) {
+    const res = await apiClient.delete(`/categories/${id}`);
+    return res.data;
   },
 };
 

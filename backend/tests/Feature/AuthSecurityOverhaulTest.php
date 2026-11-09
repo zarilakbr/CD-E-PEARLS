@@ -358,6 +358,45 @@ test('8. must_change_password memaksa redirect sebelum akses fitur lain, dan di-
     $resAllowed->assertStatus(200);
 });
 
+test('akun staf dengan must_change_password=true ditolak di rute admin dan spi luar v1', function () {
+    $adminStaff = User::factory()->create([
+        'role' => 'admin',
+        'status' => 'active',
+        'must_change_password' => true,
+    ]);
+
+    $spiStaff = User::factory()->create([
+        'role' => 'spi',
+        'status' => 'active',
+        'must_change_password' => true,
+    ]);
+
+    // Akses ke /api/admin/products ditolak 403 MUST_CHANGE_PASSWORD
+    $this->actingAs($adminStaff)->getJson('/api/admin/products')
+        ->assertStatus(403)
+        ->assertJson([
+            'success' => false,
+            'error' => 'MUST_CHANGE_PASSWORD',
+        ]);
+
+    // Akses ke /api/spi/summary ditolak 403 MUST_CHANGE_PASSWORD
+    $this->actingAs($spiStaff)->getJson('/api/spi/summary')
+        ->assertStatus(403)
+        ->assertJson([
+            'success' => false,
+            'error' => 'MUST_CHANGE_PASSWORD',
+        ]);
+
+    // Dan jika akun frozen, juga ditolak 403 ACCOUNT_FROZEN
+    $adminStaff->update(['must_change_password' => false, 'status' => 'frozen']);
+    $this->actingAs($adminStaff)->getJson('/api/admin/products')
+        ->assertStatus(403)
+        ->assertJson([
+            'success' => false,
+            'error' => 'ACCOUNT_FROZEN',
+        ]);
+});
+
 // Skenario 9: Logout
 test('9. logout mencabut token dan mengakhiri sesi autentikasi', function () {
     $user = User::create([
