@@ -207,3 +207,27 @@ export interface MockStaffAccount {
   permissions: string[];
 }
 
+export interface MockVoucher {
+  id: number;
+  code: string;
+  type: 'fixed' | 'percent';
+  value: number;
+  quota?: number | null;
+  used_count: number;
+  min_spend: number;
+  starts_at?: string | null;
+  expires_at?: string | null;
+  is_active: boolean;
+}
+
+export interface MockNotification {
+  id: number;
+  user_id: number;
+  type: string;
+  title: string;
+  message: string;
+  data?: any;
+  read_at?: string | null;
+  created_at?: string;
+}
+

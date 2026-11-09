@@ -20,6 +20,8 @@ import {
   HelpCircle,
   Settings,
   Upload,
+  Bell,
+  CheckCheck,
 } from 'lucide-react';
 import { DashboardLayout, type DashboardMenuItem } from '../../layouts/DashboardLayout';
 import { PageHeader } from '../../components/common/PageHeader';
@@ -28,8 +30,8 @@ import { DataTable } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Stepper } from '../../components/common/Stepper';
 import { ProductCard } from '../../components/common/ProductCard';
-import type { MockOrder } from '../../types/models';
-import { authApi, apiClient, addressApi, orderApi } from '../../lib/api';
+import type { MockOrder, MockNotification } from '../../types/models';
+import { authApi, apiClient, addressApi, orderApi, notificationApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
@@ -69,7 +71,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     if (initialMenu) return initialMenu === 'orders' ? 'my_orders' : initialMenu;
     const path = typeof window !== 'undefined' ? window.location.pathname : '';
     if (path === '/akun/pesanan') return 'my_orders';
-    if (path === '/akun/status-pengiriman') return 'tracking';
+    if (path === '/akun/status-pengiriman') return 'shipping_status';
+    if (path === '/akun/notifikasi') return 'notifications';
     if (path === '/akun/favorit') return 'wishlist';
     if (path === '/akun/alamat') return 'addresses';
     if (path === '/akun/profil') return 'profile';
@@ -81,6 +84,77 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       setActiveMenu(initialMenu === 'orders' ? 'my_orders' : initialMenu);
     }
   }, [initialMenu]);
+
+  // Notifications State (Tahap V3b)
+  const [notifications, setNotifications] = useState<MockNotification[]>([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+  const loadNotifications = React.useCallback(async () => {
+    setIsLoadingNotifications(true);
+    try {
+      const res = await notificationApi.getNotifications();
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setNotifications(list);
+      setUnreadNotificationsCount(list.filter((n: MockNotification) => !n.read_at).length);
+    } catch (err: any) {
+      console.error('Failed to load notifications:', err);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  }, []);
+
+  const handleMarkAsRead = async (id: number | string) => {
+    try {
+      await notificationApi.markRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
+      );
+      setUnreadNotificationsCount((prev) => Math.max(0, prev - 1));
+      toast.success('Notifikasi ditandai sudah dibaca.');
+    } catch (err) {
+      toast.error('Gagal memperbarui status notifikasi.');
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationApi.markAllRead();
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
+      );
+      setUnreadNotificationsCount(0);
+      toast.success('Semua notifikasi ditandai sudah dibaca.');
+    } catch (err) {
+      toast.error('Gagal memperbarui notifikasi.');
+    }
+  };
+
+  const handleDeleteNotification = async (id: number | string) => {
+    try {
+      await notificationApi.deleteNotification(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      setUnreadNotificationsCount((prev) => {
+        const target = notifications.find((n) => n.id === id);
+        return target && !target.read_at ? Math.max(0, prev - 1) : prev;
+      });
+      toast.success('Notifikasi berhasil dihapus.');
+    } catch (err) {
+      toast.error('Gagal menghapus notifikasi.');
+    }
+  };
+
+  const handleClearAllNotifications = async () => {
+    if (!window.confirm('Hapus semua riwayat notifikasi dari akun Anda?')) return;
+    try {
+      await notificationApi.clearNotifications();
+      setNotifications([]);
+      setUnreadNotificationsCount(0);
+      toast.success('Semua notifikasi berhasil dibersihkan.');
+    } catch (err) {
+      toast.error('Gagal membersihkan notifikasi.');
+    }
+  };
 
   // Customer Orders State
   const [orders, setOrders] = useState<MockOrder[]>([]);
@@ -265,8 +339,15 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       loadCustomerOrders();
       loadAddresses();
       refreshWishlist();
+      loadNotifications();
     }
-  }, [user, loadCustomerOrders, loadAddresses, refreshWishlist]);
+  }, [user, loadCustomerOrders, loadAddresses, refreshWishlist, loadNotifications]);
+
+  useEffect(() => {
+    if (activeMenu === 'notifications') {
+      loadNotifications();
+    }
+  }, [activeMenu, loadNotifications]);
 
   // Logout Dialog State
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
@@ -276,6 +357,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     { id: 'summary', label: 'Ringkasan', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'my_orders', label: 'Pesanan Saya', icon: <ShoppingBag className="w-4 h-4" />, badge: orders.length },
     { id: 'shipping_status', label: 'Status Pengiriman', icon: <Truck className="w-4 h-4" /> },
+    { id: 'notifications', label: 'Notifikasi', icon: <Bell className="w-4 h-4" />, badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined },
     { id: 'wishlist', label: 'Koleksi Favorit', icon: <Heart className="w-4 h-4" />, badge: wishlistProducts.length },
     { id: 'addresses', label: 'Alamat', icon: <MapPin className="w-4 h-4" /> },
     { id: 'profile', label: 'Profil Akun', icon: <UserIcon className="w-4 h-4" /> },
@@ -285,8 +367,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     setActiveMenu(id);
     const pathMap: Record<string, string> = {
       summary: '/akun',
+      my_orders: '/akun/pesanan',
       orders: '/akun/pesanan',
+      shipping_status: '/akun/status-pengiriman',
       tracking: '/akun/status-pengiriman',
+      notifications: '/akun/notifikasi',
       wishlist: '/akun/favorit',
       addresses: '/akun/alamat',
       profile: '/akun/profil',
@@ -1620,6 +1705,114 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   </div>
                 </form>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================
+          4.5b NOTIFIKASI SAYA (Tahap V3b)
+         ======================================================== */}
+      {activeMenu === 'notifications' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <PageHeader
+              title="Notifikasi Saya"
+              description="Pembaruan status pesanan, pembayaran, pengiriman, dan informasi atelier resmi."
+            />
+            <div className="flex items-center gap-2">
+              {unreadNotificationsCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllAsRead}
+                  className="min-h-[40px] px-4 rounded-full bg-[#12263A] text-white text-xs font-semibold hover:bg-[#1A3652] transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCheck className="w-3.5 h-3.5" />
+                  <span>Tandai Semua Dibaca</span>
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllNotifications}
+                  className="min-h-[40px] px-4 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Bersihkan Semua</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {isLoadingNotifications ? (
+            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-12 text-center text-[#4A5666] text-sm">
+              Memuat notifikasi...
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-12 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-[#F4F1EB] text-[#12263A] flex items-center justify-center mx-auto">
+                <Bell className="w-6 h-6 text-[#A08A5B]" />
+              </div>
+              <h3 className="font-serif text-lg font-semibold text-[#12263A]">Belum Ada Notifikasi</h3>
+              <p className="text-xs text-[#4A5666] max-w-sm mx-auto">
+                Pembaruan status pesanan, verifikasi pembayaran, dan resi pengiriman Anda akan muncul di sini.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {notifications.map((notif) => (
+                <div
+                  key={notif.id}
+                  className={`bg-white border rounded-2xl p-4 sm:p-5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                    notif.read_at ? 'border-[#E6DDD0] opacity-80' : 'border-[#D9B877] shadow-xs bg-[#FBF8F3]/40'
+                  }`}
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                      notif.read_at ? 'bg-[#F4F1EB] text-[#4A5666]' : 'bg-[#12263A] text-[#D9B877]'
+                    }`}>
+                      <Bell className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-[#12263A]">{notif.title}</h4>
+                        {!notif.read_at && (
+                          <span className="w-2 h-2 rounded-full bg-[#D9B877] inline-block" />
+                        )}
+                      </div>
+                      <p className="text-xs text-[#4A5666] mt-0.5 leading-relaxed">{notif.message}</p>
+                      {notif.created_at && (
+                        <p className="text-[11px] text-[#A08A5B] mt-1.5 font-mono">
+                          {new Date(notif.created_at).toLocaleString('id-ID', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    {!notif.read_at && (
+                      <button
+                        type="button"
+                        onClick={() => handleMarkAsRead(notif.id)}
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#F4F1EB] hover:bg-[#E6DDD0] text-[#12263A] cursor-pointer"
+                      >
+                        Tandai Dibaca
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteNotification(notif.id)}
+                      title="Hapus Notifikasi"
+                      className="p-2 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

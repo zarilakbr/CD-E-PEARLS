@@ -76,5 +76,49 @@ class NotificationController extends Controller
             'message' => 'Semua notifikasi berhasil ditandai sudah dibaca.',
         ]);
     }
+
+    /**
+     * Delete single notification belonging strictly to authenticated user.
+     */
+    public function destroy(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $notification = Notification::where('user_id', $user->id)
+            ->where('id', $id)
+            ->first();
+
+        if (! $notification) {
+            abort(404, 'Notifikasi tidak ditemukan.');
+        }
+
+        $notification->delete();
+
+        $unreadCount = Notification::where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notifikasi berhasil dihapus.',
+            'unread_count' => $unreadCount,
+        ]);
+    }
+
+    /**
+     * Clear all notifications of authenticated user.
+     */
+    public function clear(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        Notification::where('user_id', $user->id)->delete();
+
+        return response()->json([
+            'success' => true,
+            'unread_count' => 0,
+            'message' => 'Seluruh notifikasi berhasil dibersihkan.',
+        ]);
+    }
 }
 
