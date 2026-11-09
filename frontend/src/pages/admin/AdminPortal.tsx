@@ -486,13 +486,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     }
   }, [activeMenu, loadDashboardStats, loadProducts, loadOrders, loadCustomers, loadCategories, loadCertificates]);
 
-  // Real-time synchronization layer with 30s ETag polling (Tahap V2c)
+  const prevAdminOrdersVersionRef = React.useRef<string | null>(null);
+
+  // Real-time synchronization layer with 30s ETag polling (Tahap V2c & Tahap V3b)
   const { lastSyncLabel } = useDashboardSync({
     enabled: true,
     role: 'admin',
     intervalMs: 30000,
     onDataUpdated: (data) => {
-      if (data.total_orders !== undefined) {
+      if (data.orders_version && data.orders_version !== prevAdminOrdersVersionRef.current) {
+        prevAdminOrdersVersionRef.current = data.orders_version;
+        loadOrders();
+        loadDashboardStats();
+      } else if (data.total_orders !== undefined) {
         if (loadedTabs.current.has('orders')) {
           loadOrders();
         }
@@ -508,6 +514,16 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       }
     },
   });
+
+  // Keep selectedOrder in sync when orders list is updated via polling
+  React.useEffect(() => {
+    if (selectedOrder) {
+      const refreshed = orders.find(o => o.id === selectedOrder.id || (selectedOrder.rawId && o.rawId === selectedOrder.rawId));
+      if (refreshed) {
+        setSelectedOrder(refreshed);
+      }
+    }
+  }, [orders]);
 
 
   // Reports state

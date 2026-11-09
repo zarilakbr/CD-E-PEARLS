@@ -133,65 +133,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   const [newPasswordConfirmation, setNewPasswordConfirmation] = useState('');
   const [passwordUpdateMessage, setPasswordUpdateMessage] = useState<string | null>(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-
-  // Real-time synchronization layer with 60s ETag polling (Tahap V2c)
-  const { lastSyncLabel } = useDashboardSync({
-    enabled: !!user,
-    role: 'customer',
-    intervalMs: 60000,
-    onStatusChange: (_newStatus, _oldStatus, latestOrder) => {
-      if (latestOrder) {
-        setOrders((prev) =>
-          prev.map((o) => {
-            if (o.id === latestOrder.order_number || o.id === latestOrder.id) {
-              const s = (latestOrder.order_status || '').toUpperCase();
-              return {
-                ...o,
-                status:
-                  s === 'DELIVERED'
-                    ? 'Selesai'
-                    : s === 'SHIPPED'
-                    ? 'Dikirim'
-                    : s === 'PROCESSING'
-                    ? 'Dikemas'
-                    : s === 'CANCELLED'
-                    ? 'Dibatalkan'
-                    : 'Menunggu Pembayaran',
-                trackingNumber: latestOrder.tracking_number || o.trackingNumber,
-              };
-            }
-            return o;
-          })
-        );
-      }
-    },
-    onDataUpdated: (data) => {
-      if (data.latest_order) {
-        setOrders((prev) =>
-          prev.map((o) => {
-            if (o.id === data.latest_order?.order_number || o.id === data.latest_order?.id) {
-              const s = (data.latest_order.order_status || '').toUpperCase();
-              return {
-                ...o,
-                status:
-                  s === 'DELIVERED'
-                    ? 'Selesai'
-                    : s === 'SHIPPED'
-                    ? 'Dikirim'
-                    : s === 'PROCESSING'
-                    ? 'Dikemas'
-                    : s === 'CANCELLED'
-                    ? 'Dibatalkan'
-                    : 'Menunggu Pembayaran',
-                trackingNumber: data.latest_order.tracking_number || o.trackingNumber,
-              };
-            }
-            return o;
-          })
-        );
-      }
-    },
-  });
+  const prevCustomerOrdersVersionRef = React.useRef<string | null>(null);
 
   // Load customer orders from server
   const loadCustomerOrders = React.useCallback(() => {
@@ -269,6 +211,34 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       })
       .catch(() => {});
   }, [user]);
+
+  // Real-time synchronization layer with 60s ETag polling (Tahap V2c & Tahap V3b)
+  const { lastSyncLabel } = useDashboardSync({
+    enabled: !!user,
+    role: 'customer',
+    intervalMs: 60000,
+    onStatusChange: (_newStatus, _oldStatus, _latestOrder) => {
+      loadCustomerOrders();
+    },
+    onDataUpdated: (data) => {
+      if (data.orders_version && data.orders_version !== prevCustomerOrdersVersionRef.current) {
+        prevCustomerOrdersVersionRef.current = data.orders_version;
+        loadCustomerOrders();
+      } else if (data.latest_order) {
+        loadCustomerOrders();
+      }
+    },
+  });
+
+  // Keep selectedOrder in sync when orders list is updated via polling
+  useEffect(() => {
+    if (selectedOrder) {
+      const refreshed = orders.find(o => o.id === selectedOrder.id || (selectedOrder.rawId && o.rawId === selectedOrder.rawId));
+      if (refreshed) {
+        setSelectedOrder(refreshed);
+      }
+    }
+  }, [orders]);
 
   // Load customer shipping addresses
   const loadAddresses = React.useCallback(() => {

@@ -119,24 +119,6 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
   } | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
 
-  // Real-time synchronization layer with 30s ETag polling (Tahap V2c)
-  const { lastSyncLabel } = useDashboardSync({
-    enabled: true,
-    role: 'spi',
-    intervalMs: 30000,
-    onDataUpdated: (data) => {
-      if (data.today_revenue !== undefined || data.pending_approvals_count !== undefined) {
-        fetchSummary();
-      }
-      if (data.accounts_count !== undefined) {
-        fetchUsers();
-      }
-      if (data.orders_count !== undefined) {
-        fetchOrders();
-      }
-    },
-  });
-
   const fetchSummary = async () => {
     setLoadingSummary(true);
     try {
@@ -200,6 +182,39 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
       fetchOrders();
     }
   }, [activeMenu, orderStatusFilter]);
+
+  const prevSpiOrdersVersionRef = React.useRef<string | null>(null);
+
+  // Real-time synchronization layer with 30s ETag polling (Tahap V2c & Tahap V3b)
+  const { lastSyncLabel } = useDashboardSync({
+    enabled: true,
+    role: 'spi',
+    intervalMs: 30000,
+    onDataUpdated: (data) => {
+      if (data.today_revenue !== undefined || data.pending_approvals_count !== undefined) {
+        fetchSummary();
+      }
+      if (data.accounts_count !== undefined) {
+        fetchUsers();
+      }
+      if ((data.orders_version && data.orders_version !== prevSpiOrdersVersionRef.current) || data.orders_count !== undefined) {
+        if (data.orders_version) {
+          prevSpiOrdersVersionRef.current = data.orders_version;
+        }
+        fetchOrders();
+      }
+    },
+  });
+
+  // Keep selectedOrder in sync when orders list is updated
+  useEffect(() => {
+    if (selectedOrder) {
+      const refreshed = orders.find(o => o.id === selectedOrder.id || o.order_number === selectedOrder.order_number);
+      if (refreshed) {
+        setSelectedOrder(refreshed);
+      }
+    }
+  }, [orders]);
 
   const handleUpdateOrderStatus = async (e: React.FormEvent) => {
     e.preventDefault();
