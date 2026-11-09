@@ -25,7 +25,7 @@ export default defineConfig({
   base: '/',
   plugins: [react(), tailwindcss(), htmlIndexingPlugin()],
   test: {
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    include: ['src/tests/**/*.{test,spec}.{ts,tsx}', 'src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
     environment: 'jsdom',
   },
