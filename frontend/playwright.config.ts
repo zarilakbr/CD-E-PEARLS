@@ -31,10 +31,13 @@ export default defineConfig({
       use: { ...devices['Pixel 7'] },
     },
   ],
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: true,
-    timeout: 30000,
-  },
+  webServer:
+    process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1'
+      ? undefined
+      : {
+          command: 'npm run dev',
+          url: 'http://localhost:5173',
+          reuseExistingServer: true,
+          timeout: 30000,
+        },
 });

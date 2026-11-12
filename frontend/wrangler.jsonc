@@ -1,12 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cdepearlslombok",
+  "main": "./worker/index.ts",
   "compatibility_date": "2026-10-23",
   "observability": {
     "enabled": true
   },
+  "vars": {
+    "API_BASE_URL": "https://api.cdepearlslombok.id/api/v1"
+  },
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "html_handling": "drop-trailing-slash",
+    "not_found_handling": "none",
+    "run_worker_first": ["/sitemap.xml", "/robots.txt"]
   }
 }
