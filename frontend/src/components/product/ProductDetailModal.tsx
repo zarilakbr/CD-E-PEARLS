@@ -55,7 +55,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             />
             <img
               src={getSmartImageFallback(product)}
-              alt={`Detail perhiasan ${product.name}`}
+              alt={`Detail perhiasan ${product.name} — ${typeof product.category === 'object' && product.category ? (product.category as { name?: string }).name || 'Mutiara Lombok' : product.category || 'Mutiara Lombok'}`}
               width={500}
               height={500}
               className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useWishlist } from '../../context/WishlistContext';
@@ -6,15 +6,12 @@ import { useCart } from '../../context/CartContext';
 import { Heart, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { ProductCard } from '../../components/common/ProductCard';
 import { resolveMediaUrl } from '../../lib/media';
+import { Seo } from '../../components/common/Seo';
 
 export const WishlistPage: React.FC = () => {
   const navigate = useNavigate();
   const { wishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
-
-  useEffect(() => {
-    document.title = "Koleksi Favorit Saya | CD'E Pearls Lombok";
-  }, []);
 
   const handleMoveAllToCart = () => {
     wishlist.forEach((item) => {
@@ -25,6 +22,12 @@ export const WishlistPage: React.FC = () => {
 
   return (
     <div className="w-full font-sans">
+      <Seo
+        noindex
+        title="Koleksi Favorit Saya | CD'E Pearls Lombok"
+        description="Daftar perhiasan mutiara pilihan Anda di CD'E Pearls Lombok."
+        path="/favorit"
+      />
       {/* ========================================================
           MOBILE VIEW (< lg) - MARKETPLACE STYLE (TAHAP Q7)
          ======================================================== */}
@@ -163,7 +166,11 @@ export const WishlistPage: React.FC = () => {
                   <div className="relative aspect-4/3 overflow-hidden bg-[#F4F1EB]">
                     <img
                       src={resolveMediaUrl(item.image, '/images/hero_pearl_shell.jpg')}
-                      alt={item.name}
+                      alt={`${item.name} — Perhiasan Mutiara`}
+                      width={320}
+                      height={240}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = '/images/hero_pearl_shell.jpg';

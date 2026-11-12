@@ -5,6 +5,8 @@ import { catalogApi } from '../../lib/api';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { resolveMediaUrl } from '../../lib/media';
+import { Seo } from '../../components/common/Seo';
+import { buildProductSeoMeta } from '../../lib/seo';
 import {
   ShieldCheck,
   Heart,
@@ -77,7 +79,6 @@ export const ProductDetailPage: React.FC = () => {
           setProduct(item);
           setSelectedImage(resolveMediaUrl(item.image, '/images/hero_pearl_shell.jpg'));
           if (item.metal) setSelectedMetal(item.metal);
-          document.title = `${item.name} | CD'E Pearls Lombok`;
 
           // Muat produk terkait dari API resmi
           catalogApi
@@ -135,12 +136,18 @@ export const ProductDetailPage: React.FC = () => {
   if (isNotFound) {
     return (
       <div className="w-full max-w-[1200px] mx-auto px-4 py-20 text-center font-sans space-y-4">
+        <Seo
+          noindex
+          title="Perhiasan Tidak Ditemukan | CD'E Pearls"
+          description="Koleksi mutiara yang Anda cari tidak tersedia atau telah diarsipkan dari katalog CD'E Pearls Lombok."
+          path={id ? `/produk/${id}` : '/katalog'}
+        />
         <div className="w-16 h-16 rounded-full bg-[#FBF8F3] border border-[#E6DDD0] mx-auto flex items-center justify-center text-[#8A6A2F]">
           <ShoppingBag className="w-8 h-8" />
         </div>
-        <h2 className="font-serif text-2xl font-bold text-[#12263A] dark:text-[#FBF8F3]">
+        <h1 className="font-serif text-2xl font-bold text-[#12263A] dark:text-[#FBF8F3]">
           Perhiasan Tidak Ditemukan
-        </h2>
+        </h1>
         <p className="text-sm text-[#4A5666] dark:text-[#A0AEC0] max-w-md mx-auto">
           Koleksi mutiara yang Anda cari tidak tersedia atau belum dipublikasikan ke katalog resmi.
         </p>
@@ -173,6 +180,11 @@ export const ProductDetailPage: React.FC = () => {
   }
 
   const isFavorited = isInWishlist(product.id);
+  const categoryLabel =
+    typeof product.category === 'object' && product.category !== null
+      ? (product.category as { name?: string }).name || 'Mutiara Laut Selatan'
+      : product.category || 'Mutiara Laut Selatan';
+  const seoMeta = buildProductSeoMeta(product, `/produk/${id || product.id}`);
 
   const images: string[] =
     product.images && Array.isArray(product.images) && product.images.length > 0
@@ -202,6 +214,14 @@ export const ProductDetailPage: React.FC = () => {
 
   return (
     <div className="w-full font-sans">
+      <Seo
+        title={seoMeta.title}
+        description={seoMeta.description}
+        path={seoMeta.canonicalPath}
+        image={seoMeta.image}
+        type="product"
+        jsonLd={seoMeta.jsonLd}
+      />
       {/* ========================================================
           MOBILE VIEW (< lg) - MARKETPLACE STYLE (TAHAP Q6)
          ======================================================== */}
@@ -232,9 +252,13 @@ export const ProductDetailPage: React.FC = () => {
                   >
                     <img
                       src={img}
-                      alt={`${product.name} view ${idx + 1}`}
+                      alt={`${product.name} — ${categoryLabel} tampilan ${idx + 1}`}
+                      width={800}
+                      height={800}
                       className="w-full h-full object-cover"
                       loading={idx === 0 ? 'eager' : 'lazy'}
+                      fetchPriority={idx === 0 ? 'high' : undefined}
+                      decoding="async"
                     />
                   </div>
                 </CarouselItem>
@@ -257,7 +281,11 @@ export const ProductDetailPage: React.FC = () => {
             <div className="relative aspect-square w-full flex items-center justify-center overflow-hidden rounded-2xl bg-black">
               <img
                 src={images[currentSlide]}
-                alt={product.name}
+                alt={`${product.name} — ${categoryLabel}`}
+                width={1000}
+                height={1000}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-contain"
               />
             </div>
@@ -569,7 +597,11 @@ export const ProductDetailPage: React.FC = () => {
             <div className="relative aspect-4/3 w-full rounded-3xl overflow-hidden bg-[#F4F1EB] dark:bg-white/5 border border-[#E6DDD0] dark:border-white/10 shadow-lg">
               <img
                 src={resolveMediaUrl(selectedImage || product.image, '/images/hero_pearl_shell.jpg')}
-                alt={product.name}
+                alt={`${product.name} — ${categoryLabel}`}
+                width={960}
+                height={720}
+                fetchPriority="high"
+                decoding="async"
                 className="w-full h-full object-cover object-center transition-all duration-300"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = '/images/hero_pearl_shell.jpg';
@@ -605,7 +637,11 @@ export const ProductDetailPage: React.FC = () => {
                   >
                     <img
                       src={img}
-                      alt={`${product.name} thumbnail ${idx + 1}`}
+                      alt={`${product.name} — ${categoryLabel} galeri ${idx + 1}`}
+                      width={80}
+                      height={80}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover"
                     />
                   </button>

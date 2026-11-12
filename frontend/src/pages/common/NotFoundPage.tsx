@@ -1,15 +1,19 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Compass, Home, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { Seo } from '../../components/common/Seo';
 
 export const NotFoundPage: React.FC = () => {
-
-  useEffect(() => {
-    document.title = "404 - Halaman Tidak Ditemukan | CD'E Pearls Lombok";
-  }, []);
+  const location = useLocation();
 
   return (
     <div className="min-h-screen bg-[#FBF8F3] dark:bg-[#0D1C2B] text-[#12263A] dark:text-[#FBF8F3] flex flex-col justify-between font-sans transition-colors duration-200">
+      <Seo
+        noindex
+        title="404 - Halaman Tidak Ditemukan | CD'E Pearls"
+        description="Halaman yang Anda tuju tidak ditemukan di situs resmi CD'E Pearls Lombok."
+        path={location.pathname || '/404'}
+      />
       {/* Top Header */}
       <header className="px-6 py-4 border-b border-[#E6DDD0] dark:border-white/10 bg-white/80 dark:bg-[#12263A]/80 backdrop-blur-md flex items-center justify-between">
         <Link to="/" className="inline-flex items-center">

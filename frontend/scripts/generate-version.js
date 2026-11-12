@@ -36,11 +36,31 @@ if (!fs.existsSync(publicDir)) {
 fs.writeFileSync(path.join(publicDir, 'version.json'), JSON.stringify(versionData, null, 2) + '\n');
 console.log('[generate-version] Generated public/version.json:', versionData);
 
-// Controllable indexing via VITE_ALLOW_INDEXING (default false)
-const allowIndexing = process.env.VITE_ALLOW_INDEXING === 'true';
+// Controllable indexing via VITE_ALLOW_INDEXING (default true for production; set false on preview/staging)
+const allowIndexing = process.env.VITE_ALLOW_INDEXING !== 'false';
 
 const robotsContent = allowIndexing
-  ? 'User-agent: *\nAllow: /\n'
+  ? [
+      'User-agent: *',
+      'Allow: /',
+      'Disallow: /admin',
+      'Disallow: /spi',
+      'Disallow: /akun',
+      'Disallow: /checkout',
+      'Disallow: /login',
+      'Disallow: /register',
+      'Disallow: /masuk',
+      'Disallow: /daftar',
+      'Disallow: /keranjang',
+      'Disallow: /favorit',
+      'Disallow: /lupa-kata-sandi',
+      'Disallow: /atur-ulang-kata-sandi',
+      'Disallow: /verifikasi-email',
+      'Disallow: /auth/',
+      'Disallow: /api',
+      'Sitemap: https://cdepearlslombok.id/sitemap.xml',
+      '',
+    ].join('\n')
   : 'User-agent: *\nDisallow: /\n';
 
 fs.writeFileSync(path.join(publicDir, 'robots.txt'), robotsContent);

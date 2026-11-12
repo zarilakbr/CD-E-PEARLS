@@ -56,13 +56,13 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
   const [emailInput, setEmailInput] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [headerSearch, setHeaderSearch] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOverDark, setIsOverDark] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth >= 1024 : false
-  );
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     if (typeof window === 'undefined') return;
     const mql = window.matchMedia('(min-width: 1024px)');
     const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
@@ -70,6 +70,10 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
     mql.addEventListener('change', onChange);
     return () => mql.removeEventListener('change', onChange);
   }, []);
+
+  const effectiveResolvedTheme = isMounted ? resolvedTheme : 'light';
+  const effectiveWishlistCount = isMounted ? wishlistCount : 0;
+  const effectiveCartCount = isMounted ? cartCount : 0;
 
   useEffect(() => {
     let ticking = false;
@@ -317,11 +321,11 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
             <button
               type="button"
               role="switch"
-              aria-checked={resolvedTheme === 'dark'}
+              aria-checked={effectiveResolvedTheme === 'dark'}
               aria-label={t('common.switchTheme', 'Ganti tema tampilan')}
               onClick={toggleTheme}
               className={`hidden sm:flex relative w-[56px] h-[28px] rounded-full p-1 transition-colors cursor-pointer items-center justify-between border shrink-0 ${
-                resolvedTheme === 'dark'
+                effectiveResolvedTheme === 'dark'
                   ? 'bg-[#1D354E] border-[#D9B877]/50 text-[#D9B877]'
                   : isOverDark && !isScrolled
                   ? 'bg-black/30 border-white/30 text-white'
@@ -332,7 +336,7 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
               <Moon className="w-3.5 h-3.5 mr-0.5 z-10 pointer-events-none" />
               <span
                 className={`absolute top-[2px] bottom-[2px] w-[22px] rounded-full shadow-sm transition-transform duration-200 ease-out ${
-                  resolvedTheme === 'dark'
+                  effectiveResolvedTheme === 'dark'
                     ? 'translate-x-[28px] bg-[#D9B877]'
                     : 'translate-x-0 bg-white'
                 }`}
@@ -347,9 +351,9 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
               className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-inherit hover:opacity-80 transition-opacity cursor-pointer"
             >
               <Heart className="w-5 h-5" />
-              {wishlistCount > 0 && (
+              {effectiveWishlistCount > 0 && (
                 <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#8A6A2F] text-white text-[10px] font-bold flex items-center justify-center">
-                  {wishlistCount}
+                  {effectiveWishlistCount}
                 </span>
               )}
             </button>
@@ -362,9 +366,9 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
               className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-inherit hover:opacity-80 transition-opacity cursor-pointer"
             >
               <ShoppingBag className="w-5 h-5" />
-              {cartCount > 0 && (
+              {effectiveCartCount > 0 && (
                 <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#12263A] text-[#D9B877] text-[10px] font-bold flex items-center justify-center">
-                  {cartCount}
+                  {effectiveCartCount}
                 </span>
               )}
             </button>

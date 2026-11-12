@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ]);
         }
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->append(\App\Http\Middleware\NoIndexApiHeaders::class);
         $middleware->redirectGuestsTo(fn () => null);
 
         $middleware->alias([

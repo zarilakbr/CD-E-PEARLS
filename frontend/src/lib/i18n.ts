@@ -8,16 +8,31 @@ import enTranslation from '../locales/en.json';
 
 const getSavedOrBrowserLang = (): string => {
   if (typeof window === 'undefined') return 'id';
-  const saved = localStorage.getItem('cde_language');
-  if (saved === 'id' || saved === 'en') return saved;
+  try {
+    const saved = localStorage.getItem('cde_language');
+    if (saved === 'id' || saved === 'en') return saved;
+  } catch {}
   const nav = navigator.language?.toLowerCase() || '';
   if (nav.startsWith('en')) return 'en';
   return 'id';
 };
 
-const initialLang = getSavedOrBrowserLang();
+const isHydratingPrerenderedDom = (): boolean => {
+  if (typeof document === 'undefined') return false;
+  const rootEl = document.getElementById('root');
+  return Boolean(rootEl && rootEl.hasAttribute('data-prerendered-path') && rootEl.hasChildNodes());
+};
+
+const initialLang = isHydratingPrerenderedDom() ? 'id' : getSavedOrBrowserLang();
 if (typeof document !== 'undefined') {
   document.documentElement.lang = initialLang;
+}
+
+export function syncHydratedLanguage(): void {
+  const preferred = getSavedOrBrowserLang();
+  if (preferred !== i18n.language) {
+    void i18n.changeLanguage(preferred);
+  }
 }
 
 i18n

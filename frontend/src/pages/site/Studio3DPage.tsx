@@ -5,6 +5,7 @@ import {
   Check,
 } from 'lucide-react';
 import { ThreeCustomizer } from '../../components/atelier/ThreeCustomizer';
+import { Seo } from '../../components/common/Seo';
 
 interface Studio3DPageProps {
   onAddToCart?: (item: any) => void;
@@ -44,6 +45,11 @@ export const Studio3DPage: React.FC<Studio3DPageProps> = ({
 
   return (
     <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+      <Seo
+        title="Studio Kustomisasi 3D Atelier | CD'E Pearls"
+        description="Rancang perhiasan mutiara laut selatan Lombok sesuai selera Anda di Studio 3D interaktif: pilih varietas mutiara, ukuran, dan ikatan emas 18K."
+        path="/studio"
+      />
       {/* Page Header */}
       <div className="max-w-2xl mb-10">
         <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] block mb-1">

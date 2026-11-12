@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShieldAlert, ArrowLeft, Home, LogOut } from 'lucide-react';
 import type { UserRole } from '../../context/AuthContext';
+import { Seo } from '../../components/common/Seo';
 
 interface AccessDeniedPageProps {
   currentRole: UserRole;
@@ -48,6 +49,12 @@ export const AccessDeniedPage: React.FC<AccessDeniedPageProps> = ({
 
   return (
     <div className="min-h-screen bg-[#FBF8F3] text-[#12263A] flex flex-col justify-between font-sans">
+      <Seo
+        noindex
+        title="403 - Akses Ditolak | CD'E Pearls Lombok"
+        description="Halaman ini memerlukan hak akses yang sesuai."
+        path={attemptedPath || '/403'}
+      />
       {/* Header Sederhana */}
       <header className="px-6 py-4 border-b border-[#E6DDD0] bg-white flex items-center justify-between">
         <div className="flex items-center gap-3">

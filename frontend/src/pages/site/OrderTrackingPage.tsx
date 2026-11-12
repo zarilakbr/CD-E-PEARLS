@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Truck, Search, AlertCircle, Key, Phone, Hash } from 'lucide-react';
 import { orderApi } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { Seo } from '../../components/common/Seo';
 
 export const OrderTrackingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -18,10 +19,6 @@ export const OrderTrackingPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [orderData, setOrderData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    document.title = lang === 'id' ? "Lacak Pesanan | CD'E Pearls Lombok" : "Track Order | CD'E Pearls Lombok";
-  }, [lang]);
 
   useEffect(() => {
     if (initialOrder && (user || (initialToken && initialPhone4))) {
@@ -115,6 +112,12 @@ export const OrderTrackingPage: React.FC = () => {
 
   return (
     <div className="w-full max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 space-y-10">
+      <Seo
+        noindex
+        title={lang === 'id' ? "Lacak Pesanan | CD'E Pearls Lombok" : "Track Order | CD'E Pearls Lombok"}
+        description="Lacak status pengiriman pesanan perhiasan mutiara CD'E Pearls Lombok."
+        path="/lacak-pesanan"
+      />
       {/* Header with Language Switcher */}
       <div className="flex justify-end">
         <div className="inline-flex rounded-full p-1 bg-[#F4F1EB] dark:bg-white/5 border border-[#E6DDD0] dark:border-white/10 text-[11px] font-semibold">

@@ -8,11 +8,11 @@ function htmlIndexingPlugin() {
   return {
     name: 'html-indexing-plugin',
     transformIndexHtml(html: string) {
-      const allowIndexing = process.env.VITE_ALLOW_INDEXING === 'true';
-      if (allowIndexing) {
+      const allowIndexing = process.env.VITE_ALLOW_INDEXING !== 'false';
+      if (!allowIndexing) {
         return html.replace(
-          '<meta name="robots" content="noindex, nofollow" />',
-          '<meta name="robots" content="index, follow" />'
+          /<meta name="robots" content="index, follow"([^>]*)>/i,
+          '<meta name="robots" content="noindex, nofollow"$1>'
         );
       }
       return html;
@@ -21,9 +21,12 @@ function htmlIndexingPlugin() {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   base: '/',
   plugins: [react(), tailwindcss(), htmlIndexingPlugin()],
+  ssr: {
+    noExternal: ['react-helmet-async'],
+  },
   test: {
     include: ['src/tests/**/*.{test,spec}.{ts,tsx}', 'src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
@@ -57,31 +60,33 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 800,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'vendor-react';
-            }
-            if (id.includes('@tanstack/react-query')) {
-              return 'vendor-query';
-            }
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
-            if (id.includes('three')) {
-              return 'vendor-three';
-            }
-            if (id.includes('recharts')) {
-              return 'vendor-charts';
-            }
-            if (id.includes('react-hook-form') || id.includes('zod') || id.includes('@hookform/resolvers')) {
-              return 'vendor-forms';
-            }
-          }
+    rollupOptions: isSsrBuild
+      ? {}
+      : {
+          output: {
+            manualChunks(id) {
+              if (id.includes('node_modules')) {
+                if (id.includes('react') || id.includes('react-dom')) {
+                  return 'vendor-react';
+                }
+                if (id.includes('@tanstack/react-query')) {
+                  return 'vendor-query';
+                }
+                if (id.includes('lucide-react')) {
+                  return 'vendor-icons';
+                }
+                if (id.includes('three')) {
+                  return 'vendor-three';
+                }
+                if (id.includes('recharts')) {
+                  return 'vendor-charts';
+                }
+                if (id.includes('react-hook-form') || id.includes('zod') || id.includes('@hookform/resolvers')) {
+                  return 'vendor-forms';
+                }
+              }
+            },
+          },
         },
-      },
-    },
   },
-})
+}))

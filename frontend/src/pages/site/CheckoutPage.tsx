@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { orderApi } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
+import { Seo } from '../../components/common/Seo';
 import { Turnstile } from '@marsidev/react-turnstile';
 import {
   CreditCard,
@@ -30,10 +31,6 @@ export const CheckoutPage: React.FC = () => {
   const [trackingToken, setTrackingToken] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    document.title = "Penyelesaian Pesanan | CD'E Pearls Lombok";
-  }, []);
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +85,12 @@ export const CheckoutPage: React.FC = () => {
 
   return (
     <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 space-y-10">
+      <Seo
+        noindex
+        title="Penyelesaian Pesanan | CD'E Pearls Lombok"
+        description="Halaman penyelesaian pesanan privat pelanggan CD'E Pearls Lombok."
+        path="/checkout"
+      />
       <div className="text-center max-w-2xl mx-auto space-y-2">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8A6A2F]/10 border border-[#8A6A2F]/20 text-[#8A6A2F] text-[12px] font-semibold tracking-wider uppercase">
           <Lock className="w-3.5 h-3.5" />

@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetTitle } from '../components/ui/sheet';
 import { UserProfileDropdown } from '../components/common/UserProfileDropdown';
 import { DASHBOARD_BANNERS } from '../data/dashboardBanners';
 import { useTranslation } from 'react-i18next';
+import { Seo } from '../components/common/Seo';
 
 export interface DashboardMenuItem {
   id: string;
@@ -138,6 +139,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <div className="min-h-[100dvh] flex flex-row bg-[var(--bg-dash)] text-[var(--text)] font-sans relative overflow-x-hidden">
+      <Seo
+        noindex
+        title={
+          userRole === 'admin'
+            ? "Portal Admin | CD'E Pearls Lombok"
+            : userRole === 'spi'
+            ? "Portal SPI | CD'E Pearls Lombok"
+            : "Dashboard Pelanggan | CD'E Pearls Lombok"
+        }
+        description="Area privat portal manajemen CD'E Pearls Lombok."
+        path={userRole === 'admin' ? '/admin' : userRole === 'spi' ? '/spi' : '/akun'}
+      />
       {/* ========================================================
           1. SIDEBAR MOBILE (shadcn Sheet, side="left")
          ======================================================== */}

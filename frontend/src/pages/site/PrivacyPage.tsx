@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { ShieldCheck } from 'lucide-react';
+import { Seo } from '../../components/common/Seo';
 
 export const PrivacyPage: React.FC = () => {
-  useEffect(() => {
-    document.title = "Kebijakan Privasi | CD'E Pearls Lombok";
-  }, []);
-
   return (
     <div className="w-full max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 space-y-10">
+      <Seo
+        title="Kebijakan Privasi Pelanggan | CD'E Pearls Lombok"
+        description="Kebijakan perlindungan data pribadi pelanggan, kolektor, dan keamanan transaksi resmi di butik perhiasan CD'E Pearls Lombok."
+        path="/kebijakan-privasi"
+      />
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8A6A2F]/10 border border-[#8A6A2F]/20 text-[#8A6A2F] text-[12px] font-semibold tracking-wider uppercase">
           <ShieldCheck className="w-3.5 h-3.5" />
