@@ -1,5 +1,6 @@
-import React, { useState, Component, type ErrorInfo, type ReactNode, Suspense } from 'react';
+import React, { useState, useEffect, Component, type ErrorInfo, type ReactNode, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { HelmetProvider, type HelmetServerState } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider, useCart } from './context/CartContext';
 import { WishlistProvider, useWishlist } from './context/WishlistContext';
@@ -8,10 +9,16 @@ import { ProductDetailModal } from './components/product/ProductDetailModal';
 import { RouteGuard } from './routes/RouteGuard';
 import { BottomTabBar } from './components/common/BottomTabBar';
 import { Toaster } from 'sonner';
+import { syncHydratedLanguage } from './lib/i18n';
 
-// Code-splitting via React.lazy
-const PublicHomePage = React.lazy(() => import('./pages/site/PublicHomePage').then((m) => ({ default: m.PublicHomePage })));
-const CatalogPage = React.lazy(() => import('./pages/site/CatalogPage').then((m) => ({ default: m.CatalogPage })));
+// Eager imports for SEO-prerendered public routes
+import { PublicHomePage } from './pages/site/PublicHomePage';
+import { CatalogPage } from './pages/site/CatalogPage';
+import { EducationPage } from './pages/site/EducationPage';
+import { AboutPage } from './pages/site/AboutPage';
+import { ContactPage } from './pages/site/ContactPage';
+
+// Code-splitting via React.lazy for interactive, transactional, and portal routes
 const CartPage = React.lazy(() => import('./pages/site/CartPage').then((m) => ({ default: m.CartPage })));
 const WishlistPage = React.lazy(() => import('./pages/site/WishlistPage').then((m) => ({ default: m.WishlistPage })));
 const CheckoutPage = React.lazy(() => import('./pages/site/CheckoutPage').then((m) => ({ default: m.CheckoutPage })));
@@ -19,9 +26,6 @@ const CertificateCheckPage = React.lazy(() => import('./pages/site/CertificateCh
 const OrderTrackingPage = React.lazy(() => import('./pages/site/OrderTrackingPage').then((m) => ({ default: m.OrderTrackingPage })));
 const ProductDetailPage = React.lazy(() => import('./pages/site/ProductDetailPage').then((m) => ({ default: m.ProductDetailPage })));
 const Studio3DPage = React.lazy(() => import('./pages/site/Studio3DPage').then((m) => ({ default: m.Studio3DPage })));
-const EducationPage = React.lazy(() => import('./pages/site/EducationPage').then((m) => ({ default: m.EducationPage })));
-const AboutPage = React.lazy(() => import('./pages/site/AboutPage').then((m) => ({ default: m.AboutPage })));
-const ContactPage = React.lazy(() => import('./pages/site/ContactPage').then((m) => ({ default: m.ContactPage })));
 const TermsPage = React.lazy(() => import('./pages/site/TermsPage').then((m) => ({ default: m.TermsPage })));
 const PrivacyPage = React.lazy(() => import('./pages/site/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
 const HelpCenterPage = React.lazy(() => import('./pages/site/HelpCenterPage').then((m) => ({ default: m.HelpCenterPage })));
@@ -714,10 +718,14 @@ const AppContent: React.FC = () => {
   );
 };
 
-export default function App() {
+export function AppShell({ helmetContext }: { helmetContext?: { helmet?: HelmetServerState } }) {
+  useEffect(() => {
+    syncHydratedLanguage();
+  }, []);
+
   return (
     <ErrorBoundary>
-      <BrowserRouter>
+      <HelmetProvider context={helmetContext}>
         <AuthProvider>
           <CartProvider>
             <WishlistProvider>
@@ -725,7 +733,15 @@ export default function App() {
             </WishlistProvider>
           </CartProvider>
         </AuthProvider>
-      </BrowserRouter>
+      </HelmetProvider>
     </ErrorBoundary>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
+    </BrowserRouter>
   );
 }

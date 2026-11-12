@@ -16,6 +16,8 @@ import { catalogApi } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
+import { Seo } from '../../components/common/Seo';
+import { buildLocalBusinessJsonLd, buildOrganizationJsonLd } from '../../lib/seo';
 
 interface PublicHomePageProps {
   onNavigate: (tab: string, filter?: string) => void;
@@ -201,6 +203,12 @@ export const PublicHomePage: React.FC<PublicHomePageProps> = ({
 
   return (
     <div className="w-full flex flex-col font-sans">
+      <Seo
+        title="CD'E Pearls Lombok | Mutiara Laut Selatan Asli Lombok"
+        description="Butik haute joaillerie mutiara laut selatan asli Lombok (South Sea Pearls) berbalut emas 18K solid dan sertifikat lab gemologi resmi."
+        path="/"
+        jsonLd={[buildOrganizationJsonLd(), buildLocalBusinessJsonLd()]}
+      />
       {/* MOBILE VIEW (< lg): TAMPILAN MARKETPLACE (TAHAP Q) */}
       <div className="lg:hidden w-full">
         <MobileMarketplaceHome

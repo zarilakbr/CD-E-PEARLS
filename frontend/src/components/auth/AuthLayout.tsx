@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ShieldCheck, ChevronLeft } from 'lucide-react';
+import { Seo } from '../common/Seo';
 
 interface AuthLayoutProps {
   title: string;
@@ -11,21 +12,16 @@ interface AuthLayoutProps {
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ title, subtitle, children }) => {
   const { t } = useTranslation();
-
-  // Set robots noindex & title
-  useEffect(() => {
-    document.title = `${title} | CD'E Pearls Lombok Atelier`;
-    let metaRobots = document.querySelector('meta[name="robots"]');
-    if (!metaRobots) {
-      metaRobots = document.createElement('meta');
-      metaRobots.setAttribute('name', 'robots');
-      document.head.appendChild(metaRobots);
-    }
-    metaRobots.setAttribute('content', 'noindex, nofollow');
-  }, [title]);
+  const location = useLocation();
 
   return (
     <div className="min-h-[100dvh] w-full flex flex-col lg:flex-row bg-[#FBF8F3] dark:bg-[#0D1C2B] text-[#12263A] dark:text-[#FBF8F3] font-sans transition-colors duration-200">
+      <Seo
+        noindex
+        title={`${title} | CD'E Pearls`}
+        description="Halaman autentikasi akun pelanggan dan staf resmi CD'E Pearls Lombok Atelier."
+        path={location.pathname || '/masuk'}
+      />
       {/* Kolom Kiri Desktop: Foto Mutiara Mewah CD'E Pearls */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-[#12263A] overflow-hidden flex-col justify-between p-12">
         <picture className="absolute inset-0 w-full h-full pointer-events-none">

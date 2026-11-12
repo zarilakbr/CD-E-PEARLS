@@ -26,6 +26,7 @@ import { catalogApi } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
+import { Seo } from '../../components/common/Seo';
 import type { MockProduct } from '../../types/models';
 
 interface CatalogPageProps {
@@ -262,6 +263,11 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
 
   return (
     <div className="w-full bg-[#FBF8F3] min-h-screen">
+      <Seo
+        title="Katalog Perhiasan Mutiara Lombok | CD'E Pearls"
+        description="Jelajahi koleksi kalung, cincin, anting, gelang, dan mutiara laut selatan asli Lombok grade AAA berbalut emas 18K bersertifikat gemologi resmi."
+        path="/katalog"
+      />
       {/* ========================================================
           MOBILE MARKETPLACE VIEW (< lg) - TAHAP Q5
          ======================================================== */}

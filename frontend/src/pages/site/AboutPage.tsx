@@ -1,9 +1,15 @@
 import React from 'react';
 import { Award, ShieldCheck, MapPin, MessageCircle, Sparkles, Anchor } from 'lucide-react';
+import { Seo } from '../../components/common/Seo';
 
 export const AboutPage: React.FC = () => {
   return (
     <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 space-y-16">
+      <Seo
+        title="Tentang Atelier & Budidaya Lombok | CD'E Pearls"
+        description="Kisah CD'E Pearls Lombok membudidayakan tiram Pinctada maxima di perairan Sekotong & Medana selama 24-36 bulan dengan ikatan emas 18K bersertifikat."
+        path="/tentang"
+      />
       {/* Hero Tentang Kami */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
         <div className="lg:col-span-7 space-y-5">

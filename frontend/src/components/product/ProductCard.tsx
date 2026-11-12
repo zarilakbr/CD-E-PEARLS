@@ -63,9 +63,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenDetail 
           <source srcSet={resolveWebpUrl(product.webp_url || product.image)} type="image/webp" />
           <img
             src={resolveMediaUrl(product.image, '/images/placeholder_jewelry.svg')}
-            alt={product.name}
+            alt={`${product.name} — ${typeof product.category === 'object' && product.category ? (product.category as { name?: string }).name || 'Perhiasan Mutiara' : product.category || 'Perhiasan Mutiara'}`}
+            width={320}
+            height={320}
             className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
             loading="lazy"
+            decoding="async"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = '/images/placeholder_jewelry.svg';
             }}

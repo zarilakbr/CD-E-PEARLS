@@ -10,7 +10,12 @@ export const BottomTabBar: React.FC = () => {
   const navigate = useNavigate();
   const { totalItemsCount } = useCart();
   const { wishlist } = useWishlist();
+  const [isMounted, setIsMounted] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Deteksi keyboard terbuka di perangkat mobile untuk menyembunyikan tab bar
   useEffect(() => {
@@ -53,14 +58,14 @@ export const BottomTabBar: React.FC = () => {
       label: 'Favorit',
       icon: Heart,
       path: '/favorit',
-      badge: wishlist.length > 0 ? wishlist.length : undefined,
+      badge: isMounted && wishlist.length > 0 ? wishlist.length : undefined,
     },
     {
       id: 'cart',
       label: 'Keranjang',
       icon: ShoppingBag,
       path: '/keranjang',
-      badge: totalItemsCount > 0 ? totalItemsCount : undefined,
+      badge: isMounted && totalItemsCount > 0 ? totalItemsCount : undefined,
     },
     { id: 'account', label: 'Akun', icon: User, path: '/akun' },
   ];

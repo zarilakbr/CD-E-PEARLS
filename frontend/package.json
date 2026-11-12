@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/generate-version.js && tsc -b && vite build",
+    "build": "node scripts/generate-version.js && tsc -b && vite build && vite build --ssr src/entry-prerender.tsx --outDir dist-ssr && node scripts/prerender.mjs",
     "test": "vitest run",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -34,6 +34,7 @@
     "lucide-react": "^1.62.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-helmet-async": "^3.1.0",
     "react-hook-form": "^7.91.0",
     "react-i18next": "^17.1.9",
     "react-router-dom": "^7.18.5",
@@ -45,6 +46,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
+    "@cloudflare/workers-types": "^5.20261112.1",
     "@playwright/test": "^1.64.1",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
@@ -60,6 +62,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~7.0.2",
     "vite": "^8.3.5",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "wrangler": "^4.160.1"
   }
 }

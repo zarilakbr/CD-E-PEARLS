@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Scale } from 'lucide-react';
+import { Seo } from '../../components/common/Seo';
 
 export const TermsPage: React.FC = () => {
-  useEffect(() => {
-    document.title = "Syarat & Ketentuan Layanan | CD'E Pearls Lombok";
-  }, []);
-
   return (
     <div className="w-full max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 space-y-10">
+      <Seo
+        title="Syarat & Ketentuan Butik | CD'E Pearls Lombok"
+        description="Ketentuan pemesanan, verifikasi sertifikat gemologi, pembayaran terverifikasi, dan pengiriman berasuransi di butik resmi CD'E Pearls Lombok."
+        path="/syarat-ketentuan"
+      />
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8A6A2F]/10 border border-[#8A6A2F]/20 text-[#8A6A2F] text-[12px] font-semibold tracking-wider uppercase">
           <Scale className="w-3.5 h-3.5" />

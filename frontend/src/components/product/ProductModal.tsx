@@ -64,7 +64,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, open, onOpe
               <source srcSet={resolveWebpUrl(product.webp_url || product.image)} type="image/webp" />
               <img
                 src={resolveMediaUrl(product.image, '/images/placeholder_jewelry.svg')}
-                alt={product.name}
+                alt={`${product.name} — ${typeof product.category === 'object' && product.category ? (product.category as { name?: string }).name || 'Perhiasan Mutiara' : product.category || 'Perhiasan Mutiara'}`}
+                width={500}
+                height={500}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = '/images/placeholder_jewelry.svg';

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Award, ShieldCheck, Search, CheckCircle2, AlertCircle } from 'lucide-react';
 import { certificateApi } from '../../lib/api';
+import { Seo } from '../../components/common/Seo';
 
 export const CertificateCheckPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -13,7 +14,6 @@ export const CertificateCheckPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = "Cek Sertifikat Gemologi | CD'E Pearls Lombok";
     if (initialCode) {
       handleLookup(initialCode);
     }
@@ -46,6 +46,11 @@ export const CertificateCheckPage: React.FC = () => {
 
   return (
     <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 space-y-12">
+      <Seo
+        title="Cek Sertifikat Gemologi Resmi | CD'E Pearls"
+        description="Verifikasi keaslian nomor seri sertifikat laboratorium gemologi mutiara laut selatan asli Lombok di arsip resmi CD'E Pearls Lombok."
+        path="/cek-sertifikat"
+      />
       {/* Page Title */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8A6A2F]/10 border border-[#8A6A2F]/20 text-[#8A6A2F] text-[12px] font-semibold tracking-wider uppercase">

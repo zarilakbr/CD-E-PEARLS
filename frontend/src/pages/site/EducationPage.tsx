@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
-
 import { useNavigate } from 'react-router-dom';
+import { Seo } from '../../components/common/Seo';
 
 interface EducationPageProps {
   onNavigateCatalog?: () => void;
@@ -54,6 +54,11 @@ export const EducationPage: React.FC<EducationPageProps> = ({ onNavigateCatalog 
 
   return (
     <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 space-y-16">
+      <Seo
+        title="Edukasi & Gradasi Mutiara Lombok | CD'E Pearls"
+        description="Pelajari 6 pilar kualitas mutiara laut selatan asli Lombok: kilau cermin, ketebalan nacre alami, bentuk, kebersihan permukaan, diameter, dan warna."
+        path="/edukasi"
+      />
       {/* Header with Visual Banner */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         <div className="lg:col-span-7 space-y-4">

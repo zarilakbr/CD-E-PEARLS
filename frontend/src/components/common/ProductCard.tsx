@@ -52,13 +52,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const resolvedCustomImage = image ? resolveMediaUrl(image) : '';
   const hasCustomImage = Boolean(resolvedCustomImage && resolvedCustomImage.trim() && !resolvedCustomImage.includes('placeholder'));
 
+  const categoryLabel =
+    typeof category === 'string'
+      ? category
+      : typeof category === 'object' && category
+      ? (category as { name?: string; slug?: string }).name || (category as { slug?: string }).slug || ''
+      : '';
+
   const computeFallbackImage = () => {
     if (hasCustomImage && resolvedCustomImage) return resolvedCustomImage;
     const n = (name || '').toLowerCase();
-    const catStr = typeof category === 'string' 
-      ? category 
-      : (typeof category === 'object' && category ? (category as any).name || (category as any).slug || '' : '');
-    const c = catStr.toLowerCase();
+    const c = categoryLabel.toLowerCase();
     if (n.includes('cincin') || c.includes('cincin')) return '/images/placeholder_jewelry.svg';
     if (n.includes('gelang') || c.includes('gelang')) return '/images/featured_pearl_dark_luxury.jpg';
     if (n.includes('anting') || c.includes('anting')) return '/images/terroir_pearl_plate_left.jpg';
@@ -90,7 +94,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
             <img
               src={imgSrc}
-              alt={`Perhiasan ${name} - ${category}`}
+              alt={`Perhiasan ${name} — ${categoryLabel || 'Mutiara Laut Selatan'}`}
               width={320}
               height={320}
               onError={() => setImgSrc('/images/hero_pearl_shell.jpg')}

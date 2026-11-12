@@ -13,6 +13,7 @@ import { Stepper } from '../../components/common/Stepper';
 import type { MockOrder } from '../../types/models';
 import { resolveMediaUrl } from '../../lib/media';
 import { useCart } from '../../context/CartContext';
+import { Seo } from '../../components/common/Seo';
 
 const getItemImage = (category?: any, image?: string) => {
   if (image) return resolveMediaUrl(image);
@@ -98,6 +99,12 @@ export const CartPage: React.FC<CartPageProps> = ({
 
   return (
     <div className="w-full font-sans">
+      <Seo
+        noindex
+        title="Keranjang Belanja | CD'E Pearls Lombok"
+        description="Tas perhiasan mutiara belanja Anda di CD'E Pearls Lombok."
+        path="/keranjang"
+      />
       {/* ========================================================
           MOBILE VIEW (< lg) - MARKETPLACE STYLE (TAHAP Q7)
          ======================================================== */}
@@ -311,7 +318,11 @@ export const CartPage: React.FC<CartPageProps> = ({
                         <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
                           <img
                             src={getItemImage(item.product.category, item.product.image)}
-                            alt={item.product.name}
+                            alt={`${item.product.name} — Perhiasan Mutiara`}
+                            width={64}
+                            height={64}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover"
                           />
                         </div>

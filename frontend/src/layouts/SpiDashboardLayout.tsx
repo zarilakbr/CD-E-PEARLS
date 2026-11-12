@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { DASHBOARD_BANNERS } from '../data/dashboardBanners';
 import { useTranslation } from 'react-i18next';
+import { Seo } from '../components/common/Seo';
 
 export interface SpiMenuItem {
   id: string;
@@ -168,6 +169,12 @@ export const SpiDashboardLayout: React.FC<SpiDashboardLayoutProps> = ({
 
   return (
     <div className="min-h-[100dvh] flex flex-row bg-[var(--bg-dash)] text-[var(--text)] font-sans relative overflow-x-hidden">
+      <Seo
+        noindex
+        title="Portal Audit SPI | CD'E Pearls Lombok"
+        description="Area privat Satuan Pengawas Internal CD'E Pearls Lombok."
+        path="/spi"
+      />
       {/* Mobile Backdrop */}
       {mobileMenuOpen && (
         <div

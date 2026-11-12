@@ -22,6 +22,7 @@ import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { Seo } from '../../components/common/Seo';
 
 export const GuestAccountHub: React.FC = () => {
   const navigate = useNavigate();
@@ -56,6 +57,12 @@ export const GuestAccountHub: React.FC = () => {
 
   return (
     <div className="w-full min-h-[calc(100vh-4rem)] bg-[var(--bg)] py-6 px-3.5 sm:px-6 max-w-lg mx-auto space-y-4 font-sans animate-in fade-in duration-250 pb-20">
+      <Seo
+        noindex
+        title="Akun Pelanggan | CD'E Pearls Lombok"
+        description="Kelola profil, pesanan, dan sertifikat perhiasan mutiara CD'E Pearls Lombok."
+        path="/akun"
+      />
       {/* 1. Kartu Kecil Masuk dan Daftar */}
       <Card className="p-4 sm:p-5 bg-[var(--surface)] border-[var(--border)] shadow-xs rounded-2xl">
         <div className="flex items-center gap-3.5 mb-4">

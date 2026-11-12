@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { MapPin, Phone, Mail, Clock, Send, Sparkles } from 'lucide-react';
+import { Seo } from '../../components/common/Seo';
 
 export const ContactPage: React.FC = () => {
-  useEffect(() => {
-    document.title = "Kontak Butik | CD'E Pearls Lombok";
-  }, []);
-
   return (
     <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 space-y-12">
+      <Seo
+        title="Kontak Butik & Concierge Lombok | CD'E Pearls"
+        description="Kunjungi galeri CD'E Pearls di Senggigi, Lombok Barat atau hubungi kurator kami via WhatsApp untuk konsultasi perhiasan dan janji temu privat."
+        path="/kontak"
+      />
       <div className="text-center space-y-3 max-w-2xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8A6A2F]/10 border border-[#8A6A2F]/20 text-[#8A6A2F] text-[12px] font-semibold tracking-wider uppercase">
           <Sparkles className="w-3.5 h-3.5" />

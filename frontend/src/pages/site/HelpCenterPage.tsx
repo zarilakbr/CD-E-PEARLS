@@ -1,11 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { HelpCircle, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
+import { Seo } from '../../components/common/Seo';
 
 export const HelpCenterPage: React.FC = () => {
-  useEffect(() => {
-    document.title = "Pusat Bantuan & FAQ | CD'E Pearls Lombok";
-  }, []);
-
   const [openIdx, setOpenIdx] = useState<number | null>(0);
 
   const faqs = [
@@ -33,6 +30,11 @@ export const HelpCenterPage: React.FC = () => {
 
   return (
     <div className="w-full max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 space-y-12">
+      <Seo
+        title="Pusat Bantuan & FAQ | CD'E Pearls Lombok"
+        description="Temukan jawaban seputar keaslian sertifikat gemologi, budidaya mutiara Lombok, metode pembayaran aman, pengiriman berasuransi, dan perawatan mutiara."
+        path="/bantuan"
+      />
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8A6A2F]/10 border border-[#8A6A2F]/20 text-[#8A6A2F] text-[12px] font-semibold tracking-wider uppercase">
           <HelpCircle className="w-3.5 h-3.5" />
