@@ -182,7 +182,7 @@ test('U-11.3: ambang harga minimum DAN maksimum dari pengaturan SPI dipatuhi sec
     $photo = UploadedFile::fake()->image('pearl_test.jpg', 600, 600);
 
     // Kasus 1: Harga Rp 150.000 (di bawah minimum Rp 200.000) -> pending_approval
-    $resMin = $this->actingAs($this->admin)->postJson('/api/admin/products', [
+    $resMin = $this->actingAs($this->admin)->postJson('/api/v1/admin/products', [
         'name' => 'Liontin Mutiara Dibawah Ambang Min',
         'description' => 'Mutiara dengan harga terlalu rendah',
         'category_slug' => 'kalung-mutiara',
@@ -201,7 +201,7 @@ test('U-11.3: ambang harga minimum DAN maksimum dari pengaturan SPI dipatuhi sec
 
     // Kasus 2: Harga Rp 5.000.000 (berada di dalam rentang wajar Rp 200.000 - Rp 50.000.000) -> published
     $photo2 = UploadedFile::fake()->image('pearl_normal.jpg', 600, 600);
-    $resNormal = $this->actingAs($this->admin)->postJson('/api/admin/products', [
+    $resNormal = $this->actingAs($this->admin)->postJson('/api/v1/admin/products', [
         'name' => 'Kalung Mutiara Rentang Wajar',
         'description' => 'Mutiara dengan harga wajar sesuai pasar',
         'category_slug' => 'kalung-mutiara',
@@ -219,7 +219,7 @@ test('U-11.3: ambang harga minimum DAN maksimum dari pengaturan SPI dipatuhi sec
 
     // Kasus 3: Harga Rp 60.000.000 (di atas maksimum Rp 50.000.000) -> pending_approval
     $photo3 = UploadedFile::fake()->image('pearl_expensive.jpg', 600, 600);
-    $resMax = $this->actingAs($this->admin)->postJson('/api/admin/products', [
+    $resMax = $this->actingAs($this->admin)->postJson('/api/v1/admin/products', [
         'name' => 'Kalung Mutiara Diatas Ambang Max',
         'description' => 'Mutiara super langka dengan harga di atas ambang batas standar',
         'category_slug' => 'kalung-mutiara',

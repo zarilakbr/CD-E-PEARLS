@@ -58,22 +58,22 @@ beforeEach(function () {
 });
 
 test('tamu ditolak 401 saat meminta ekspor excel', function () {
-    $res = $this->get('/api/spi/reports/sales/export');
+    $res = $this->get('/api/v1/spi/reports/sales/export');
     $res->assertStatus(401);
 });
 
 test('pelanggan biasa ditolak 403 saat meminta ekspor excel', function () {
-    $res = $this->actingAs($this->user)->get('/api/spi/reports/sales/export');
+    $res = $this->actingAs($this->user)->get('/api/v1/spi/reports/sales/export');
     $res->assertStatus(403);
 });
 
 test('admin operasional ditolak 403 saat meminta ekspor excel (khusus SPI)', function () {
-    $res = $this->actingAs($this->admin)->get('/api/spi/reports/sales/export');
+    $res = $this->actingAs($this->admin)->get('/api/v1/spi/reports/sales/export');
     $res->assertStatus(403);
 });
 
 test('SPI berhasil mengekspor excel 200 dengan MIME dan header xlsx yang valid', function () {
-    $res = $this->actingAs($this->spi)->get('/api/spi/reports/sales/export');
+    $res = $this->actingAs($this->spi)->get('/api/v1/spi/reports/sales/export');
 
     $res->assertStatus(200);
     $res->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -88,7 +88,7 @@ test('SPI berhasil mengekspor excel 200 dengan MIME dan header xlsx yang valid',
 });
 
 test('SPI dapat memfilter ekspor excel berdasarkan status pesanan dan kategori', function () {
-    $res = $this->actingAs($this->spi)->get('/api/spi/reports/sales/export?status=COMPLETED&category=gelang');
+    $res = $this->actingAs($this->spi)->get('/api/v1/spi/reports/sales/export?status=COMPLETED&category=gelang');
 
     $res->assertStatus(200);
     $res->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
