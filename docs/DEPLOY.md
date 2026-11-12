@@ -290,15 +290,20 @@ export SEED_USER_PASSWORD="KATA_SANDI_USER_KUAT_MIN_12_KARAKTER"
 
 ## 12. Konfigurasi Cron Job Laravel Scheduler (Tiap Menit)
 
-Laravel Scheduler bertugas menangani pembersihan pesanan kedaluwarsa, pelepasan kuota stok yang tidak diselesaikan, dan rekonsiliasi berkala.
+Laravel Scheduler berfungsi sebagai pengelola jadwal internal aplikasi. Cron host pada Hostinger dijalankan **setiap 1 menit (`* * * * *`)** karena mesin Laravel sendiri yang mengevaluasi ekspresi interval tiap tugas di `backend/routes/console.php`, sehingga tugas 5 menitan, 10 menitan, atau harian tetap presisi tanpa perlu mendaftarkan banyak entri cron manual.
 
+### Daftar Tugas Terjadwal Saat Ini (`backend/routes/console.php`):
+- **`orders:expire-reservations` (`everyTenMinutes()`)** — Kelas `App\Console\Commands\ExpireOrderReservationsCommand`: memindai pesanan berstatus `payment_status = 'WAITING_PAYMENT'` dan `order_status != 'CANCELLED'` yang melewati batas waktu reservasi (`reservation_hours` / `payment_timeout_hours`, default 24 jam), membatalkannya (`order_status = 'CANCELLED'`, `payment_status = 'FAILED'`), mengembalikan `stock` & mengurangi `stock_reserved` secara transaksional (`lockForUpdate`), serta mencatat `StockMovement` (`reservation_expired`) dan `OrderStatusHistory`.
+
+### Langkah Pemasangan di Hostinger hPanel:
 1. Buka **Hostinger hPanel** -> **Advanced** -> **Cron Jobs**.
 2. Pilih jenis jadwal: **Custom**.
 3. Atur frekuensi setiap menit: `* * * * *`.
-4. Masukkan baris perintah berikut:
+4. Masukkan baris perintah wajib berikut (sesuaikan path `~/cde-app` dengan direktori repo aktif di server Anda):
    ```bash
-   * * * * * /opt/alt/php84/usr/bin/php /home/USERNAME/cdepearls/backend/artisan schedule:run >> /dev/null 2>&1
+   * * * * * cd ~/cde-app/backend && php artisan schedule:run >> /dev/null 2>&1
    ```
+   *(Catatan: Jika PHP CLI bawaan server belum PHP 8.4, gunakan binary `/opt/alt/php84/usr/bin/php`, misal `* * * * * cd ~/cde-app/backend && /opt/alt/php84/usr/bin/php artisan schedule:run >> /dev/null 2>&1`).*
 5. Simpan pengaturan Cron Job.
 
 ---
@@ -348,45 +353,61 @@ Backend menyediakan endpoint pemantauan ketersediaan sistem:
 
 ---
 
-## 16. Deploy Frontend ke Cloudflare WORKERS
+## 16. Deploy Frontend ke Cloudflare WORKERS (Otomatis via Workers Builds)
 
-Frontend di-deploy menggunakan platform **Cloudflare Workers** (Static Assets):
+Frontend di-deploy secara otomatis dari branch **`main`** melalui **Cloudflare Workers Builds** (worker `cdepearlslombok`, konfigurasi `frontend/wrangler.jsonc`):
 
-1. **Konfigurasi Project di Cloudflare Dashboard**:
-   - **Worker Name**: `cdepearlslombok`
-   - **Branch Produksi**: `main`
+1. **Konfigurasi Project di Cloudflare Dashboard (Workers & Pages -> `cdepearlslombok`)**:
+   - **Platform**: Cloudflare **Workers** (bukan Pages)
+   - **Branch Produksi**: `main` (build & deploy otomatis saat merge ke `main`)
    - **Root Directory**: `frontend`
-   - **Build Command**: `npm run build`
-   - **Build Output Directory**: `dist`
+   - **Build Command**: `npm run build` *(menjalankan `generate-version.js`, `tsc -b`, `vite build`, `vite build --ssr`, dan `scripts/prerender.mjs` ke `dist/`)*
+   - **Edge Worker Entry**: `frontend/worker/index.ts` (menangani `/robots.txt`, `/sitemap.xml`, `HTMLRewriter` untuk `/produk/:id`, serta `X-Robots-Tag: noindex, nofollow` pada rute privat)
 2. **Variabel Lingkungan Build (Cloudflare Environment Variables)**:
    - `VITE_API_URL`: `https://api.cdepearlslombok.id/api/v1`
    - `VITE_TURNSTILE_SITE_KEY`: Site key Cloudflare Turnstile resmi untuk domain `cdepearlslombok.id`
-3. **SPA Routing**:
-   Konfigurasi Cloudflare Workers Static Assets otomatis melayani `index.html` untuk semua rute klien (Client-Side Routing React SPA).
+   - `VITE_ALLOW_INDEXING`: **Biarkan tidak disetel (`true` secara default) di produksi.** Setel `VITE_ALLOW_INDEXING=false` **HANYA untuk build non-produksi** (preview/staging) agar crawler tidak mengindeks lingkungan uji.
+3. **Manual Deploy CLI (bila diperlukan dari lokal)**:
+   ```bash
+   cd frontend
+   npm run build
+   npx wrangler deploy
+   ```
 
 ---
 
-## 17. Alur Pembaruan Produksi (Production Update Workflow)
+## 17. Urutan Deploy Backend di Hostinger (Update Produksi)
 
-Setiap kali ada pembaruan kode baru yang di-merge ke branch `main`, lakukan langkah pembaruan berikut pada server Hostinger via SSH:
+Setiap kali ada pembaruan kode baru yang di-merge ke branch `main`, jalankan urutan deploy berikut via SSH pada server Hostinger *(sesuaikan `~/cde-app` dengan path aktual, atau `/home/USERNAME/cdepearls` bila folder server memakai nama lama)*:
 
 ```bash
-cd /home/USERNAME/cdepearls
-
-# 1. Tarik pembaruan kode terbaru
-git pull origin main
-
-# 2. Perbarui dependensi backend dengan PHP 8.4
-cd backend
-/opt/alt/php84/usr/bin/php $(which composer) install --no-dev --optimize-autoloader
-
-# 3. Jalankan migrasi database baru
-/opt/alt/php84/usr/bin/php artisan migrate --force
-
-# 4. Bersihkan cache lama dan optimalkan ulang
-/opt/alt/php84/usr/bin/php artisan optimize:clear
-/opt/alt/php84/usr/bin/php artisan optimize
+cd ~/cde-app && git pull origin main && cd backend
 ```
+
+1. **Perbarui dependensi Composer (jika `composer.json`/`composer.lock` berubah)**:
+   ```bash
+   composer install --no-dev --optimize-autoloader
+   # atau dengan PHP 8.4 eksplisit: /opt/alt/php84/usr/bin/php $(which composer) install --no-dev --optimize-autoloader
+   ```
+2. **Jalankan migrasi database HANYA bila ada berkas migrasi baru** *(wajib cadangkan DB `.sql` terlebih dahulu sesuai Bagian 9)*:
+   ```bash
+   php artisan migrate --force
+   ```
+3. **Bersihkan cache lama dan bangun ulang cache produksi**:
+   ```bash
+   php artisan optimize:clear && php artisan optimize
+   ```
+4. **Cek kesehatan endpoint API**:
+   ```bash
+   curl -i https://api.cdepearlslombok.id/api/v1/health
+   # Wajib mengembalikan HTTP 200 {"status":"ok"} dan header X-Robots-Tag: noindex
+   ```
+
+Ringkas satu baris (ketika tidak ada perubahan Composer):
+```bash
+cd ~/cde-app && git pull origin main && cd backend && php artisan migrate --force && php artisan optimize:clear && php artisan optimize
+```
+*(Lewati `php artisan migrate --force` jika tidak ada migrasi baru).*
 
 ---
 
@@ -420,5 +441,26 @@ Lakukan tiga pengujian verifikasi manual berikut pada lingkungan produksi:
    - Dari dashboard Admin, buka menu Manajemen Produk lalu tambahkan 1 produk baru beserta berkas gambar asli.
    - Pastikan gambar berhasil diunggah, versi `.webp` terbuat secara otomatis di storage, dan gambar produk tampil sempurna di:
      - Halaman Katalog Publik (`/katalog`)
-     - Halaman Detail Produk (`/produk/{slug}`)
+     - Halaman Detail Produk (`/produk/{id}`)
      - Tabel Daftar Produk Admin (`/admin/produk`)
+
+---
+
+## 19. Prosedur Rollback (Darurat Produksi)
+
+### A. Rollback Backend (Hostinger)
+1. Identifikasi commit stabil terakhir sebelum deploy bermasalah:
+   ```bash
+   cd ~/cde-app && git log --oneline -8
+   ```
+2. Kembalikan kode ke commit stabil `<commit>`, lalu bangun ulang cache Laravel:
+   ```bash
+   cd ~/cde-app && git checkout <commit> && cd backend && php artisan optimize:clear && php artisan optimize
+   ```
+   *(Catatan: Jika deploy sebelumnya membawa perubahan skema database yang merusak kompatibilitas mundur, lakukan pemulihan dari cadangan `.sql` sebelum `git checkout`. Setelah kondisi pulih di cabang utama, kembalikan `HEAD` ke `main` setelah commit revert/perbaikan masuk).*
+3. Pastikan `/api/v1/health` kembali mengembalikan `HTTP 200 {"status":"ok"}`.
+
+### B. Rollback Frontend (Cloudflare Workers)
+1. Buka **Cloudflare Dashboard -> Workers & Pages -> `cdepearlslombok`**.
+2. Buka tab **Deployments**.
+3. Pilih deployment versi stabil sebelumnya lalu klik **Rollback** untuk memulihkan versi Worker dan aset statis secara instan tanpa menunggu rebuild.

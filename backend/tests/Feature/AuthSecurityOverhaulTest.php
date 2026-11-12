@@ -371,16 +371,16 @@ test('akun staf dengan must_change_password=true ditolak di rute admin dan spi l
         'must_change_password' => true,
     ]);
 
-    // Akses ke /api/admin/products ditolak 403 MUST_CHANGE_PASSWORD
-    $this->actingAs($adminStaff)->getJson('/api/admin/products')
+    // Akses ke /api/v1/admin/products ditolak 403 MUST_CHANGE_PASSWORD
+    $this->actingAs($adminStaff)->getJson('/api/v1/admin/products')
         ->assertStatus(403)
         ->assertJson([
             'success' => false,
             'error' => 'MUST_CHANGE_PASSWORD',
         ]);
 
-    // Akses ke /api/spi/summary ditolak 403 MUST_CHANGE_PASSWORD
-    $this->actingAs($spiStaff)->getJson('/api/spi/summary')
+    // Akses ke /api/v1/spi/summary ditolak 403 MUST_CHANGE_PASSWORD
+    $this->actingAs($spiStaff)->getJson('/api/v1/spi/summary')
         ->assertStatus(403)
         ->assertJson([
             'success' => false,
@@ -389,7 +389,7 @@ test('akun staf dengan must_change_password=true ditolak di rute admin dan spi l
 
     // Dan jika akun frozen, juga ditolak 403 ACCOUNT_FROZEN
     $adminStaff->update(['must_change_password' => false, 'status' => 'frozen']);
-    $this->actingAs($adminStaff)->getJson('/api/admin/products')
+    $this->actingAs($adminStaff)->getJson('/api/v1/admin/products')
         ->assertStatus(403)
         ->assertJson([
             'success' => false,

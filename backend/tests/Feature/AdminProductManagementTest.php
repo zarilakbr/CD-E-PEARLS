@@ -36,22 +36,22 @@ beforeEach(function () {
 });
 
 test('tamu 401 saat mengakses manajemen produk admin', function () {
-    $this->postJson('/api/admin/products', [])->assertStatus(401);
-    $this->putJson('/api/admin/products/1', [])->assertStatus(401);
-    $this->deleteJson('/api/admin/products/1')->assertStatus(401);
+    $this->postJson('/api/v1/admin/products', [])->assertStatus(401);
+    $this->putJson('/api/v1/admin/products/1', [])->assertStatus(401);
+    $this->deleteJson('/api/v1/admin/products/1')->assertStatus(401);
 });
 
 test('pelanggan 403 saat mengakses manajemen produk admin', function () {
     $this->actingAs($this->customer)
-        ->postJson('/api/admin/products', [])
+        ->postJson('/api/v1/admin/products', [])
         ->assertStatus(403);
 
     $this->actingAs($this->customer)
-        ->putJson('/api/admin/products/1', [])
+        ->putJson('/api/v1/admin/products/1', [])
         ->assertStatus(403);
 
     $this->actingAs($this->customer)
-        ->deleteJson('/api/admin/products/1')
+        ->deleteJson('/api/v1/admin/products/1')
         ->assertStatus(403);
 });
 
@@ -74,49 +74,49 @@ test('validasi 422 per field: tolak harga < 0, stok < 0, ukuran luar 9-21mm, var
 
     // 1. Tolak harga < 0
     $this->actingAs($this->admin)
-        ->postJson('/api/admin/products', array_merge($basePayload, ['price' => -1000]))
+        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['price' => -1000]))
         ->assertStatus(422)
         ->assertJsonValidationErrors(['price']);
 
     // 2. Tolak stok < 0
     $this->actingAs($this->admin)
-        ->postJson('/api/admin/products', array_merge($basePayload, ['stock' => -5]))
+        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['stock' => -5]))
         ->assertStatus(422)
         ->assertJsonValidationErrors(['stock']);
 
     // 3. Tolak ukuran_mm di luar 9-21 mm (misal 8 mm atau 25 mm)
     $this->actingAs($this->admin)
-        ->postJson('/api/admin/products', array_merge($basePayload, ['ukuran_mm' => '8.0']))
+        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['ukuran_mm' => '8.0']))
         ->assertStatus(422)
         ->assertJsonValidationErrors(['ukuran_mm']);
 
     $this->actingAs($this->admin)
-        ->postJson('/api/admin/products', array_merge($basePayload, ['ukuran_mm' => '22.0']))
+        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['ukuran_mm' => '22.0']))
         ->assertStatus(422)
         ->assertJsonValidationErrors(['ukuran_mm']);
 
     // 4. Tolak jenis mutiara tidak valid
     $this->actingAs($this->admin)
-        ->postJson('/api/admin/products', array_merge($basePayload, ['varietas' => 'Mutiara Plastik']))
+        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['varietas' => 'Mutiara Plastik']))
         ->assertStatus(422)
         ->assertJsonValidationErrors(['varietas']);
 
     // 5. Tolak grade tidak valid
     $this->actingAs($this->admin)
-        ->postJson('/api/admin/products', array_merge($basePayload, ['grade' => 'INVALID_GRADE']))
+        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['grade' => 'INVALID_GRADE']))
         ->assertStatus(422)
         ->assertJsonValidationErrors(['grade']);
 
     // 6. Tolak kelompok warna tidak valid
     $this->actingAs($this->admin)
-        ->postJson('/api/admin/products', array_merge($basePayload, ['kelompok_warna' => 'neon_green']))
+        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['kelompok_warna' => 'neon_green']))
         ->assertStatus(422)
         ->assertJsonValidationErrors(['kelompok_warna']);
 
     // 7. Tolak unggahan bukan MIME gambar asli
     $fakeScriptFile = UploadedFile::fake()->create('malicious.php.png', 100, 'text/x-php');
     $this->actingAs($this->admin)
-        ->postJson('/api/admin/products', array_merge($basePayload, [
+        ->postJson('/api/v1/admin/products', array_merge($basePayload, [
             'photos' => [$fakeScriptFile],
         ]))
         ->assertStatus(422)
@@ -146,7 +146,7 @@ test('admin 201: admin berhasil menambah produk dengan verifikasi foto dan nama 
         'primary_photo_index' => 0,
     ];
 
-    $response = $this->actingAs($this->admin)->postJson('/api/admin/products', $payload);
+    $response = $this->actingAs($this->admin)->postJson('/api/v1/admin/products', $payload);
 
     $response->assertStatus(201);
     expect($response->json('success'))->toBeTrue();
@@ -193,7 +193,7 @@ test('admin dapat mengubah data produk (PUT)', function () {
         'ukuran_mm' => '10.5',
     ];
 
-    $response = $this->actingAs($this->admin)->putJson("/api/admin/products/{$product->id}", $updatePayload);
+    $response = $this->actingAs($this->admin)->putJson("/api/v1/admin/products/{$product->id}", $updatePayload);
 
     $response->assertStatus(200);
     expect($response->json('success'))->toBeTrue();
@@ -215,7 +215,7 @@ test('admin dapat menonaktifkan produk (soft delete)', function () {
     ]);
 
     // Panggil DELETE untuk menonaktifkan / arsipkan
-    $response = $this->actingAs($this->admin)->deleteJson("/api/admin/products/{$product->id}");
+    $response = $this->actingAs($this->admin)->deleteJson("/api/v1/admin/products/{$product->id}");
 
     $response->assertStatus(200);
     expect($response->json('success'))->toBeTrue();
@@ -244,7 +244,7 @@ test('admin berhasil menambah produk kategori Liontin dan Bros dengan berbagai v
     $photo2 = UploadedFile::fake()->image('liontin_side.jpg', 600, 600);
 
     // 1. Tambah Liontin Tahitian AAA 11mm
-    $resLiontin = $this->actingAs($this->admin)->postJson('/api/admin/products', [
+    $resLiontin = $this->actingAs($this->admin)->postJson('/api/v1/admin/products', [
         'name' => 'Liontin Mutiara Hitam Tahitian Peacock 18K',
         'description' => 'Liontin anggun mutiara hitam Tahitian kilau peacock',
         'category_slug' => 'liontin-mutiara',
@@ -268,7 +268,7 @@ test('admin berhasil menambah produk kategori Liontin dan Bros dengan berbagai v
 
     // 2. Tambah Bros Freshwater Baroque AA 13mm
     $photoBros = UploadedFile::fake()->image('bros_front.jpg', 600, 600);
-    $resBros = $this->actingAs($this->admin)->postJson('/api/admin/products', [
+    $resBros = $this->actingAs($this->admin)->postJson('/api/v1/admin/products', [
         'name' => 'Bros Kebaya Mutiara Air Tawar Floral Silver 925',
         'description' => 'Bros kebaya klasik dengan mutiara air tawar bentuk baroque',
         'category_slug' => 'bros-mutiara',

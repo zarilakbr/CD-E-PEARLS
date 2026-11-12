@@ -242,30 +242,5 @@ Route::prefix('v1')->group(function () {
     });
 });
 
-// S-1 Direct Root Alias /api/admin/products for Admin & SPI
-Route::middleware(['auth:sanctum', 'not_frozen', 'must_change_password', 'role:admin,spi'])->prefix('admin')->group(function () {
-    Route::get('/products', [ProductAdminController::class, 'index']);
-    Route::post('/products/upload-image', [ProductAdminController::class, 'uploadImage']);
-    Route::post('/products', [ProductAdminController::class, 'store']);
-    Route::put('/products/{id}', [ProductAdminController::class, 'update']);
-    Route::delete('/products/{id}', [ProductAdminController::class, 'destroy']);
-});
-
-// S-2 Direct Root Alias /api/spi/* for SPI Exclusive
-Route::middleware(['auth:sanctum', 'not_frozen', 'must_change_password', 'role:spi'])->prefix('spi')->group(function () {
-    Route::get('/summary', [SpiControlCenterController::class, 'summary']);
-    Route::get('/orders', [SpiControlCenterController::class, 'orders']);
-    Route::get('/orders/{id}', [SpiControlCenterController::class, 'orderDetail']);
-    Route::match(['put', 'post'], '/orders/{id}/status', [SpiControlCenterController::class, 'updateOrderStatus']);
-    Route::get('/stock', [SpiControlCenterController::class, 'stock']);
-    Route::post('/stock/{id}/adjust', [SpiControlCenterController::class, 'adjustStock']);
-    Route::get('/users', [SpiControlCenterController::class, 'users']);
-    Route::put('/users/{id}/role', [SpiControlCenterController::class, 'updateUserRole']);
-    Route::match(['put', 'post'], '/users/{id}/toggle-status', [SpiControlCenterController::class, 'toggleUserStatus']);
-    Route::get('/audit-logs', [SpiControlCenterController::class, 'auditLogs']);
-    Route::get('/settings', [SpiControlCenterController::class, 'getSettings']);
-    Route::post('/settings', [SpiControlCenterController::class, 'updateSettings']);
-    Route::get('/reports/sales/export', [SpiControlCenterController::class, 'exportSalesReport']);
-});
 
 

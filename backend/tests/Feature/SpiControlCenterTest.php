@@ -41,30 +41,30 @@ beforeEach(function () {
 });
 
 test('tamu 401 saat mengakses seluruh rute pusat kendali SPI', function () {
-    $this->getJson('/api/spi/summary')->assertStatus(401);
-    $this->getJson('/api/spi/orders')->assertStatus(401);
-    $this->getJson('/api/spi/stock')->assertStatus(401);
-    $this->getJson('/api/spi/users')->assertStatus(401);
-    $this->getJson('/api/spi/audit-logs')->assertStatus(401);
-    $this->getJson('/api/spi/settings')->assertStatus(401);
+    $this->getJson('/api/v1/spi/summary')->assertStatus(401);
+    $this->getJson('/api/v1/spi/orders')->assertStatus(401);
+    $this->getJson('/api/v1/spi/stock')->assertStatus(401);
+    $this->getJson('/api/v1/spi/users')->assertStatus(401);
+    $this->getJson('/api/v1/spi/audit-logs')->assertStatus(401);
+    $this->getJson('/api/v1/spi/settings')->assertStatus(401);
 });
 
 test('pelanggan 403 saat mengakses seluruh rute pusat kendali SPI', function () {
-    $this->actingAs($this->customer)->getJson('/api/spi/summary')->assertStatus(403);
-    $this->actingAs($this->customer)->getJson('/api/spi/orders')->assertStatus(403);
-    $this->actingAs($this->customer)->getJson('/api/spi/stock')->assertStatus(403);
-    $this->actingAs($this->customer)->getJson('/api/spi/users')->assertStatus(403);
-    $this->actingAs($this->customer)->getJson('/api/spi/audit-logs')->assertStatus(403);
-    $this->actingAs($this->customer)->getJson('/api/spi/settings')->assertStatus(403);
+    $this->actingAs($this->customer)->getJson('/api/v1/spi/summary')->assertStatus(403);
+    $this->actingAs($this->customer)->getJson('/api/v1/spi/orders')->assertStatus(403);
+    $this->actingAs($this->customer)->getJson('/api/v1/spi/stock')->assertStatus(403);
+    $this->actingAs($this->customer)->getJson('/api/v1/spi/users')->assertStatus(403);
+    $this->actingAs($this->customer)->getJson('/api/v1/spi/audit-logs')->assertStatus(403);
+    $this->actingAs($this->customer)->getJson('/api/v1/spi/settings')->assertStatus(403);
 });
 
 test('admin 403 saat mengakses seluruh rute pusat kendali SPI (Eksklusif SPI)', function () {
-    $this->actingAs($this->admin)->getJson('/api/spi/summary')->assertStatus(403);
-    $this->actingAs($this->admin)->getJson('/api/spi/orders')->assertStatus(403);
-    $this->actingAs($this->admin)->getJson('/api/spi/stock')->assertStatus(403);
-    $this->actingAs($this->admin)->getJson('/api/spi/users')->assertStatus(403);
-    $this->actingAs($this->admin)->getJson('/api/spi/audit-logs')->assertStatus(403);
-    $this->actingAs($this->admin)->getJson('/api/spi/settings')->assertStatus(403);
+    $this->actingAs($this->admin)->getJson('/api/v1/spi/summary')->assertStatus(403);
+    $this->actingAs($this->admin)->getJson('/api/v1/spi/orders')->assertStatus(403);
+    $this->actingAs($this->admin)->getJson('/api/v1/spi/stock')->assertStatus(403);
+    $this->actingAs($this->admin)->getJson('/api/v1/spi/users')->assertStatus(403);
+    $this->actingAs($this->admin)->getJson('/api/v1/spi/audit-logs')->assertStatus(403);
+    $this->actingAs($this->admin)->getJson('/api/v1/spi/settings')->assertStatus(403);
 });
 
 test('spi 200: Ringkasan metrik database nyata (omzet hari ini/7d/30d, pesanan per status, produk terlaris, stok menipis, pelanggan baru)', function () {
@@ -102,7 +102,7 @@ test('spi 200: Ringkasan metrik database nyata (omzet hari ini/7d/30d, pesanan p
         'subtotal' => 20000000,
     ]);
 
-    $response = $this->actingAs($this->spi)->getJson('/api/spi/summary');
+    $response = $this->actingAs($this->spi)->getJson('/api/v1/spi/summary');
 
     $response->assertStatus(200);
     $data = $response->json();
@@ -138,7 +138,7 @@ test('spi dapat melihat dan mengoreksi stok dengan tercatat di log & stock_movem
         'status' => 'published',
     ]);
 
-    $response = $this->actingAs($this->spi)->postJson("/api/spi/stock/{$product->id}/adjust", [
+    $response = $this->actingAs($this->spi)->postJson("/api/v1/spi/stock/{$product->id}/adjust", [
         'delta' => -3,
         'reason' => 'Hasil opname brankas kuartal IV ditemukan selisih fisik',
     ]);
@@ -181,7 +181,7 @@ test('spi dapat mengubah status pesanan sesuai state machine', function () {
         'order_status' => 'PROCESSING',
     ]);
 
-    $response = $this->actingAs($this->spi)->putJson("/api/spi/orders/{$order->id}/status", [
+    $response = $this->actingAs($this->spi)->putJson("/api/v1/spi/orders/{$order->id}/status", [
         'order_status' => 'SHIPPED',
         'notes' => 'Diserahkan ke kurir berpendingin khusus perhiasan',
     ]);
@@ -207,26 +207,26 @@ test('spi dapat mengelola pengguna tetapi DILARANG menurunkan perannya sendiri a
     ]);
 
     // 1. SPI mengubah peran user lain menjadi admin -> SUKSES 200
-    $res1 = $this->actingAs($this->spi)->putJson("/api/spi/users/{$targetUser->id}/role", [
+    $res1 = $this->actingAs($this->spi)->putJson("/api/v1/spi/users/{$targetUser->id}/role", [
         'role' => 'admin',
     ]);
     $res1->assertStatus(200);
     expect($targetUser->fresh()->role)->toBe('admin');
 
     // 2. SPI menonaktifkan user lain -> SUKSES 200
-    $res2 = $this->actingAs($this->spi)->putJson("/api/spi/users/{$targetUser->id}/toggle-status");
+    $res2 = $this->actingAs($this->spi)->putJson("/api/v1/spi/users/{$targetUser->id}/toggle-status");
     $res2->assertStatus(200);
     expect($targetUser->fresh()->status)->toBe('frozen');
 
     // 3. SPI DILARANG menurunkan dirinya sendiri -> DITOLAK 403
-    $res3 = $this->actingAs($this->spi)->putJson("/api/spi/users/{$this->spi->id}/role", [
+    $res3 = $this->actingAs($this->spi)->putJson("/api/v1/spi/users/{$this->spi->id}/role", [
         'role' => 'admin',
     ]);
     $res3->assertStatus(403);
     expect($this->spi->fresh()->role)->toBe('spi');
 
     // 4. SPI DILARANG menonaktifkan dirinya sendiri -> DITOLAK 403
-    $res4 = $this->actingAs($this->spi)->putJson("/api/spi/users/{$this->spi->id}/toggle-status");
+    $res4 = $this->actingAs($this->spi)->putJson("/api/v1/spi/users/{$this->spi->id}/toggle-status");
     $res4->assertStatus(403);
     expect($this->spi->fresh()->status)->toBe('active');
 });
@@ -240,12 +240,12 @@ test('spi dapat melihat dan memperbarui pengaturan toko', function () {
         'payment_timeout_hours' => 24,
     ];
 
-    $updateRes = $this->actingAs($this->spi)->postJson('/api/spi/settings', $settingsPayload);
+    $updateRes = $this->actingAs($this->spi)->postJson('/api/v1/spi/settings', $settingsPayload);
     $updateRes->assertStatus(200);
     expect($updateRes->json('success'))->toBeTrue();
 
     // Verifikasi GET settings
-    $getRes = $this->actingAs($this->spi)->getJson('/api/spi/settings');
+    $getRes = $this->actingAs($this->spi)->getJson('/api/v1/spi/settings');
     $getRes->assertStatus(200);
     $savedSettings = $getRes->json('data');
 
