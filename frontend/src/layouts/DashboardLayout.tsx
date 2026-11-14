@@ -138,7 +138,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-row bg-[var(--bg-dash)] text-[var(--text)] font-sans relative overflow-x-hidden">
+    <div className="min-h-[100dvh] flex flex-row bg-[var(--bg-dash)] pearl-bg text-[var(--text)] font-sans relative overflow-x-hidden">
       <Seo
         noindex
         title={
@@ -370,7 +370,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* ========================================================
           2. KANAN: AREA KONTEN DENGAN TOP PHOTO BANNER & GREETING
          ======================================================== */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-[100dvh]">
+      <div className="flex-1 flex flex-col min-w-0 min-h-[100dvh] bg-[var(--bg-dash)] pearl-bg">
         {/* Top Photo Banner */}
         <div className="relative w-full h-[156px] lg:h-[188px] overflow-hidden shrink-0 bg-[#12263A]">
           <picture className="absolute inset-0 w-full h-full pointer-events-none">

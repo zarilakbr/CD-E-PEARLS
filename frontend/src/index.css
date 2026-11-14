@@ -250,6 +250,63 @@ body {
   bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ========================================================
+   LATAR MUTIARA (Nacre Dashboard Background)
+   Area konten dashboard (Pelanggan, Admin, SPI):
+   - Tema terang: radial-gradient bertumpuk di atas krem #F4F1EB
+     (putih mutiara kiri atas, rose lembut #F3E4E1 kanan atas,
+      biru-abu muda #E6EDF3 kanan bawah, sorotan hangat #FBF3E2 kiri bawah)
+     + linear-gradient diagonal kilau nacre (8% ke 6% transparan putih).
+   - Tema gelap: dasar navy #0B1622 dengan semburat kilau mutiara
+     opacity rendah yang mewah tanpa mengganggu kontras.
+   - background-attachment: scroll (ringan di mobile & Safari).
+   ======================================================== */
+.pearl-bg {
+  background-color: var(--bg-dash);
+  background-image:
+    /* Kilau diagonal nacre sangat halus */
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.06) 100%),
+    /* Semburat putih mutiara di kiri atas */
+    radial-gradient(circle at 10% 12%, rgba(255, 255, 255, 0.80) 0%, rgba(255, 255, 255, 0) 45%),
+    /* Semburat rose lembut di kanan atas (#F3E4E1) */
+    radial-gradient(circle at 88% 15%, rgba(243, 228, 225, 0.65) 0%, rgba(243, 228, 225, 0) 50%),
+    /* Semburat biru-abu muda di kanan bawah (#E6EDF3) */
+    radial-gradient(circle at 85% 82%, rgba(230, 237, 243, 0.70) 0%, rgba(230, 237, 243, 0) 50%),
+    /* Sorotan hangat di kiri bawah (#FBF3E2) */
+    radial-gradient(circle at 12% 85%, rgba(251, 243, 226, 0.65) 0%, rgba(251, 243, 226, 0) 50%);
+  background-attachment: scroll;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+:root[data-theme="dark"] .pearl-bg,
+html.dark .pearl-bg {
+  background-color: var(--bg-dash);
+  background-image:
+    /* Kilau diagonal halus mode gelap */
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 45%, rgba(217, 184, 119, 0.02) 100%),
+    /* Kilau perak mutiara kiri atas */
+    radial-gradient(circle at 10% 12%, rgba(220, 230, 242, 0.07) 0%, rgba(220, 230, 242, 0) 45%),
+    /* Semburat mutiara rose tipis kanan atas */
+    radial-gradient(circle at 88% 15%, rgba(225, 190, 200, 0.05) 0%, rgba(225, 190, 200, 0) 50%),
+    /* Semburat samudra nacre kanan bawah */
+    radial-gradient(circle at 85% 82%, rgba(35, 75, 115, 0.16) 0%, rgba(35, 75, 115, 0) 55%),
+    /* Sorotan emas mutiara kiri bawah */
+    radial-gradient(circle at 12% 85%, rgba(217, 184, 119, 0.05) 0%, rgba(217, 184, 119, 0) 50%);
+  background-attachment: scroll;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+@media (prefers-contrast: more) {
+  .pearl-bg,
+  :root[data-theme="dark"] .pearl-bg,
+  html.dark .pearl-bg {
+    background-image: none !important;
+    background-color: var(--bg-dash) !important;
+  }
+}
+
 /* Reduced motion preference (Q10C: ganti dengan fade pendek 150ms, opacity saja) */
 @keyframes fadeOnly {
   from { opacity: 0; }
