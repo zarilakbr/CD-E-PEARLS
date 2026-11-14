@@ -12,8 +12,10 @@ const mockProducts = [
     slug: 'cincin-mutiara-emas-south-sea-18k',
     price: 14500000,
     formattedPrice: 'Rp 14.500.000',
-    category: 'Cincin Mutiara',
+    category: { name: 'Cincin Mutiara', slug: 'cincin-mutiara' },
+    category_slug: 'cincin-mutiara',
     variety: 'Gold South Sea Pearl',
+    varietas: 'Gold South Sea Pearl',
     grade: 'AAA',
     pearlSize: '12.8 mm',
     metal: 'Emas Kuning 18K (750)',
@@ -21,6 +23,7 @@ const mockProducts = [
     certificateNo: 'GIA-LMB-9921',
     description: 'Mahakarya cincin mutiara laut selatan Lombok dengan kilau cermin (mirror luster) keemasan alami.',
     stock: 3,
+    status: 'published',
   },
 ];
 
@@ -465,7 +468,15 @@ test.describe('Tahap V5 — Verifikasi Tampilan Mobile & Sinkron Tema', () => {
       test(`Katalog & Modal Detail Produk: Mobile ${vp.name} (${theme})`, async ({ page }) => {
         await page.setViewportSize({ width: vp.width, height: vp.height });
 
-        await page.route(new RegExp('/api/v1/products'), async (route) => {
+        await page.route('**/categories*', async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ data: [{ id: 1, name: 'Cincin Mutiara', slug: 'cincin-mutiara' }] }),
+          });
+        });
+
+        await page.route('**/products*', async (route) => {
           await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -484,22 +495,20 @@ test.describe('Tahap V5 — Verifikasi Tampilan Mobile & Sinkron Tema', () => {
           }
         }, theme);
 
+        await page.waitForSelector('[data-slot="product-card"]', { timeout: 10000 });
+
+        // Klik kartu produk untuk memunculkan ProductDetailModal
+        const card = page.locator('[data-slot="product-card"]').first();
+        await card.click();
         await page.waitForTimeout(600);
 
-        // Klik salah satu kartu produk untuk memunculkan ProductDetailModal
-        const card = page.locator('[data-slot="product-card"], .group:has-text("Cincin Mutiara")').first();
-        if (await card.isVisible()) {
-          await card.click();
-          await page.waitForTimeout(600);
-
-          if (vp.width === 360) {
-            await assertNoHorizontalScroll(page, `Product Detail Modal ${vp.name} ${theme}`);
-          }
-          await page.screenshot({
-            path: path.join(screenshotDir, `product-detail-modal-${vp.name}-${theme}.png`),
-            fullPage: false,
-          });
+        if (vp.width === 360) {
+          await assertNoHorizontalScroll(page, `Product Detail Modal ${vp.name} ${theme}`);
         }
+        await page.screenshot({
+          path: path.join(screenshotDir, `product-detail-modal-${vp.name}-${theme}.png`),
+          fullPage: false,
+        });
       });
     }
   }
