@@ -76,7 +76,7 @@ class CertificateController extends Controller
             'grade' => 'required|string|max:20', // AAA, AA+
             'ukuran' => 'required|string|max:50', // 11.8 mm
             'tanggal' => 'required|date',
-            'pdf_file' => 'nullable|file|mimes:pdf|max:10240', // 10MB max
+            'pdf_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240', // 10MB max
             'pdf_path' => [
                 'nullable',
                 'string',
@@ -96,7 +96,8 @@ class CertificateController extends Controller
         $pdfPath = $validated['pdf_path'] ?? null;
         if ($request->hasFile('pdf_file')) {
             $file = $request->file('pdf_file');
-            $filename = 'cert_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $validated['nomor']) . '_' . time() . '.pdf';
+            $ext = strtolower($file->getClientOriginalExtension() ?: 'pdf');
+            $filename = 'cert_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $validated['nomor']) . '_' . time() . '.' . $ext;
             $pdfPath = $file->storeAs('certificates', $filename, 'public');
         }
 
@@ -144,7 +145,7 @@ class CertificateController extends Controller
             'grade' => 'sometimes|required|string|max:20',
             'ukuran' => 'sometimes|required|string|max:50',
             'tanggal' => 'sometimes|required|date',
-            'pdf_file' => 'nullable|file|mimes:pdf|max:10240',
+            'pdf_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'pdf_path' => [
                 'nullable',
                 'string',
@@ -163,7 +164,8 @@ class CertificateController extends Controller
 
         if ($request->hasFile('pdf_file')) {
             $file = $request->file('pdf_file');
-            $filename = 'cert_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $certificate->nomor) . '_' . time() . '.pdf';
+            $ext = strtolower($file->getClientOriginalExtension() ?: 'pdf');
+            $filename = 'cert_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $certificate->nomor) . '_' . time() . '.' . $ext;
             $pdfPath = $file->storeAs('certificates', $filename, 'public');
             $validated['pdf_path'] = '/storage/' . $pdfPath;
         }

@@ -26,6 +26,7 @@ class Product extends Model
         'grade',
         'logam',
         'ukuran_mm',
+        'jumlah',
         'berat',
         'bentuk',
         'kelompok_warna',
@@ -54,7 +55,26 @@ class Product extends Model
 
     protected $appends = [
         'webp_url',
+        'certificate_pdf_url',
+        'certificate_number',
     ];
+
+    public function getCertificatePdfUrlAttribute(): ?string
+    {
+        $cert = $this->certificate;
+        if (! $cert || empty($cert->pdf_path)) {
+            return null;
+        }
+        if (str_starts_with($cert->pdf_path, 'http://') || str_starts_with($cert->pdf_path, 'https://')) {
+            return $cert->pdf_path;
+        }
+        return rtrim(config('app.url'), '/') . '/' . ltrim($cert->pdf_path, '/');
+    }
+
+    public function getCertificateNumberAttribute(): ?string
+    {
+        return $this->certificate?->nomor;
+    }
 
     public function getWebpUrlAttribute(): ?string
     {

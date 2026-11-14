@@ -55,7 +55,7 @@ test('pelanggan 403 saat mengakses manajemen produk admin', function () {
         ->assertStatus(403);
 });
 
-test('validasi 422 per field: tolak harga < 0, stok < 0, ukuran luar 9-21mm, varietas, grade, kelompok warna, mime palsu', function () {
+test('validasi 422 per field: tolak harga < 0, stok < 0, string > 100 karakter, mime palsu', function () {
     $basePayload = [
         'name' => 'Kalung Mutiara Ratu Laut',
         'description' => 'Kilau nacre tebal perairan Sekotong',
@@ -84,36 +84,24 @@ test('validasi 422 per field: tolak harga < 0, stok < 0, ukuran luar 9-21mm, var
         ->assertStatus(422)
         ->assertJsonValidationErrors(['stock']);
 
-    // 3. Tolak ukuran_mm di luar 9-21 mm (misal 8 mm atau 25 mm)
+    // 3. Tolak string spesifikasi lebih dari 100 karakter
+    $over100 = str_repeat('A', 101);
     $this->actingAs($this->admin)
-        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['ukuran_mm' => '8.0']))
+        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['ukuran_mm' => $over100]))
         ->assertStatus(422)
         ->assertJsonValidationErrors(['ukuran_mm']);
 
     $this->actingAs($this->admin)
-        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['ukuran_mm' => '22.0']))
+        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['jumlah' => $over100]))
         ->assertStatus(422)
-        ->assertJsonValidationErrors(['ukuran_mm']);
+        ->assertJsonValidationErrors(['jumlah']);
 
-    // 4. Tolak jenis mutiara tidak valid
     $this->actingAs($this->admin)
-        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['varietas' => 'Mutiara Plastik']))
+        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['varietas' => $over100]))
         ->assertStatus(422)
         ->assertJsonValidationErrors(['varietas']);
 
-    // 5. Tolak grade tidak valid
-    $this->actingAs($this->admin)
-        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['grade' => 'INVALID_GRADE']))
-        ->assertStatus(422)
-        ->assertJsonValidationErrors(['grade']);
-
-    // 6. Tolak kelompok warna tidak valid
-    $this->actingAs($this->admin)
-        ->postJson('/api/v1/admin/products', array_merge($basePayload, ['kelompok_warna' => 'neon_green']))
-        ->assertStatus(422)
-        ->assertJsonValidationErrors(['kelompok_warna']);
-
-    // 7. Tolak unggahan bukan MIME gambar asli
+    // 4. Tolak unggahan bukan MIME gambar asli
     $fakeScriptFile = UploadedFile::fake()->create('malicious.php.png', 100, 'text/x-php');
     $this->actingAs($this->admin)
         ->postJson('/api/v1/admin/products', array_merge($basePayload, [

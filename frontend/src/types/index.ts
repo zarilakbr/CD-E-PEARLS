@@ -28,10 +28,14 @@ export interface Product {
   pearl_color?: string;
   pearl_grade?: string;
   variety?: string;
+  varietas?: string;
   grade?: string;
   pearlSize?: string;
+  ukuran_mm?: string;
+  jumlah?: string;
   origin?: string;
   weight?: string;
+  berat?: string;
   metal?: string;
   is_featured?: boolean;
   is_bestseller?: boolean;
@@ -41,7 +45,10 @@ export interface Product {
   webp_url?: string;
   images?: Array<{ url: string; order?: number; is_primary?: boolean; alt?: string } | string>;
   description?: string;
-  certificate?: string;
+  certificate?: string | any;
+  certificate_id?: number | null;
+  certificate_number?: string | null;
+  certificate_pdf_url?: string | null;
   formattedPrice?: string;
   created_at?: string;
   updated_at?: string;

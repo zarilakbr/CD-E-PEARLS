@@ -14,43 +14,46 @@ class AdminProductRequest extends FormRequest
         return $user && in_array($user->role, ['admin', 'spi'], true);
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('ukuran_mm') && is_numeric($this->ukuran_mm)) {
+            $this->merge(['ukuran_mm' => (string) $this->ukuran_mm]);
+        }
+        if ($this->has('jumlah') && is_numeric($this->jumlah)) {
+            $this->merge(['jumlah' => (string) $this->jumlah]);
+        }
+        if ($this->has('berat') && is_numeric($this->berat)) {
+            $this->merge(['berat' => (string) $this->berat]);
+        }
+        if ($this->has('code') && is_numeric($this->code)) {
+            $this->merge(['code' => (string) $this->code]);
+        }
+    }
+
     public function rules(): array
     {
         $isPost = $this->isMethod('POST');
 
         return [
+            'code' => ['nullable', 'string', 'max:100'],
             'name' => [$isPost ? 'required' : 'sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'category_slug' => [$isPost ? 'required' : 'sometimes', 'string', 'exists:categories,slug'],
-            'varietas' => [$isPost ? 'required' : 'sometimes', 'string', Rule::in([
-                'Freshwater', 'South Sea', 'Tahitian',
-                'Freshwater Pearl', 'South Sea Pearl', 'Tahitian Black Pearl', 'Golden South Sea',
-            ])],
-            'grade' => [$isPost ? 'required' : 'sometimes', 'string', Rule::in(['Low', 'C', 'B', 'A', 'AA', 'AAA'])],
-            'ukuran_mm' => [
-                $isPost ? 'required' : 'sometimes',
-                function ($attribute, $value, $fail) {
-                    $num = null;
-                    if (is_numeric($value)) {
-                        $num = (float) $value;
-                    } elseif (is_string($value) && preg_match('/^([0-9]+(?:\.[0-9]+)?)/', trim($value), $matches)) {
-                        $num = (float) $matches[1];
-                    }
-
-                    if ($num === null || $num < 9.0 || $num > 21.0) {
-                        $fail('Ukuran mutiara wajib berada dalam rentang 9 hingga 21 mm.');
-                    }
-                },
-            ],
-            'berat' => ['nullable', 'string', 'max:50'],
+            'varietas' => ['nullable', 'string', 'max:100'],
+            'grade' => ['nullable', 'string', 'max:100'],
+            'ukuran_mm' => ['nullable', 'string', 'max:100'],
+            'jumlah' => ['nullable', 'string', 'max:100'],
+            'berat' => ['nullable', 'string', 'max:100'],
             'bentuk' => ['nullable', 'string', 'max:50'],
-            'kelompok_warna' => [$isPost ? 'required' : 'sometimes', 'string', Rule::in(['putih', 'emas', 'kuning', 'langka'])],
+            'kelompok_warna' => ['nullable', 'string', 'max:50'],
             'varian_warna' => ['nullable', 'string', 'max:100'],
             'price' => [$isPost ? 'required' : 'sometimes', 'numeric', 'min:0'],
             'stock' => [$isPost ? 'required' : 'sometimes', 'integer', 'min:0'],
             'original_price' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['nullable', 'string', Rule::in(['published', 'draft', 'archived'])],
+            'status' => ['nullable', 'string', Rule::in(['published', 'draft', 'archived', 'pending_approval'])],
             'certificate_id' => ['nullable', 'exists:certificates,id'],
+            'certificate_number' => ['nullable', 'string', 'max:100'],
+            'certificate_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
             'is_featured' => ['nullable', 'boolean'],
             'is_bestseller' => ['nullable', 'boolean'],
             'photos' => ['nullable', 'array', 'max:10'],

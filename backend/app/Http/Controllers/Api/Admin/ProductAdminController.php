@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\AdminProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\Approval;
 use App\Models\AuditLog;
+use App\Models\Certificate;
 use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Http\JsonResponse;
@@ -171,6 +172,95 @@ class ProductAdminController extends Controller
     }
 
     /**
+     * Handle certificate attachment, creation, or update when saving a product.
+     */
+    protected function handleCertificateAttachment(Request $request, array &$validated, ?int $existingCertId = null): ?int
+    {
+        $certId = $validated['certificate_id'] ?? $existingCertId;
+        $certNumber = trim((string) ($request->input('certificate_number') ?? $request->input('nomor') ?? ''));
+
+        // 1. Certificate file is uploaded (PDF, JPG, PNG)
+        if ($request->hasFile('certificate_file')) {
+            $file = $request->file('certificate_file');
+            $ext = strtolower($file->getClientOriginalExtension() ?: 'pdf');
+            $safeNomor = preg_replace('/[^A-Za-z0-9_-]/', '_', $certNumber ?: 'CERT');
+            $filename = 'cert_' . $safeNomor . '_' . time() . '_' . Str::random(6) . '.' . $ext;
+            $storedPath = $file->storeAs('certificates', $filename, 'public');
+            $pdfPath = '/storage/' . $storedPath;
+
+            $cert = null;
+            if (! empty($certNumber)) {
+                $cert = Certificate::where('nomor', $certNumber)->first();
+            }
+            if (! $cert && $certId) {
+                $cert = Certificate::find($certId);
+            }
+
+            if ($cert) {
+                $updateData = ['pdf_path' => $pdfPath];
+                if (! empty($certNumber)) {
+                    $updateData['nomor'] = $certNumber;
+                }
+                if (! empty($validated['grade'])) {
+                    $updateData['grade'] = $validated['grade'];
+                }
+                if (! empty($validated['ukuran_mm'])) {
+                    $updateData['ukuran'] = $validated['ukuran_mm'];
+                }
+                $cert->update($updateData);
+
+                return $cert->id;
+            }
+
+            $cert = Certificate::create([
+                'nomor' => $certNumber ?: ('CERT-' . ($validated['code'] ?? Str::upper(Str::random(8)))),
+                'lab' => $request->input('certificate_lab') ?? 'Laboratorium Gemologi CD\'E Pearls',
+                'grade' => $validated['grade'] ?? 'AAA',
+                'ukuran' => $validated['ukuran_mm'] ?? '-',
+                'tanggal' => now()->toDateString(),
+                'pdf_path' => $pdfPath,
+            ]);
+
+            return $cert->id;
+        }
+
+        // 2. Certificate number is provided without a new file upload
+        if (! empty($certNumber)) {
+            $cert = Certificate::where('nomor', $certNumber)->first();
+            if ($cert) {
+                return $cert->id;
+            }
+
+            if ($certId) {
+                $cert = Certificate::find($certId);
+                if ($cert) {
+                    $cert->update(['nomor' => $certNumber]);
+
+                    return $cert->id;
+                }
+            }
+
+            $cert = Certificate::create([
+                'nomor' => $certNumber,
+                'lab' => $request->input('certificate_lab') ?? 'Laboratorium Gemologi CD\'E Pearls',
+                'grade' => $validated['grade'] ?? 'AAA',
+                'ukuran' => $validated['ukuran_mm'] ?? '-',
+                'tanggal' => now()->toDateString(),
+                'pdf_path' => null,
+            ]);
+
+            return $cert->id;
+        }
+
+        // 3. Explicit certificate_id provided or unlinked
+        if (array_key_exists('certificate_id', $validated)) {
+            return $validated['certificate_id'] ? (int) $validated['certificate_id'] : null;
+        }
+
+        return $certId;
+    }
+
+    /**
      * Store a newly created product.
      */
     public function store(AdminProductRequest $request): JsonResponse
@@ -230,9 +320,17 @@ class ProductAdminController extends Controller
             $validated['image'] = $primaryImageUrl;
         }
 
-        // 2. Generate unique SKU/Code
-        $categoryPrefix = strtoupper(substr(str_replace('-mutiara', '', $validated['category_slug']), 0, 3));
-        $validated['code'] = 'PRD-LMB-'.$categoryPrefix.'-'.Str::upper(Str::random(6));
+        // 2. Generate or preserve SKU/Code
+        if (empty($validated['code'])) {
+            $categoryPrefix = strtoupper(substr(str_replace('-mutiara', '', $validated['category_slug'] ?? 'kalung'), 0, 3));
+            $validated['code'] = 'PRD-LMB-'.$categoryPrefix.'-'.Str::upper(Str::random(6));
+        }
+
+        // Handle Certificate Attachment
+        $certId = $this->handleCertificateAttachment($request, $validated);
+        if ($certId !== null) {
+            $validated['certificate_id'] = $certId;
+        }
 
         // 3. Discount calculation if original_price is provided
         if (isset($validated['original_price']) && $validated['original_price'] > $validated['price']) {
@@ -308,7 +406,7 @@ class ProductAdminController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Produk perhiasan mutiara berhasil ditambahkan ke katalog CD\'E Pearls.',
-            'data' => $product->fresh(['category']),
+            'data' => $product->fresh(['category', 'certificate']),
         ], Response::HTTP_CREATED);
     }
 
@@ -406,6 +504,13 @@ class ProductAdminController extends Controller
         }
 
         $oldValues = $product->only(['name', 'price', 'stock', 'status', 'grade', 'varietas']);
+
+        // Handle Certificate Attachment
+        $certId = $this->handleCertificateAttachment($request, $validated, $product->certificate_id);
+        if ($certId !== null || array_key_exists('certificate_id', $validated)) {
+            $validated['certificate_id'] = $certId;
+        }
+
         $product->update($validated);
 
         AuditLog::create([
@@ -425,7 +530,7 @@ class ProductAdminController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Produk perhiasan mutiara berhasil diperbarui.',
-            'data' => $product->fresh(['category']),
+            'data' => $product->fresh(['category', 'certificate']),
         ]);
     }
 
