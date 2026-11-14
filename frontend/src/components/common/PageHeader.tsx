@@ -14,16 +14,16 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   badge,
 }) => {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 sm:mb-8">
       <div>
         <div className="flex items-center gap-3">
-          <h1 className="font-serif text-[32px] md:text-[38px] font-semibold text-[#12263A] tracking-tight leading-tight">
+          <h1 className="font-serif text-[28px] sm:text-[32px] md:text-[38px] font-semibold text-[var(--text)] tracking-tight leading-tight">
             {title}
           </h1>
           {badge}
         </div>
         {description && (
-          <p className="mt-1 text-[15px] text-[#4A5666] font-normal leading-relaxed">
+          <p className="mt-1 text-[14px] sm:text-[15px] text-[var(--text-2)] font-normal leading-relaxed">
             {description}
           </p>
         )}
@@ -37,3 +37,5 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     </div>
   );
 };
+
+export default PageHeader;

@@ -54,23 +54,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const certUrl = product.certificate_pdf_url || product.certificate?.pdf_path;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl relative max-h-[92dvh] flex flex-col md:flex-row"
+        className="bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-2xl sm:rounded-3xl w-[calc(100%-1rem)] max-w-3xl overflow-hidden shadow-2xl relative max-h-[96dvh] flex flex-col md:flex-row"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Tombol Tutup */}
+        {/* Tombol Tutup (Touch Target 44x44) */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 z-20 min-h-[40px] min-w-[40px] rounded-full bg-[var(--surface)]/90 border border-[var(--border)] flex items-center justify-center text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer shadow-xs"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 min-h-[44px] min-w-[44px] rounded-full bg-[var(--surface)]/90 border border-[var(--border)] flex items-center justify-center text-[var(--text)] hover:bg-[var(--bg-dash)] transition-colors cursor-pointer shadow-xs"
           aria-label="Tutup jendela"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Gambar Produk Kiri */}
-        <div className="w-full md:w-1/2 h-[260px] sm:h-[300px] md:h-auto min-h-[260px] md:min-h-[340px] bg-[#12263A] relative shrink-0 overflow-hidden group">
+        <div className="w-full md:w-1/2 h-[240px] sm:h-[300px] md:h-auto min-h-[220px] md:min-h-[320px] bg-[#12263A] relative shrink-0 overflow-hidden group">
           <picture className="w-full h-full block">
             <source
               type="image/webp"
@@ -92,7 +92,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
           {/* Floating Badges */}
-          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
+          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 flex flex-col gap-1.5">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-[#12263A]/85 backdrop-blur-md text-[#D9B877] border border-[#D9B877]/30 shadow-md">
               <ShieldCheck className="w-3.5 h-3.5 text-[#D9B877]" />
               Sertifikat lab gemologi
@@ -104,17 +104,17 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             )}
           </div>
 
-          <div className="absolute bottom-3 left-3 right-3 z-10 flex items-center justify-between text-white/90 text-[11px] font-medium backdrop-blur-md bg-black/40 px-3 py-2 rounded-xl border border-white/10">
-            <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#D9B877]" />
-              Sekotong &amp; Medana, Lombok
+          <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-10 flex items-center justify-between text-white/90 text-[11px] font-medium backdrop-blur-md bg-black/40 px-3 py-2 rounded-xl border border-white/10">
+            <span className="flex items-center gap-1.5 truncate">
+              <Sparkles className="w-3.5 h-3.5 text-[#D9B877] shrink-0" />
+              <span className="truncate">Sekotong &amp; Medana, Lombok</span>
             </span>
-            <span className="text-[#D9B877] font-semibold">100% Pinctada maxima</span>
+            <span className="text-[#D9B877] font-semibold shrink-0 ml-1">100% Pinctada maxima</span>
           </div>
         </div>
 
         {/* Detail Produk Kanan */}
-        <div className="w-full md:w-1/2 p-5 sm:p-6 md:p-8 flex flex-col justify-between overflow-y-auto custom-scrollbar">
+        <div className="w-full md:w-1/2 p-4 sm:p-6 md:p-8 flex flex-col justify-between overflow-y-auto custom-scrollbar">
           <div>
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
@@ -122,32 +122,32 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </span>
               {species && (
                 <>
-                  <span className="text-gray-300 dark:text-gray-600">•</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border)]">
+                  <span className="opacity-40">•</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--surface-muted)] text-[var(--text)] border border-[var(--border)]">
                     {species}
                   </span>
                 </>
               )}
             </div>
 
-            <h2 className="font-serif text-xl sm:text-2xl md:text-3xl font-medium text-[var(--text)] leading-tight">
+            <h2 className="font-serif text-xl sm:text-2xl md:text-3xl font-medium text-[var(--text)] leading-tight break-words">
               {product.name}
             </h2>
 
             {formattedPrice && (
-              <div className="mt-2 font-serif text-xl sm:text-2xl font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
+              <div className="mt-2.5 font-serif text-xl sm:text-2xl font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
                 {formattedPrice}
               </div>
             )}
 
-            {/* Grid 7 Spesifikasi Produk - Hanya Tampilkan Baris yang Terisi */}
+            {/* Grid 7 Spesifikasi Produk - Hanya Tampilkan Baris yang Terisi (1 col pada <=380px, 2 col pada >380px) */}
             {specs.length > 0 && (
-              <div className="mt-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] p-3 text-xs divide-y divide-[var(--border)]">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 pb-1">
+              <div className="mt-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] p-3 text-xs">
+                <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-x-4 gap-y-2">
                   {specs.map((item) => (
-                    <div key={item.label} className="flex justify-between sm:flex-col sm:justify-start gap-0.5 py-0.5">
+                    <div key={item.label} className="flex justify-between min-[380px]:flex-col min-[380px]:justify-start gap-0.5 py-0.5">
                       <span className="text-[var(--text-2)] text-[11px] font-medium">{item.label}</span>
-                      <span className="font-semibold text-[var(--text)] break-words text-right sm:text-left">{item.value}</span>
+                      <span className="font-semibold text-[var(--text)] break-words text-right min-[380px]:text-left">{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -156,7 +156,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
             {/* Sertifikat Gemologi Resmi (jika ada) */}
             {certNumber && (
-              <div className="mt-3 p-3 bg-[#E1ECF7]/40 dark:bg-white/5 border border-[#1D4E7A]/20 dark:border-white/10 rounded-xl flex items-center justify-between gap-2.5 text-xs text-[var(--text)]">
+              <div className="mt-3 p-3 bg-[var(--info-bg)]/80 border border-[var(--info-border)] rounded-xl flex items-center justify-between gap-2.5 text-xs text-[var(--info-text)]">
                 <div className="flex items-center gap-2 min-w-0">
                   <Award className="w-4 h-4 text-[#8A6A2F] dark:text-[#D9B877] shrink-0" />
                   <span className="truncate">Sertifikat Resmi: <strong>{certNumber}</strong></span>
@@ -176,14 +176,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             )}
 
             {product.description && (
-              <p className="mt-4 text-xs text-[var(--text-2)] leading-relaxed">
+              <p className="mt-3 sm:mt-4 text-[13px] sm:text-xs text-[var(--text-2)] leading-relaxed break-words">
                 {product.description}
               </p>
             )}
           </div>
 
-          {/* Tombol Aksi */}
-          <div className="mt-6 pt-3 border-t border-[var(--border)] sticky bottom-0 bg-[var(--surface)]/95 backdrop-blur-xs flex flex-col gap-2.5">
+          {/* Tombol Aksi (Sticky/Pinned at bottom for mobile) */}
+          <div className="mt-5 pt-3 border-t border-[var(--border)] sticky bottom-0 bg-[var(--surface)]/95 backdrop-blur-xs flex flex-col gap-2.5 pb-safe">
             <button
               type="button"
               disabled={product.stock !== undefined && product.stock <= 0}
@@ -194,9 +194,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   onClose();
                 }
               }}
-              className="w-full min-h-[44px] rounded-full bg-[#12263A] dark:bg-[#D9B877] text-white dark:text-[#12263A] hover:bg-[#1A3652] dark:hover:bg-[#C9A55B] active:scale-95 transition-all text-xs font-semibold inline-flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+              className="w-full min-h-[44px] rounded-full bg-[#12263A] dark:bg-[#D9B877] text-white dark:text-[#0B1622] hover:bg-[#1A3652] dark:hover:bg-[#E5C98F] active:scale-95 transition-all text-xs font-semibold inline-flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
             >
-              <ShoppingBag className="w-4 h-4 text-[#D9B877] dark:text-[#12263A]" />
+              <ShoppingBag className="w-4 h-4 text-[#D9B877] dark:text-[#0B1622]" />
               <span>{product.stock !== undefined && product.stock <= 0 ? 'Stok Habis' : 'Tambah ke Keranjang Belanja'}</span>
             </button>
 
@@ -215,3 +215,5 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     </div>
   );
 };
+
+export default ProductDetailModal;
