@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Save, Star, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
+import { X, Upload, Save, Star, ArrowUp, ArrowDown, Trash2, FileText, CheckCircle, ExternalLink } from 'lucide-react';
 import type { MockProduct } from '../../types/models';
 import { resolveMediaUrl } from '../../lib/media';
 
@@ -15,7 +15,7 @@ interface ProductFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Partial<MockProduct> | null;
-  onSave: (productData: Partial<MockProduct>, photoFiles?: File[]) => Promise<void> | void;
+  onSave: (productData: Partial<MockProduct>, photoFiles?: File[], certificateFile?: File | null) => Promise<void> | void;
 }
 
 export const ProductFormModal: React.FC<ProductFormModalProps> = ({
@@ -26,41 +26,49 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 }) => {
   const isEditing = Boolean(product?.id);
 
+  const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Kalung');
-  const [variety, setVariety] = useState('South Sea');
-  const [grade, setGrade] = useState('AAA');
-  const [pearlSize, setPearlSize] = useState('12.0');
-  const [weight, setWeight] = useState('5.0 gr');
-  const [bentuk, setBentuk] = useState('Bulat');
+  const [variety, setVariety] = useState('');
+  const [grade, setGrade] = useState('');
+  const [pearlSize, setPearlSize] = useState('');
+  const [jumlah, setJumlah] = useState('');
+  const [weight, setWeight] = useState('');
+  const [bentuk, setBentuk] = useState('');
   const [colorGroup, setColorGroup] = useState('emas');
-  const [colorVariant, setColorVariant] = useState('Emas Champagne');
-  const [price, setPrice] = useState(15000000);
-  const [stock, setStock] = useState(5);
+  const [colorVariant, setColorVariant] = useState('');
+  const [price, setPrice] = useState<number | string>(15000000);
+  const [stock, setStock] = useState<number | string>(5);
   const [status, setStatus] = useState<'Aktif' | 'Nonaktif'>('Aktif');
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [certificateNumber, setCertificateNumber] = useState('');
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const [existingCertificate, setExistingCertificate] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (product) {
+      setCode(product.code || '');
       setName(product.name || '');
       setDescription(product.description || '');
-      // Normalize category (e.g. Kalung Mutiara -> Kalung)
       const catNorm = (product.category || 'Kalung').replace(/\s*Mutiara/i, '').trim();
       setCategory(['Kalung', 'Gelang', 'Cincin', 'Anting', 'Liontin', 'Bros'].includes(catNorm) ? catNorm : 'Kalung');
-      const varNorm = (product.variety || 'South Sea').replace(/\s*Pearl/i, '').replace(/Golden\s*/i, '').replace(/Black\s*/i, '').trim();
-      setVariety(['Freshwater', 'South Sea', 'Tahitian'].includes(varNorm) ? varNorm : 'South Sea');
-      setGrade(product.grade || 'AAA');
-      setPearlSize(product.pearlSize ? product.pearlSize.replace(/[^0-9.]/g, '') || '12.0' : '12.0');
-      setWeight(product.weight || '5.0 gr');
-      setBentuk(product.bentuk || 'Bulat');
+      setVariety(product.varietas || product.variety || '');
+      setGrade(product.grade || '');
+      setPearlSize(product.ukuran_mm || product.pearlSize || '');
+      setJumlah(product.jumlah || '');
+      setWeight(product.berat || product.weight || '');
+      setBentuk(product.bentuk || '');
       setColorGroup(product.colorGroup || 'emas');
-      setColorVariant(product.colorVariant || 'Emas Champagne');
-      setPrice(Number(product.price) || 15000000);
-      setStock(Number(product.stock) !== undefined ? Number(product.stock) : 5);
+      setColorVariant(product.colorVariant || '');
+      setPrice(Number(product.price) || 0);
+      setStock(Number(product.stock) !== undefined ? Number(product.stock) : 0);
       setStatus(product.status === 'Nonaktif' ? 'Nonaktif' : 'Aktif');
+      setCertificateNumber(product.certificate_number || product.certificateNo || product.certificate?.nomor || '');
+      setCertificateFile(null);
+      setExistingCertificate(product.certificate_pdf_url || product.certificate?.pdf_path || null);
 
       if (product.images && product.images.length > 0) {
         setPhotos(
@@ -84,20 +92,25 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setPhotos([]);
       }
     } else {
+      setCode('');
       setName('');
       setDescription('');
       setCategory('Kalung');
-      setVariety('South Sea');
-      setGrade('AAA');
-      setPearlSize('12.0');
-      setWeight('5.0 gr');
-      setBentuk('Bulat');
+      setVariety('');
+      setGrade('');
+      setPearlSize('');
+      setJumlah('');
+      setWeight('');
+      setBentuk('');
       setColorGroup('emas');
-      setColorVariant('Emas Champagne');
+      setColorVariant('');
       setPrice(15000000);
       setStock(5);
       setStatus('Aktif');
       setPhotos([]);
+      setCertificateNumber('');
+      setCertificateFile(null);
+      setExistingCertificate(null);
     }
     setErrors({});
   }, [product, isOpen]);
@@ -148,6 +161,36 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     });
   };
 
+  const handleCertificateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    const validMimes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!validMimes.includes(file.type)) {
+      setErrors((prev) => ({
+        ...prev,
+        certificateFile: 'Format sertifikat wajib berupa PDF, JPG, JPEG, atau PNG.',
+      }));
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors((prev) => ({
+        ...prev,
+        certificateFile: 'Ukuran berkas sertifikat maksimal 10 MB.',
+      }));
+      return;
+    }
+
+    setCertificateFile(file);
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.certificateFile;
+      return next;
+    });
+  };
+
   const setPrimaryPhoto = (index: number) => {
     setPhotos((prev) =>
       prev.map((p, idx) => ({
@@ -186,17 +229,36 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       errs.name = 'Nama produk mutiara wajib diisi.';
     }
 
-    const sizeNum = parseFloat(pearlSize);
-    if (isNaN(sizeNum) || sizeNum < 9 || sizeNum > 21) {
-      errs.pearlSize = 'Ukuran mutiara wajib berada dalam rentang 9 hingga 21 mm.';
-    }
-
-    if (price < 0) {
+    const numPrice = Number(price);
+    if (isNaN(numPrice) || numPrice < 0) {
       errs.price = 'Harga tidak boleh kurang dari Rp 0.';
     }
 
-    if (stock < 0) {
+    const numStock = Number(stock);
+    if (isNaN(numStock) || numStock < 0) {
       errs.stock = 'Stok tidak boleh kurang dari 0 unit.';
+    }
+
+    if (code.trim().length > 100) {
+      errs.code = 'Nomor produk (kode) maksimal 100 karakter.';
+    }
+    if (variety.trim().length > 100) {
+      errs.variety = 'Jenis mutiara maksimal 100 karakter.';
+    }
+    if (grade.trim().length > 100) {
+      errs.grade = 'Grade mutiara maksimal 100 karakter.';
+    }
+    if (pearlSize.trim().length > 100) {
+      errs.pearlSize = 'Ukuran mutiara maksimal 100 karakter.';
+    }
+    if (jumlah.trim().length > 100) {
+      errs.jumlah = 'Jumlah mutiara maksimal 100 karakter.';
+    }
+    if (weight.trim().length > 100) {
+      errs.weight = 'Berat mutiara maksimal 100 karakter.';
+    }
+    if (certificateNumber.trim().length > 100) {
+      errs.certificateNumber = 'Nomor sertifikat maksimal 100 karakter.';
     }
 
     setErrors(errs);
@@ -219,24 +281,33 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       };
 
       const primaryPhoto = photos.find((p) => p.isPrimary) || photos[0];
+      const cleanPrice = Number(price) || 0;
+      const cleanStock = Number(stock) || 0;
 
       const productPayload: Partial<MockProduct> = {
         ...product,
+        code: code.trim(),
         name: name.trim(),
         description: description.trim(),
         category: `${category} Mutiara`,
         categorySlug: categorySlugMap[category] || 'kalung-mutiara',
-        variety,
-        grade,
-        pearlSize: `${pearlSize} mm`,
-        weight,
-        bentuk,
+        variety: variety.trim(),
+        varietas: variety.trim(),
+        grade: grade.trim(),
+        pearlSize: pearlSize.trim(),
+        ukuran_mm: pearlSize.trim(),
+        jumlah: jumlah.trim(),
+        weight: weight.trim(),
+        berat: weight.trim(),
+        bentuk: bentuk.trim(),
         colorGroup,
-        colorVariant,
-        price,
-        formattedPrice: `Rp ${price.toLocaleString('id-ID')}`,
-        stock,
+        colorVariant: colorVariant.trim(),
+        price: cleanPrice,
+        formattedPrice: `Rp ${cleanPrice.toLocaleString('id-ID')}`,
+        stock: cleanStock,
         status,
+        certificateNo: certificateNumber.trim(),
+        certificate_number: certificateNumber.trim(),
         image: primaryPhoto ? primaryPhoto.previewUrl : product?.image || '/images/placeholder_jewelry.svg',
         images: photos.map((p, idx) => ({
           url: p.previewUrl,
@@ -247,7 +318,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       };
 
       const filesToUpload = photos.map((p) => p.file).filter(Boolean) as File[];
-      await onSave(productPayload, filesToUpload);
+      await onSave(productPayload, filesToUpload, certificateFile);
       onClose();
     } finally {
       setIsSubmitting(false);
@@ -261,21 +332,21 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-xl bg-white h-full shadow-2xl flex flex-col justify-between overflow-y-auto custom-scrollbar z-10 border-l border-[#E6DDD0]">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-[#0B1528] h-full shadow-2xl flex flex-col justify-between overflow-y-auto custom-scrollbar z-10 border-l border-[#E6DDD0] dark:border-white/10">
         {/* Header Panel */}
-        <div className="p-6 border-b border-[#E6DDD0] flex items-center justify-between bg-[#FBF8F3]">
+        <div className="p-6 border-b border-[#E6DDD0] dark:border-white/10 flex items-center justify-between bg-[#FBF8F3] dark:bg-white/5">
           <div>
-            <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
+            <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
               Atelier Editor
             </span>
-            <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
+            <h3 className="font-serif text-2xl font-semibold text-[#12263A] dark:text-[#FBF8F3]">
               {isEditing ? 'Ubah Data Produk' : 'Tambah Produk Baru'}
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-[#EDE6DA] text-[#12263A] transition-colors cursor-pointer"
+            className="p-2 rounded-full hover:bg-[#EDE6DA] dark:hover:bg-white/10 text-[#12263A] dark:text-[#FBF8F3] transition-colors cursor-pointer"
             title="Tutup Form"
           >
             <X className="w-5 h-5" />
@@ -283,33 +354,33 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 flex-1">
-          {/* Nama Produk */}
-          <div>
-            <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-              Nama Perhiasan Mutiara *
-            </label>
-            <input
-              type="text"
-              required
-              name="name" placeholder="Contoh: Kalung Mutiara South Sea 18K"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none focus:border-[#12263A]"
-            />
-            {errors.name && <p className="text-red-600 text-xs mt-1">{errors.name}</p>}
-          </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 flex-1">
+          {/* Baris 1: Nama Produk & Kategori */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                Nama Perhiasan Mutiara *
+              </label>
+              <input
+                type="text"
+                required
+                name="name"
+                placeholder="Contoh: Kalung Mutiara South Sea 18K"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] dark:bg-white/5 border border-[#E6DDD0] dark:border-white/10 text-sm text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
+              />
+              {errors.name && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.name}</p>}
+            </div>
 
-          {/* Kategori & Jenis Mutiara */}
-          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+              <label className="block text-xs font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
                 Kategori
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
+                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] dark:bg-white/5 border border-[#E6DDD0] dark:border-white/10 text-sm text-[#12263A] dark:text-[#FBF8F3] focus:outline-none"
               >
                 <option value="Kalung">Kalung</option>
                 <option value="Gelang">Gelang</option>
@@ -319,195 +390,301 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 <option value="Bros">Bros</option>
               </select>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                Jenis Mutiara
-              </label>
-              <select
-                value={variety}
-                onChange={(e) => setVariety(e.target.value)}
-                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-              >
-                <option value="South Sea">South Sea</option>
-                <option value="Freshwater">Freshwater</option>
-                <option value="Tahitian">Tahitian</option>
-              </select>
+          {/* Section: 7 Field Spesifikasi Produk (Input Teks Bebas, Tanpa Dropdown) */}
+          <div className="p-4 rounded-2xl bg-[#FBF8F3] dark:bg-white/5 border border-[#E6DDD0] dark:border-white/10 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E6DDD0] dark:border-white/10 pb-2">
+              <span className="text-xs font-bold text-[#8A6A2F] dark:text-[#D9B877] uppercase tracking-wider">
+                Spesifikasi Mahakarya (Input Bebas)
+              </span>
+              <span className="text-[11px] text-[#4A5666] dark:text-white/60">
+                Kosongkan jika tidak relevan
+              </span>
+            </div>
+
+            {/* Grid 1: No (code), Jenis (Species), Ukuran (Size) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                  No / SKU (Code)
+                </label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="PRD-LMB-001"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-xs text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
+                />
+                {errors.code && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.code}</p>}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                  Jenis / Spesies (Species)
+                </label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="South Sea / Tahitian / Freshwater"
+                  value={variety}
+                  onChange={(e) => setVariety(e.target.value)}
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-xs text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
+                />
+                {errors.variety && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.variety}</p>}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                  Ukuran (Size)
+                </label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="Contoh: 11.2 - 12.0 mm"
+                  value={pearlSize}
+                  onChange={(e) => setPearlSize(e.target.value)}
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-xs text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
+                />
+                {errors.pearlSize && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.pearlSize}</p>}
+              </div>
+            </div>
+
+            {/* Grid 2: Grade, Jumlah (Quantity), Berat (Weight) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                  Grade
+                </label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="AAA / AA+ / Istimewa"
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value)}
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-xs text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
+                />
+                {errors.grade && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.grade}</p>}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                  Jumlah (Quantity)
+                </label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="1 untai / 45 butir"
+                  value={jumlah}
+                  onChange={(e) => setJumlah(e.target.value)}
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-xs text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
+                />
+                {errors.jumlah && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.jumlah}</p>}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                  Berat (Weight)
+                </label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="Contoh: 15.4 gr"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-xs text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
+                />
+                {errors.weight && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.weight}</p>}
+              </div>
+            </div>
+
+            {/* Grid 3: Bentuk & Varian Warna */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                  Bentuk Mutiara
+                </label>
+                <input
+                  type="text"
+                  maxLength={50}
+                  placeholder="Bulat / Semi-Baroque / Drop"
+                  value={bentuk}
+                  onChange={(e) => setBentuk(e.target.value)}
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-xs text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                  Varian Warna
+                </label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="Champagne Gold / Perak Kilau"
+                  value={colorVariant}
+                  onChange={(e) => setColorVariant(e.target.value)}
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-xs text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Grade, Ukuran mm, Bentuk */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Section: Harga, Stok, Status */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                Grade
-              </label>
-              <select
-                value={grade}
-                onChange={(e) => setGrade(e.target.value)}
-                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-              >
-                <option value="AAA">AAA</option>
-                <option value="AA">AA</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="Low">Low</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                Ukuran (mm) *
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                min="9"
-                max="21"
-                required
-                name="ukuran_mm" placeholder="9-21 mm"
-                value={pearlSize}
-                onChange={(e) => setPearlSize(e.target.value)}
-                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-              />
-              {errors.pearlSize && <p className="text-red-600 text-xs mt-1">{errors.pearlSize}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                Bentuk
-              </label>
-              <select
-                value={bentuk}
-                onChange={(e) => setBentuk(e.target.value)}
-                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-              >
-                <option value="Bulat">Bulat</option>
-                <option value="Semi-Baroque">Semi-Baroque</option>
-                <option value="Baroque">Baroque</option>
-                <option value="Drop">Drop</option>
-                <option value="Oval">Oval</option>
-                <option value="Button">Button</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Berat, Kelompok Warna, Varian Warna */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                Berat
-              </label>
-              <input
-                type="text"
-                placeholder="Contoh: 5.2 gr"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                Kelompok Warna
-              </label>
-              <select
-                value={colorGroup}
-                onChange={(e) => setColorGroup(e.target.value)}
-                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-              >
-                <option value="putih">Putih</option>
-                <option value="emas">Emas</option>
-                <option value="kuning">Kuning</option>
-                <option value="langka">Langka</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                Varian Warna
-              </label>
-              <input
-                type="text"
-                placeholder="Champagne / Perak"
-                value={colorVariant}
-                onChange={(e) => setColorVariant(e.target.value)}
-                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Harga & Stok On Hand */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-1">
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+              <label className="block text-xs font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
                 Harga (Rp) *
               </label>
               <input
                 type="number"
                 min="0"
                 required
-                name="price" placeholder="15000000"
+                name="price"
+                placeholder="15000000"
                 value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
-                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
+                onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] dark:bg-white/5 border border-[#E6DDD0] dark:border-white/10 text-sm text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
               />
-              {errors.price && <p className="text-red-600 text-xs mt-1">{errors.price}</p>}
+              {errors.price && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.price}</p>}
             </div>
 
-            <div className="col-span-1">
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+            <div>
+              <label className="block text-xs font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
                 Stok On Hand *
               </label>
               <input
                 type="number"
                 min="0"
                 required
-                name="stock" placeholder="5"
+                name="stock"
+                placeholder="5"
                 value={stock}
-                onChange={(e) => setStock(Number(e.target.value))}
-                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
+                onChange={(e) => setStock(e.target.value === '' ? '' : Number(e.target.value))}
+                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] dark:bg-white/5 border border-[#E6DDD0] dark:border-white/10 text-sm text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
               />
-              {errors.stock && <p className="text-red-600 text-xs mt-1">{errors.stock}</p>}
+              {errors.stock && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.stock}</p>}
             </div>
 
-            <div className="col-span-1">
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
-                Status Aktif
+            <div>
+              <label className="block text-xs font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                Status Katalog
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as 'Aktif' | 'Nonaktif')}
-                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
+                className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] dark:bg-white/5 border border-[#E6DDD0] dark:border-white/10 text-sm text-[#12263A] dark:text-[#FBF8F3] focus:outline-none"
               >
-                <option value="Aktif">Aktif</option>
-                <option value="Nonaktif">Nonaktif</option>
+                <option value="Aktif">Aktif (Published)</option>
+                <option value="Nonaktif">Nonaktif (Draft)</option>
               </select>
             </div>
           </div>
 
+          {/* Section: Sertifikat Keaslian Gemologi (Nomor & Unggah File) */}
+          <div className="p-4 rounded-2xl bg-[#E1ECF7]/30 dark:bg-white/5 border border-[#1D4E7A]/20 dark:border-white/10 space-y-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#1D4E7A] dark:text-[#D9B877]" />
+              <span className="text-xs font-bold text-[#1D4E7A] dark:text-[#D9B877] uppercase tracking-wider">
+                Sertifikat Gemologi Produk
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                  Nomor Sertifikat
+                </label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="Contoh: CERT-LGI-2026-081"
+                  value={certificateNumber}
+                  onChange={(e) => setCertificateNumber(e.target.value)}
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-xs text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
+                />
+                {errors.certificateNumber && (
+                  <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.certificateNumber}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
+                  Berkas Sertifikat (PDF / JPG / PNG, maks 10 MB)
+                </label>
+                <label className="flex items-center justify-between w-full min-h-[40px] px-3 rounded-xl bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-xs text-[#12263A] dark:text-[#FBF8F3] cursor-pointer hover:border-[#8A6A2F] transition-colors">
+                  <span className="truncate max-w-[180px] text-[#4A5666] dark:text-white/70">
+                    {certificateFile ? certificateFile.name : 'Pilih file sertifikat...'}
+                  </span>
+                  <Upload className="w-3.5 h-3.5 text-[#8A6A2F] dark:text-[#D9B877] shrink-0 ml-2" />
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                    onChange={handleCertificateUpload}
+                    className="hidden"
+                  />
+                </label>
+                {errors.certificateFile && (
+                  <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.certificateFile}</p>
+                )}
+              </div>
+            </div>
+
+            {certificateFile && (
+              <div className="flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2 rounded-xl">
+                <span className="flex items-center gap-1.5 truncate">
+                  <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Siap diunggah: <strong>{certificateFile.name}</strong> ({(certificateFile.size / 1024).toFixed(0)} KB)</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCertificateFile(null)}
+                  className="text-xs text-red-600 hover:underline shrink-0 ml-2"
+                >
+                  Batal
+                </button>
+              </div>
+            )}
+
+            {existingCertificate && !certificateFile && (
+              <div className="flex items-center justify-between text-xs text-[#1D4E7A] dark:text-[#D9B877] bg-white/60 dark:bg-white/5 px-3 py-2 rounded-xl border border-[#1D4E7A]/15">
+                <span className="truncate">Sertifikat terlampir saat ini</span>
+                <a
+                  href={resolveMediaUrl(existingCertificate)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#8A6A2F] dark:text-[#D9B877] hover:underline shrink-0 ml-2"
+                >
+                  <span>Lihat Berkas</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            )}
+          </div>
+
           {/* Deskripsi */}
           <div>
-            <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+            <label className="block text-xs font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider mb-1">
               Deskripsi Produk
             </label>
             <textarea
               rows={3}
-              name="description" placeholder="Jelaskan kilau nacre, asal perairan Lombok, dan detail tatahan perhiasan..."
+              name="description"
+              placeholder="Jelaskan kilau nacre, asal perairan Lombok, dan detail tatahan perhiasan..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
+              className="w-full p-3 rounded-xl bg-[#F4F1EB] dark:bg-white/5 border border-[#E6DDD0] dark:border-white/10 text-sm text-[#12263A] dark:text-[#FBF8F3] focus:outline-none focus:border-[#8A6A2F]"
             />
           </div>
 
           {/* Galeri & Unggah Banyak Foto */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-[#12263A] dark:text-[#FBF8F3] uppercase tracking-wider">
                 Banyak Foto Perhiasan (Maks 10)
               </label>
-              <label className="text-xs font-semibold text-[#8A6A2F] hover:underline cursor-pointer flex items-center gap-1">
+              <label className="text-xs font-semibold text-[#8A6A2F] dark:text-[#D9B877] hover:underline cursor-pointer flex items-center gap-1">
                 <Upload className="w-3.5 h-3.5" />
                 <span>Unggah Foto</span>
                 <input
@@ -520,13 +697,13 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               </label>
             </div>
 
-            {errors.photos && <p className="text-red-600 text-xs mb-2">{errors.photos}</p>}
+            {errors.photos && <p className="text-red-600 dark:text-red-400 text-xs mb-2">{errors.photos}</p>}
 
             {photos.length === 0 ? (
-              <label className="border border-dashed border-[#D9CFBF] bg-[#F4F1EB] rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#EDE6DA] transition-colors">
-                <Upload className="w-6 h-6 mb-2 text-[#8A6A2F]" />
-                <span className="text-xs font-semibold text-[#12263A]">Pilih berkas foto perhiasan</span>
-                <span className="text-[11px] text-[#4A5666] mt-0.5">JPEG, PNG, WebP hingga 5 MB per foto</span>
+              <label className="border border-dashed border-[#D9CFBF] dark:border-white/20 bg-[#F4F1EB] dark:bg-white/5 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#EDE6DA] dark:hover:bg-white/10 transition-colors">
+                <Upload className="w-6 h-6 mb-2 text-[#8A6A2F] dark:text-[#D9B877]" />
+                <span className="text-xs font-semibold text-[#12263A] dark:text-[#FBF8F3]">Pilih berkas foto perhiasan</span>
+                <span className="text-[11px] text-[#4A5666] dark:text-white/60 mt-0.5">JPEG, PNG, WebP hingga 5 MB per foto</span>
                 <input
                   type="file"
                   multiple
@@ -540,9 +717,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 {photos.map((item, index) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 p-2.5 rounded-xl border border-[#E6DDD0] bg-[#FAF8F5]"
+                    className="flex items-center gap-3 p-2.5 rounded-xl border border-[#E6DDD0] dark:border-white/10 bg-[#FAF8F5] dark:bg-white/5"
                   >
-                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#E6DDD0] bg-black shrink-0 relative">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#E6DDD0] dark:border-white/10 bg-black shrink-0 relative">
                       <img src={item.previewUrl} alt={item.alt} className="w-full h-full object-cover" />
                       {item.isPrimary && (
                         <span className="absolute bottom-0 inset-x-0 bg-[#8A6A2F] text-[9px] text-white text-center font-bold">
@@ -562,7 +739,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                             prev.map((p, idx) => (idx === index ? { ...p, alt: val } : p))
                           );
                         }}
-                        className="w-full min-h-[32px] px-2.5 py-1 text-xs rounded-lg bg-white border border-[#E6DDD0] text-[#12263A] focus:outline-none"
+                        className="w-full min-h-[32px] px-2.5 py-1 text-xs rounded-lg bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-[#12263A] dark:text-[#FBF8F3] focus:outline-none"
                       />
                     </div>
 
@@ -573,7 +750,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         className={`p-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                           item.isPrimary
                             ? 'bg-[#8A6A2F] text-white'
-                            : 'bg-white border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB]'
+                            : 'bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-[#4A5666] dark:text-white/70 hover:bg-[#F4F1EB] dark:hover:bg-white/10'
                         }`}
                         title="Jadikan Foto Utama"
                       >
@@ -584,7 +761,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         type="button"
                         disabled={index === 0}
                         onClick={() => movePhoto(index, 'up')}
-                        className="p-1.5 rounded-lg bg-white border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] disabled:opacity-30 cursor-pointer"
+                        className="p-1.5 rounded-lg bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-[#4A5666] dark:text-white/70 hover:bg-[#F4F1EB] dark:hover:bg-white/10 disabled:opacity-30 cursor-pointer"
                         title="Pindah ke Atas"
                       >
                         <ArrowUp className="w-3.5 h-3.5" />
@@ -594,7 +771,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         type="button"
                         disabled={index === photos.length - 1}
                         onClick={() => movePhoto(index, 'down')}
-                        className="p-1.5 rounded-lg bg-white border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] disabled:opacity-30 cursor-pointer"
+                        className="p-1.5 rounded-lg bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-[#4A5666] dark:text-white/70 hover:bg-[#F4F1EB] dark:hover:bg-white/10 disabled:opacity-30 cursor-pointer"
                         title="Pindah ke Bawah"
                       >
                         <ArrowDown className="w-3.5 h-3.5" />
@@ -603,7 +780,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       <button
                         type="button"
                         onClick={() => removePhoto(index)}
-                        className="p-1.5 rounded-lg bg-white border border-[#E6DDD0] text-red-600 hover:bg-red-50 cursor-pointer"
+                        className="p-1.5 rounded-lg bg-white dark:bg-[#12263A] border border-[#E6DDD0] dark:border-white/10 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
                         title="Hapus Foto"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -616,12 +793,12 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-4 border-t border-[#E6DDD0] flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-[#E6DDD0] dark:border-white/10 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="min-h-[44px] px-5 rounded-full border border-[#E6DDD0] text-[#12263A] hover:bg-[#F4F1EB] text-xs font-semibold transition-colors cursor-pointer"
+              className="min-h-[44px] px-5 rounded-full border border-[#E6DDD0] dark:border-white/10 text-[#12263A] dark:text-[#FBF8F3] hover:bg-[#F4F1EB] dark:hover:bg-white/10 text-xs font-semibold transition-colors cursor-pointer"
             >
               Batal
             </button>
@@ -639,4 +816,3 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     </div>
   );
 };
-

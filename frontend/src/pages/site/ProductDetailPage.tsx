@@ -18,6 +18,8 @@ import {
   Truck,
   ZoomIn,
   ChevronRight,
+  Award,
+  ExternalLink,
 } from 'lucide-react';
 import {
   Carousel,
@@ -190,6 +192,25 @@ export const ProductDetailPage: React.FC = () => {
     product.images && Array.isArray(product.images) && product.images.length > 0
       ? product.images.map((img: any) => resolveMediaUrl(typeof img === 'string' ? img : img.url, '/images/hero_pearl_shell.jpg'))
       : [resolveMediaUrl(product.image, '/images/hero_pearl_shell.jpg')];
+
+  const species = product.varietas || product.variety;
+  const size = product.ukuran_mm || product.pearlSize || (product as any).size_mm || (product as any).pearl_size;
+  const weight = product.berat || product.weight;
+  const formattedPrice = product.formattedPrice || (product.price ? `Rp ${Number(product.price).toLocaleString('id-ID')}` : '');
+
+  // 7 Spesifikasi Produk CD'E Pearls - HANYA tampilkan baris yang ada isinya
+  const specs = [
+    { label: 'No', value: product.code },
+    { label: 'Jenis (Species)', value: species },
+    { label: 'Ukuran (Size)', value: size },
+    { label: 'Grade', value: product.grade },
+    { label: 'Jumlah (Quantity)', value: product.jumlah },
+    { label: 'Berat (Weight)', value: weight },
+    { label: 'Harga', value: formattedPrice },
+  ].filter((item) => item.value !== undefined && item.value !== null && String(item.value).trim() !== '');
+
+  const certNumber = product.certificate_number || (product as any).certificateNo || (product as any).certificate?.nomor;
+  const certUrl = product.certificate_pdf_url || (product as any).certificate?.pdf_path;
 
   const handleAddToCartDirect = () => {
     addToCart({
@@ -364,12 +385,18 @@ export const ProductDetailPage: React.FC = () => {
                   {product.description ||
                     'Mahakarya perhiasan mutiara air laut selatan (South Sea Pearls) kualitas mirror luster alami dari perairan budidaya Sekotong & Medana, Lombok. Dirangkai dengan emas 18K solid solid.'}
                 </p>
-                <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] font-mono">
-                  <div>Grade: <strong>{product.grade || 'AAA'}</strong></div>
-                  <div>Ukuran: <strong>{selectedSize}</strong></div>
-                  <div>Rangka: <strong>{selectedMetal}</strong></div>
-                  <div>Origin: <strong>Lombok</strong></div>
-                </div>
+                {specs.length > 0 && (
+                  <div className="mt-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] p-3 text-xs divide-y divide-[var(--border)]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                      {specs.map((item) => (
+                        <div key={item.label} className="flex justify-between gap-1 py-0.5">
+                          <span className="text-[var(--text-2)] text-[11px] font-medium">{item.label}</span>
+                          <span className="font-semibold text-[var(--text)] break-words text-right">{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </AccordionContent>
             </AccordionItem>
 
@@ -379,12 +406,32 @@ export const ProductDetailPage: React.FC = () => {
               </AccordionTrigger>
               <AccordionContent className="text-xs text-[var(--text-2)] leading-relaxed space-y-2">
                 <p>
-                  Setiap mutiara disertai kartu sertifikasi fisik resmi dari laboratorium gemologi independen. Memuat nomor identifikasi seri, uji ketebalan nacre, bentuk bulat sempurna, dan origin perairan Lombok.
+                  Setiap mutiara disertai sertifikasi fisik resmi dari laboratorium gemologi independen. Memuat nomor identifikasi seri, uji ketebalan nacre, bentuk bulat sempurna, dan origin perairan Lombok.
                 </p>
-                <div className="p-2.5 rounded-xl bg-[var(--surface-2)] flex items-center gap-2 text-[11px] font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
-                  <ShieldCheck className="w-4 h-4 shrink-0" />
-                  <span>Garansi Keaslian 100% Uang Kembali</span>
-                </div>
+                {certNumber ? (
+                  <div className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] flex items-center justify-between gap-2 text-xs text-[var(--text)]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Award className="w-4 h-4 text-[#8A6A2F] dark:text-[#D9B877] shrink-0" />
+                      <span className="truncate">Sertifikat Resmi: <strong>{certNumber}</strong></span>
+                    </div>
+                    {certUrl && (
+                      <a
+                        href={resolveMediaUrl(certUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#8A6A2F] text-white hover:bg-[#725624] text-[11px] font-semibold shrink-0 transition-colors shadow-xs"
+                      >
+                        <span>Lihat Sertifikat</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-[var(--surface-2)] flex items-center gap-2 text-[11px] font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
+                    <ShieldCheck className="w-4 h-4 shrink-0" />
+                    <span>Garansi Keaslian 100% Uang Kembali</span>
+                  </div>
+                )}
               </AccordionContent>
             </AccordionItem>
 
@@ -670,45 +717,41 @@ export const ProductDetailPage: React.FC = () => {
                 'Mahakarya perhiasan mutiara laut selatan alami dari perairan murni Sekotong & Medana, Lombok. Dirangkai dengan emas 18K solid dan dilengkapi sertifikat uji lab gemologi keaslian.'}
             </p>
 
-            {/* Specifications Table */}
-            <div className="rounded-2xl border border-[#E6DDD0] dark:border-white/10 divide-y divide-[#E6DDD0] dark:divide-white/10 text-xs">
-              <div className="flex justify-between p-3 bg-[#FBF8F3] dark:bg-white/5">
-                <span className="text-[#4A5666] dark:text-[#D9B877]">Grade Gemologi</span>
-                <span className="font-semibold text-[#12263A] dark:text-[#FBF8F3]">
-                  {product.grade || 'AAA'}
-                </span>
+            {/* Specifications Table (Hanya Tampilkan Baris yang Terisi) */}
+            {specs.length > 0 && (
+              <div className="rounded-2xl border border-[#E6DDD0] dark:border-white/10 divide-y divide-[#E6DDD0] dark:divide-white/10 text-xs overflow-hidden">
+                {specs.map((item, idx) => (
+                  <div
+                    key={item.label}
+                    className={`flex justify-between p-3 ${idx % 2 === 0 ? 'bg-[#FBF8F3] dark:bg-white/5' : 'bg-transparent'}`}
+                  >
+                    <span className="text-[#4A5666] dark:text-[#D9B877] font-medium">{item.label}</span>
+                    <span className="font-semibold text-[#12263A] dark:text-[#FBF8F3] text-right">{item.value}</span>
+                  </div>
+                ))}
               </div>
-              <div className="flex justify-between p-3">
-                <span className="text-[#4A5666] dark:text-[#D9B877]">Ukuran / Diameter</span>
-                <span className="font-semibold text-[#12263A] dark:text-[#FBF8F3]">
-                  {product.size_mm || product.pearl_size || '11–13 mm'}
-                </span>
+            )}
+
+            {/* Sertifikat Card (Desktop) */}
+            {certNumber && (
+              <div className="p-3.5 rounded-2xl bg-[#E1ECF7]/40 dark:bg-white/5 border border-[#1D4E7A]/20 dark:border-white/10 flex items-center justify-between gap-3 text-xs text-[#12263A] dark:text-[#FBF8F3]">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Award className="w-4 h-4 text-[#8A6A2F] dark:text-[#D9B877] shrink-0" />
+                  <span className="truncate">Sertifikat Resmi: <strong>{certNumber}</strong></span>
+                </div>
+                {certUrl && (
+                  <a
+                    href={resolveMediaUrl(certUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#8A6A2F] text-white hover:bg-[#725624] text-xs font-semibold shrink-0 transition-colors shadow-xs"
+                  >
+                    <span>Lihat Sertifikat</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
               </div>
-              <div className="flex justify-between p-3 bg-[#FBF8F3] dark:bg-white/5">
-                <span className="text-[#4A5666] dark:text-[#D9B877]">Rangka Logam</span>
-                <span className="font-semibold text-[#12263A] dark:text-[#FBF8F3]">
-                  {product.metal || 'Emas Kuning 18K Solid'}
-                </span>
-              </div>
-              <div className="flex justify-between p-3">
-                <span className="text-[#4A5666] dark:text-[#D9B877]">Lokasi Budidaya</span>
-                <span className="font-semibold text-[#12263A] dark:text-[#FBF8F3]">
-                  Sekotong &amp; Medana, Lombok
-                </span>
-              </div>
-              <div className="flex justify-between p-3 bg-[#FBF8F3] dark:bg-white/5">
-                <span className="text-[#4A5666] dark:text-[#D9B877]">Masa Tumbuh Tiram</span>
-                <span className="font-semibold text-[#12263A] dark:text-[#FBF8F3]">
-                  24–36 Bulan Alami
-                </span>
-              </div>
-              <div className="flex justify-between p-3">
-                <span className="text-[#4A5666] dark:text-[#D9B877]">Sertifikasi</span>
-                <span className="font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
-                  Sertifikat Gemologi Termasuk
-                </span>
-              </div>
-            </div>
+            )}
 
             {/* Action Buttons */}
             <div className="space-y-3 pt-2">

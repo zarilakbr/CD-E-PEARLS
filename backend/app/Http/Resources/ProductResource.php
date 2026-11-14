@@ -51,6 +51,22 @@ class ProductResource extends JsonResource
             }, $data['images']);
         }
 
+        // Format certificate data with absolute pdf URL if present
+        $cert = $this->certificate;
+        if ($cert) {
+            $certArr = $cert->toArray();
+            if (! empty($certArr['pdf_path']) && ! str_starts_with($certArr['pdf_path'], 'http://') && ! str_starts_with($certArr['pdf_path'], 'https://')) {
+                $certArr['pdf_path'] = $appUrl . '/' . ltrim($certArr['pdf_path'], '/');
+            }
+            $data['certificate'] = $certArr;
+            $data['certificate_number'] = $cert->nomor;
+            $data['certificate_pdf_url'] = $certArr['pdf_path'] ?? null;
+        } else {
+            $data['certificate'] = null;
+            $data['certificate_number'] = $this->certificate_number ?? null;
+            $data['certificate_pdf_url'] = null;
+        }
+
         return $data;
     }
 }

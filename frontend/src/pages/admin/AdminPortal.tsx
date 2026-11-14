@@ -720,23 +720,39 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   ];
 
   // Handle Product Save (Create or Update)
-  const handleSaveProduct = async (productData: Partial<MockProduct>, photoFiles?: File[]) => {
+  const handleSaveProduct = async (
+    productData: Partial<MockProduct>,
+    photoFiles?: File[],
+    certificateFile?: File | null
+  ) => {
     let savedProductData: any = null;
     try {
       const formData = new FormData();
+      if (productData.code) {
+        formData.append('code', productData.code.trim().slice(0, 100));
+      }
       formData.append('name', productData.name || '');
       formData.append('description', productData.description || '');
       formData.append('category_slug', productData.categorySlug || 'kalung-mutiara');
-      formData.append('varietas', productData.variety || 'South Sea');
-      formData.append('grade', productData.grade || 'AAA');
-      formData.append('ukuran_mm', productData.pearlSize ? productData.pearlSize.replace(/[^0-9.]/g, '') : '12.0');
-      formData.append('berat', productData.weight || '5.0 gr');
-      formData.append('bentuk', productData.bentuk || 'Bulat');
+      formData.append('varietas', (productData.variety || productData.varietas || '').trim().slice(0, 100));
+      formData.append('grade', (productData.grade || '').trim().slice(0, 100));
+      formData.append('ukuran_mm', (productData.pearlSize || productData.ukuran_mm || '').trim().slice(0, 100));
+      formData.append('jumlah', (productData.jumlah || '').trim().slice(0, 100));
+      formData.append('berat', (productData.weight || productData.berat || '').trim().slice(0, 100));
+      formData.append('bentuk', (productData.bentuk || '').trim().slice(0, 50));
       formData.append('kelompok_warna', productData.colorGroup || 'emas');
-      formData.append('varian_warna', productData.colorVariant || 'Emas Champagne');
+      formData.append('varian_warna', (productData.colorVariant || '').trim().slice(0, 100));
       formData.append('price', String(productData.price || 0));
       formData.append('stock', String(productData.stock || 0));
       formData.append('status', productData.status === 'Nonaktif' ? 'draft' : 'published');
+
+      const certNum = (productData.certificate_number || productData.certificateNo || '').trim().slice(0, 100);
+      if (certNum) {
+        formData.append('certificate_number', certNum);
+      }
+      if (certificateFile) {
+        formData.append('certificate_file', certificateFile);
+      }
 
       if (photoFiles && photoFiles.length > 0) {
         photoFiles.forEach((f) => formData.append('photos[]', f));
@@ -759,22 +775,32 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     if (savedProductData) {
       const newProd: MockProduct = {
         id: savedProductData.id,
+        code: savedProductData.code || productData.code || '',
         name: savedProductData.name,
         category: savedProductData.category?.name || productData.category || 'Kalung Mutiara',
         categorySlug: savedProductData.category_slug || productData.categorySlug || 'kalung-mutiara',
-        variety: savedProductData.varietas || productData.variety || 'South Sea',
-        grade: savedProductData.grade || productData.grade || 'AAA',
-        pearlSize: savedProductData.ukuran_mm ? `${savedProductData.ukuran_mm} mm` : productData.pearlSize || '12 mm',
+        variety: savedProductData.varietas ?? productData.variety ?? '',
+        varietas: savedProductData.varietas ?? productData.varietas ?? '',
+        grade: savedProductData.grade ?? productData.grade ?? '',
+        pearlSize: savedProductData.ukuran_mm ?? productData.pearlSize ?? '',
+        ukuran_mm: savedProductData.ukuran_mm ?? productData.ukuran_mm ?? '',
+        jumlah: savedProductData.jumlah ?? productData.jumlah ?? '',
         metal: savedProductData.logam || productData.metal || 'Emas 18K',
-        weight: savedProductData.berat || productData.weight || '5.0 gr',
-        bentuk: savedProductData.bentuk || productData.bentuk || 'Bulat',
+        weight: savedProductData.berat ?? productData.weight ?? '',
+        berat: savedProductData.berat ?? productData.berat ?? '',
+        bentuk: savedProductData.bentuk ?? productData.bentuk ?? '',
         colorGroup: savedProductData.kelompok_warna || productData.colorGroup || 'emas',
-        colorVariant: savedProductData.varian_warna || productData.colorVariant || 'Emas Champagne',
+        colorVariant: savedProductData.varian_warna ?? productData.colorVariant ?? '',
         price: Number(savedProductData.price) || Number(productData.price) || 0,
         formattedPrice: `Rp ${(Number(savedProductData.price) || Number(productData.price) || 0).toLocaleString('id-ID')}`,
         stock: Number(savedProductData.stock) !== undefined ? Number(savedProductData.stock) : Number(productData.stock) || 0,
         status: (savedProductData.status === 'published' ? 'Aktif' : 'Nonaktif') as 'Aktif' | 'Nonaktif',
         description: savedProductData.description || productData.description || '',
+        certificateNo: savedProductData.certificate_number || savedProductData.certificate?.nomor || productData.certificateNo || '',
+        certificate_number: savedProductData.certificate_number || savedProductData.certificate?.nomor || productData.certificate_number || '',
+        certificate_id: savedProductData.certificate_id ?? productData.certificate_id ?? null,
+        certificate_pdf_url: savedProductData.certificate_pdf_url || savedProductData.certificate?.pdf_path || productData.certificate_pdf_url || null,
+        certificate: savedProductData.certificate || productData.certificate || null,
         image: resolveMediaUrl(savedProductData.image || productData.image, '/images/placeholder_jewelry.svg'),
         images: savedProductData.images || productData.images,
       };
@@ -789,22 +815,32 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       // Local fallback
       const newProd: MockProduct = {
         id: productData.id || Date.now(),
+        code: productData.code || '',
         name: productData.name || '[Nama produk]',
         category: productData.category || 'Kalung Mutiara',
         categorySlug: productData.categorySlug || 'kalung-mutiara',
-        variety: productData.variety || 'South Sea',
-        grade: productData.grade || 'AAA',
-        pearlSize: productData.pearlSize || '12 mm',
+        variety: productData.variety || '',
+        varietas: productData.variety || '',
+        grade: productData.grade || '',
+        pearlSize: productData.pearlSize || '',
+        ukuran_mm: productData.pearlSize || '',
+        jumlah: productData.jumlah || '',
         metal: productData.metal || 'Emas 18K',
-        weight: productData.weight || '5.0 gr',
-        bentuk: productData.bentuk || 'Bulat',
+        weight: productData.weight || '',
+        berat: productData.weight || '',
+        bentuk: productData.bentuk || '',
         colorGroup: productData.colorGroup || 'emas',
-        colorVariant: productData.colorVariant || 'Emas Champagne',
-        price: Number(productData.price) || 15000000,
-        formattedPrice: `Rp ${(Number(productData.price) || 15000000).toLocaleString('id-ID')}`,
-        stock: Number(productData.stock) || 5,
+        colorVariant: productData.colorVariant || '',
+        price: Number(productData.price) || 0,
+        formattedPrice: `Rp ${(Number(productData.price) || 0).toLocaleString('id-ID')}`,
+        stock: Number(productData.stock) || 0,
         status: (productData.status as 'Aktif' | 'Nonaktif') || 'Aktif',
-        description: productData.description || 'Deskripsi perhiasan mutiara Lombok...',
+        description: productData.description || '',
+        certificateNo: productData.certificateNo || productData.certificate_number || '',
+        certificate_number: productData.certificate_number || productData.certificateNo || '',
+        certificate_id: productData.certificate_id || null,
+        certificate_pdf_url: productData.certificate_pdf_url || null,
+        certificate: productData.certificate || null,
         image: resolveMediaUrl(productData.image, '/images/placeholder_jewelry.svg'),
         images: productData.images,
       };

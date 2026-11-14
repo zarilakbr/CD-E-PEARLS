@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Award, ShoppingBag, MessageCircle, ShieldCheck, Sparkles } from 'lucide-react';
+import { X, Award, ShoppingBag, MessageCircle, ShieldCheck, Sparkles, ExternalLink } from 'lucide-react';
 import type { MockProduct } from '../../types/models';
 import { resolveMediaUrl, resolveWebpUrl } from '../../lib/media';
 import { useCart } from '../../context/CartContext';
@@ -30,6 +30,29 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const { addToCart } = useCart();
   if (!isOpen || !product) return null;
 
+  const categoryName = typeof product.category === 'object' && product.category
+    ? (product.category as { name?: string }).name || 'Mutiara Lombok'
+    : product.category || 'Mutiara Lombok';
+
+  const species = product.varietas || product.variety;
+  const size = product.ukuran_mm || product.pearlSize;
+  const weight = product.berat || product.weight;
+  const formattedPrice = product.formattedPrice || (product.price ? `Rp ${Number(product.price).toLocaleString('id-ID')}` : '');
+
+  // 7 Spesifikasi Produk CD'E Pearls - HANYA tampilkan baris yang ada isinya
+  const specs = [
+    { label: 'No', value: product.code },
+    { label: 'Jenis (Species)', value: species },
+    { label: 'Ukuran (Size)', value: size },
+    { label: 'Grade', value: product.grade },
+    { label: 'Jumlah (Quantity)', value: product.jumlah },
+    { label: 'Berat (Weight)', value: weight },
+    { label: 'Harga', value: formattedPrice },
+  ].filter((item) => item.value !== undefined && item.value !== null && String(item.value).trim() !== '');
+
+  const certNumber = product.certificate_number || product.certificateNo || product.certificate?.nomor;
+  const certUrl = product.certificate_pdf_url || product.certificate?.pdf_path;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
@@ -55,7 +78,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             />
             <img
               src={getSmartImageFallback(product)}
-              alt={`Detail perhiasan ${product.name} — ${typeof product.category === 'object' && product.category ? (product.category as { name?: string }).name || 'Mutiara Lombok' : product.category || 'Mutiara Lombok'}`}
+              alt={`Detail perhiasan ${product.name} — ${categoryName}`}
               width={500}
               height={500}
               className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
@@ -66,7 +89,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               }}
             />
           </picture>
-          {/* Subtle gradient vignette & sheen */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
           {/* Floating Badges */}
@@ -94,53 +116,70 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* Detail Produk Kanan */}
         <div className="w-full md:w-1/2 p-4 sm:p-6 md:p-8 flex flex-col justify-between overflow-y-auto custom-scrollbar">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
-                {product.category}
+                {categoryName}
               </span>
-              <span className="opacity-40">•</span>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--surface-muted)] text-[var(--text)] border border-[var(--border)]">
-                {product.variety}
-              </span>
+              {species && (
+                <>
+                  <span className="opacity-40">•</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--surface-muted)] text-[var(--text)] border border-[var(--border)]">
+                    {species}
+                  </span>
+                </>
+              )}
             </div>
 
-            <h2 className="font-serif text-2xl sm:text-3xl font-medium text-[var(--text)] leading-tight break-words">
+            <h2 className="font-serif text-xl sm:text-2xl md:text-3xl font-medium text-[var(--text)] leading-tight break-words">
               {product.name}
             </h2>
 
-            <div className="mt-2.5 font-serif text-2xl font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
-              {product.formattedPrice}
-            </div>
+            {formattedPrice && (
+              <div className="mt-2.5 font-serif text-xl sm:text-2xl font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
+                {formattedPrice}
+              </div>
+            )}
 
-            {/* Spesifikasi Lengkap Grid (1 col on <= 380px, 2 col on > 380px) */}
-            <div className="mt-4 grid grid-cols-1 min-[380px]:grid-cols-2 gap-2 sm:gap-2.5 p-3 sm:p-3.5 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl text-xs">
-              <div>
-                <span className="text-[var(--text-2)] block">Grade Mutiara:</span>
-                <span className="font-semibold text-[var(--text)]">{product.grade} (Mirror Luster)</span>
+            {/* Grid 7 Spesifikasi Produk - Hanya Tampilkan Baris yang Terisi (1 col pada <=380px, 2 col pada >380px) */}
+            {specs.length > 0 && (
+              <div className="mt-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] p-3 text-xs">
+                <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-x-4 gap-y-2">
+                  {specs.map((item) => (
+                    <div key={item.label} className="flex justify-between min-[380px]:flex-col min-[380px]:justify-start gap-0.5 py-0.5">
+                      <span className="text-[var(--text-2)] text-[11px] font-medium">{item.label}</span>
+                      <span className="font-semibold text-[var(--text)] break-words text-right min-[380px]:text-left">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div>
-                <span className="text-[var(--text-2)] block">Ukuran Diameter:</span>
-                <span className="font-semibold text-[var(--text)]">{product.pearlSize}</span>
-              </div>
-              <div>
-                <span className="text-[var(--text-2)] block">Logam &amp; Rangka:</span>
-                <span className="font-semibold text-[var(--text)]">{product.metal}</span>
-              </div>
-              <div>
-                <span className="text-[var(--text-2)] block">Berat Estimasi:</span>
-                <span className="font-semibold text-[var(--text)]">{product.weight}</span>
-              </div>
-            </div>
+            )}
 
-            {/* Sertifikat Gemologi Tersimpan */}
-            <div className="mt-3 p-3 bg-[var(--info-bg)]/80 border border-[var(--info-border)] rounded-xl flex items-center gap-2.5 text-xs text-[var(--info-text)]">
-              <Award className="w-4 h-4 shrink-0" />
-              <span>Sertifikat Resmi: <strong>{product.certificateNo || 'LAB-LMB-8921'}</strong> (Sertifikat lab gemologi)</span>
-            </div>
+            {/* Sertifikat Gemologi Resmi (jika ada) */}
+            {certNumber && (
+              <div className="mt-3 p-3 bg-[var(--info-bg)]/80 border border-[var(--info-border)] rounded-xl flex items-center justify-between gap-2.5 text-xs text-[var(--info-text)]">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Award className="w-4 h-4 text-[#8A6A2F] dark:text-[#D9B877] shrink-0" />
+                  <span className="truncate">Sertifikat Resmi: <strong>{certNumber}</strong></span>
+                </div>
+                {certUrl && (
+                  <a
+                    href={resolveMediaUrl(certUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#8A6A2F] text-white hover:bg-[#725624] text-[11px] font-semibold shrink-0 transition-colors shadow-xs"
+                  >
+                    <span>Lihat Sertifikat</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            )}
 
-            <p className="mt-3 sm:mt-4 text-[13px] sm:text-xs text-[var(--text-2)] leading-relaxed break-words">
-              {product.description}
-            </p>
+            {product.description && (
+              <p className="mt-3 sm:mt-4 text-[13px] sm:text-xs text-[var(--text-2)] leading-relaxed break-words">
+                {product.description}
+              </p>
+            )}
           </div>
 
           {/* Tombol Aksi (Sticky/Pinned at bottom for mobile) */}

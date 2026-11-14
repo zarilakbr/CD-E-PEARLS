@@ -13,21 +13,38 @@ export interface MockCategory {
 
 export interface MockProduct {
   id: number;
+  code?: string;
   name: string;
   category: string;
   categorySlug: string;
   variety: string;
+  varietas?: string;
   grade: string;
   pearlSize: string; // e.g. "11-12 mm"
-  metal: 'Emas 18K' | 'Perak 925';
+  ukuran_mm?: string;
+  jumlah?: string;
+  metal: 'Emas 18K' | 'Perak 925' | string;
   goldKarat?: string;
   weight: string; // e.g. "4.2 gr"
+  berat?: string;
   price: number;
   formattedPrice: string;
   stock: number;
   status: 'Aktif' | 'Nonaktif';
   description: string;
   certificateNo?: string;
+  certificate_id?: number | null;
+  certificate_number?: string | null;
+  certificate_pdf_url?: string | null;
+  certificate?: {
+    id: number;
+    nomor: string;
+    lab?: string;
+    grade?: string;
+    ukuran?: string;
+    tanggal?: string;
+    pdf_path?: string | null;
+  } | null;
   bentuk?: string;
   colorGroup?: string;
   colorVariant?: string;
