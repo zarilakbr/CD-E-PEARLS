@@ -63,7 +63,7 @@ class ProductResource extends JsonResource
             $data['certificate_pdf_url'] = $certArr['pdf_path'] ?? null;
         } else {
             $data['certificate'] = null;
-            $data['certificate_number'] = null;
+            $data['certificate_number'] = $this->certificate_number ?? null;
             $data['certificate_pdf_url'] = null;
         }
 

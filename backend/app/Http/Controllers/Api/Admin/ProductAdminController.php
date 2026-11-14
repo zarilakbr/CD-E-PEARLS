@@ -182,7 +182,23 @@ class ProductAdminController extends Controller
         // 1. Certificate file is uploaded (PDF, JPG, PNG)
         if ($request->hasFile('certificate_file')) {
             $file = $request->file('certificate_file');
+            $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+            $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
             $ext = strtolower($file->getClientOriginalExtension() ?: 'pdf');
+            $mime = $file->getMimeType();
+
+            if (! in_array($ext, $allowedExtensions, true) || ! in_array($mime, $allowedMimes, true)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'certificate_file' => 'Berkas sertifikat harus berupa dokumen PDF atau gambar JPG/PNG yang valid.',
+                ]);
+            }
+
+            if ($file->getSize() > 10 * 1024 * 1024) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'certificate_file' => 'Ukuran berkas sertifikat tidak boleh melebihi 10MB.',
+                ]);
+            }
+
             $safeNomor = preg_replace('/[^A-Za-z0-9_-]/', '_', $certNumber ?: 'CERT');
             $filename = 'cert_' . $safeNomor . '_' . time() . '_' . Str::random(6) . '.' . $ext;
             $storedPath = $file->storeAs('certificates', $filename, 'public');
@@ -209,6 +225,9 @@ class ProductAdminController extends Controller
                 }
                 $cert->update($updateData);
 
+                $validated['certificate_id'] = $cert->id;
+                $validated['certificate_number'] = $cert->nomor;
+
                 return $cert->id;
             }
 
@@ -221,6 +240,9 @@ class ProductAdminController extends Controller
                 'pdf_path' => $pdfPath,
             ]);
 
+            $validated['certificate_id'] = $cert->id;
+            $validated['certificate_number'] = $cert->nomor;
+
             return $cert->id;
         }
 
@@ -228,33 +250,41 @@ class ProductAdminController extends Controller
         if (! empty($certNumber)) {
             $cert = Certificate::where('nomor', $certNumber)->first();
             if ($cert) {
+                // Skenario 1: Tautkan ke sertifikat yang sudah ada di database
+                $validated['certificate_id'] = $cert->id;
+                $validated['certificate_number'] = $cert->nomor;
+
                 return $cert->id;
             }
 
-            if ($certId) {
-                $cert = Certificate::find($certId);
-                if ($cert) {
-                    $cert->update(['nomor' => $certNumber]);
+            // Skenario 2: Nomor BARU & TIDAK ADA berkas
+            // DILARANG buat baris bodong di tabel certificates. Simpan sebagai teks pada produk.
+            $validated['certificate_id'] = null;
+            $validated['certificate_number'] = $certNumber;
 
-                    return $cert->id;
-                }
-            }
-
-            $cert = Certificate::create([
-                'nomor' => $certNumber,
-                'lab' => $request->input('certificate_lab') ?? 'Laboratorium Gemologi CD\'E Pearls',
-                'grade' => $validated['grade'] ?? 'AAA',
-                'ukuran' => $validated['ukuran_mm'] ?? '-',
-                'tanggal' => now()->toDateString(),
-                'pdf_path' => null,
-            ]);
-
-            return $cert->id;
+            return null;
         }
 
         // 3. Explicit certificate_id provided or unlinked
         if (array_key_exists('certificate_id', $validated)) {
-            return $validated['certificate_id'] ? (int) $validated['certificate_id'] : null;
+            $resolvedId = $validated['certificate_id'] ? (int) $validated['certificate_id'] : null;
+            $validated['certificate_id'] = $resolvedId;
+            if ($resolvedId) {
+                $cert = Certificate::find($resolvedId);
+                $validated['certificate_number'] = $cert?->nomor;
+            } else {
+                $validated['certificate_number'] = null;
+            }
+
+            return $resolvedId;
+        }
+
+        // 4. If certificate_number was explicitly submitted as empty string, clear it
+        if ($request->has('certificate_number') && empty($certNumber)) {
+            $validated['certificate_id'] = null;
+            $validated['certificate_number'] = null;
+
+            return null;
         }
 
         return $certId;
@@ -328,7 +358,7 @@ class ProductAdminController extends Controller
 
         // Handle Certificate Attachment
         $certId = $this->handleCertificateAttachment($request, $validated);
-        if ($certId !== null) {
+        if ($certId !== null || array_key_exists('certificate_id', $validated)) {
             $validated['certificate_id'] = $certId;
         }
 

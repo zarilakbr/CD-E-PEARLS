@@ -13,6 +13,7 @@ class Product extends Model
         'code',
         'category_slug',
         'certificate_id',
+        'certificate_number',
         'name',
         'price',
         'original_price',
@@ -73,7 +74,7 @@ class Product extends Model
 
     public function getCertificateNumberAttribute(): ?string
     {
-        return $this->certificate?->nomor;
+        return $this->certificate?->nomor ?? ($this->attributes['certificate_number'] ?? null);
     }
 
     public function getWebpUrlAttribute(): ?string

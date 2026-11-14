@@ -118,7 +118,7 @@ test('admin dapat melampirkan berkas sertifikat saat membuat produk dan terhubun
     expect($detail['certificate_pdf_url'])->toContain('/storage/certificates/');
 });
 
-test('admin dapat menghubungkan nomor sertifikat tanpa berkas baru jika sertifikat sudah ada atau dibuatkan stub', function () {
+test('skenario 1: admin menghubungkan nomor sertifikat yang sudah ada di tabel certificates', function () {
     $existingCert = Certificate::create([
         'nomor' => 'CERT-EXISTING-001',
         'lab' => 'Lembaga Gemologi Indonesia',
@@ -141,4 +141,127 @@ test('admin dapat menghubungkan nomor sertifikat tanpa berkas baru jika sertifik
 
     $product = Product::find($response->json('data.id'));
     expect($product->certificate_id)->toBe($existingCert->id);
+    expect($product->certificate_number)->toBe('CERT-EXISTING-001');
+});
+
+test('skenario 2: admin memasukkan nomor sertifikat baru tanpa berkas tidak membuat baris di tabel certificates', function () {
+    $certsCountBefore = Certificate::count();
+
+    $payload = [
+        'name' => 'Anting Mutiara Mabe Minimalis',
+        'category_slug' => 'kalung-mutiara',
+        'price' => 4500000,
+        'stock' => 5,
+        'certificate_number' => 'CERT-NEW-NO-FILE-8899',
+    ];
+
+    $response = $this->actingAs($this->admin)->postJson('/api/v1/admin/products', $payload);
+    $response->assertStatus(201);
+
+    // Pastikan TIDAK ADA baris sertifikat baru di tabel certificates
+    expect(Certificate::count())->toBe($certsCountBefore);
+    $this->assertDatabaseMissing('certificates', [
+        'nomor' => 'CERT-NEW-NO-FILE-8899',
+    ]);
+
+    // Pastikan nomor sertifikat tetap tersimpan di kolom products.certificate_number dan certificate_id null
+    $product = Product::find($response->json('data.id'));
+    expect($product->certificate_id)->toBeNull();
+    expect($product->certificate_number)->toBe('CERT-NEW-NO-FILE-8899');
+
+    // Detail API mengembalikan certificate_number tetapi certificate_pdf_url null
+    $detailResponse = $this->getJson("/api/v1/products/{$product->id}");
+    $detailResponse->assertStatus(200);
+    $detail = $detailResponse->json('data');
+    expect($detail['certificate_number'])->toBe('CERT-NEW-NO-FILE-8899');
+    expect($detail['certificate_pdf_url'])->toBeNull();
+});
+
+test('skenario 3: admin memasukkan nomor baru dengan berkas membuat baris di tabel certificates dan menautkannya', function () {
+    $certPdf = UploadedFile::fake()->create('sertifikat_resmi.pdf', 300, 'application/pdf');
+
+    $payload = [
+        'name' => 'Liontin Mutiara Baroque Emas',
+        'category_slug' => 'kalung-mutiara',
+        'price' => 7800000,
+        'stock' => 2,
+        'certificate_number' => 'CERT-NEW-WITH-FILE-7766',
+        'certificate_file' => $certPdf,
+    ];
+
+    $response = $this->actingAs($this->admin)->postJson('/api/v1/admin/products', $payload);
+    $response->assertStatus(201);
+
+    $this->assertDatabaseHas('certificates', [
+        'nomor' => 'CERT-NEW-WITH-FILE-7766',
+    ]);
+
+    $cert = Certificate::where('nomor', 'CERT-NEW-WITH-FILE-7766')->first();
+    expect($cert)->not->toBeNull();
+    expect($cert->pdf_path)->not->toBeNull();
+
+    $product = Product::find($response->json('data.id'));
+    expect($product->certificate_id)->toBe($cert->id);
+    expect($product->certificate_number)->toBe('CERT-NEW-WITH-FILE-7766');
+});
+
+test('skenario 4: lookup publik hanya mengesahkan sertifikat yang memiliki berkas resmi', function () {
+    // 1. Sertifikat valid dengan berkas
+    Certificate::create([
+        'nomor' => 'CERT-VERIFIED-VALID',
+        'lab' => 'Lembaga Gemologi Indonesia',
+        'grade' => 'AAA',
+        'ukuran' => '12.0 mm',
+        'tanggal' => '2026-02-01',
+        'pdf_path' => '/storage/certificates/cert_verified.pdf',
+    ]);
+
+    // 2. Sertifikat tanpa berkas (pdf_path null)
+    Certificate::create([
+        'nomor' => 'CERT-UNVERIFIED-NO-PDF',
+        'lab' => 'Laboratorium Gemologi',
+        'grade' => 'AA',
+        'ukuran' => '10.0 mm',
+        'tanggal' => '2026-02-01',
+        'pdf_path' => null,
+    ]);
+
+    // Lookup 1: Sertifikat dengan berkas -> 200 OK
+    $okResponse = $this->getJson('/api/v1/certificates/lookup/CERT-VERIFIED-VALID');
+    $okResponse->assertStatus(200);
+    expect($okResponse->json('success'))->toBeTrue();
+    expect($okResponse->json('data.nomor'))->toBe('CERT-VERIFIED-VALID');
+
+    // Lookup 2: Sertifikat tanpa berkas -> 404 Not Found
+    $noFileResponse = $this->getJson('/api/v1/certificates/lookup/CERT-UNVERIFIED-NO-PDF');
+    $noFileResponse->assertStatus(404);
+    expect($noFileResponse->json('success'))->toBeFalse();
+    expect($noFileResponse->json('message'))->toContain('belum memiliki berkas terverifikasi');
+
+    // Lookup 3: Nomor yang hanya ada sebagai teks pada produk (skenario 2) -> 404 Not Found
+    $textOnlyResponse = $this->getJson('/api/v1/certificates/lookup/CERT-NEW-NO-FILE-8899');
+    $textOnlyResponse->assertStatus(404);
+    expect($textOnlyResponse->json('success'))->toBeFalse();
+
+    // Lookup 4: Nomor fiktif acak -> 404 Not Found
+    $randomResponse = $this->getJson('/api/v1/certificates/lookup/CERT-NOT-EXISTS-XYZ');
+    $randomResponse->assertStatus(404);
+    expect($randomResponse->json('success'))->toBeFalse();
+});
+
+test('validasi berkas sertifikat menolak ekstensi ilegal', function () {
+    $illegalFile = UploadedFile::fake()->create('malicious.exe', 100, 'application/x-msdownload');
+
+    $payload = [
+        'name' => 'Gelang Mutiara Air Tawar',
+        'category_slug' => 'kalung-mutiara',
+        'price' => 3500000,
+        'stock' => 1,
+        'certificate_number' => 'CERT-FAIL-EXT',
+        'certificate_file' => $illegalFile,
+    ];
+
+    $response = $this->actingAs($this->admin)->postJson('/api/v1/admin/products', $payload);
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['certificate_file']);
 });

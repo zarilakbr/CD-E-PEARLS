@@ -47,12 +47,14 @@ class CertificateController extends Controller
     {
         $certificate = Certificate::with(['products' => fn ($q) => $q->where('status', 'published')])
             ->where('nomor', $code)
+            ->whereNotNull('pdf_path')
+            ->where('pdf_path', '!=', '')
             ->first();
 
         if (! $certificate) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sertifikat keaslian gemologi tidak ditemukan dalam arsip resmi CD\'E Pearls Lombok.',
+                'message' => 'Sertifikat keaslian gemologi tidak ditemukan dalam arsip resmi CD\'E Pearls Lombok atau belum memiliki berkas terverifikasi.',
             ], Response::HTTP_NOT_FOUND);
         }
 
