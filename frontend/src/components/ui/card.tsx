@@ -8,7 +8,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'rounded-2xl border border-[#E6DDD0] bg-white text-[#12263A] shadow-xs transition-all duration-300 ease-out hover:border-[#8A6A2F]/50 hover:shadow-md',
+      'rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shadow-xs transition-all duration-300 ease-out hover:border-[#8A6A2F]/50 dark:hover:border-[#D9B877]/50 hover:shadow-md',
       className
     )}
     {...props}
@@ -22,7 +22,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('flex flex-col space-y-1.5 p-6', className)}
+    className={cn('flex flex-col space-y-1.5 p-5 sm:p-6', className)}
     {...props}
   />
 ));
@@ -35,7 +35,7 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      'font-serif text-2xl font-medium leading-snug tracking-tight text-[#12263A]',
+      'font-serif text-xl sm:text-2xl font-medium leading-snug tracking-tight text-[var(--text)]',
       className
     )}
     {...props}
@@ -49,7 +49,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn('text-[14px] text-[#4A5666] leading-relaxed', className)}
+    className={cn('text-[13px] sm:text-[14px] text-[var(--text-2)] leading-relaxed', className)}
     {...props}
   />
 ));
@@ -59,7 +59,7 @@ const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
+  <div ref={ref} className={cn('p-5 sm:p-6 pt-0', className)} {...props} />
 ));
 CardContent.displayName = 'CardContent';
 
@@ -69,7 +69,7 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('flex items-center p-6 pt-0 border-t border-[#E6DDD0]/60 mt-4', className)}
+    className={cn('flex items-center p-5 sm:p-6 pt-0 border-t border-[var(--border)]/60 mt-4', className)}
     {...props}
   />
 ));

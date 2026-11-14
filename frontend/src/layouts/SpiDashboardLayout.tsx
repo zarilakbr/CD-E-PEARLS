@@ -476,7 +476,7 @@ export const SpiDashboardLayout: React.FC<SpiDashboardLayoutProps> = ({
         {/* ========================================================
             3. MAIN CONTENT
            ======================================================== */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>

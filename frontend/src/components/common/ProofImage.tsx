@@ -168,10 +168,10 @@ export const ProofImage: React.FC<ProofImageProps> = ({
     return (
       <div
         data-testid="proof-skeleton"
-        className={`flex flex-col items-center justify-center bg-neutral-100/80 animate-pulse text-neutral-400 p-4 rounded-lg select-none ${skeletonClassName || className || 'h-36 w-full'}`}
+        className={`flex flex-col items-center justify-center bg-[var(--surface-2)] animate-pulse text-[var(--text-2)] p-4 rounded-lg select-none ${skeletonClassName || className || 'h-36 w-full'}`}
       >
-        <RefreshCw className="w-5 h-5 animate-spin text-neutral-400 mb-1" />
-        <span className="text-[11px] font-medium text-neutral-500">Memuat bukti transfer...</span>
+        <RefreshCw className="w-5 h-5 animate-spin text-[var(--text-2)] mb-1" />
+        <span className="text-[11px] font-medium text-[var(--text-2)]">Memuat bukti transfer...</span>
       </div>
     );
   }
@@ -180,13 +180,13 @@ export const ProofImage: React.FC<ProofImageProps> = ({
     return (
       <div
         data-testid="proof-error"
-        className={`flex flex-col items-center justify-center p-3 text-center bg-red-50/80 border border-red-200 rounded-lg text-red-700 text-xs gap-1.5 ${errorClassName || className || 'h-36 w-full'}`}
+        className={`flex flex-col items-center justify-center p-3 text-center bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg text-[var(--danger-text)] text-xs gap-1.5 ${errorClassName || className || 'h-36 w-full'}`}
       >
-        <div className="flex items-center gap-1 font-semibold text-red-800">
-          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+        <div className="flex items-center gap-1 font-semibold text-[var(--danger-text)]">
+          <AlertCircle className="w-4 h-4 text-[var(--danger-text)] shrink-0" />
           <span>Bukti tidak dapat dimuat</span>
         </div>
-        <p className="text-[10px] text-red-600">
+        <p className="text-[10px] text-[var(--danger-text)]/90">
           Gagal mengambil berkas transfer atau sesi Anda telah kedaluwarsa.
         </p>
         <button
@@ -196,7 +196,7 @@ export const ProofImage: React.FC<ProofImageProps> = ({
             e.stopPropagation();
             retry();
           }}
-          className="mt-1 px-3 py-1 text-[11px] font-semibold bg-white border border-red-300 rounded-full shadow-xs hover:bg-red-50 text-red-800 inline-flex items-center gap-1 cursor-pointer transition-colors"
+          className="mt-1 px-3 py-1 text-[11px] font-semibold bg-[var(--surface)] border border-[var(--danger-border)] rounded-full shadow-xs hover:bg-[var(--danger-bg)] text-[var(--danger-text)] inline-flex items-center gap-1 cursor-pointer transition-colors"
         >
           <RefreshCw className="w-3 h-3" />
           <span>Coba Lagi</span>
@@ -209,11 +209,11 @@ export const ProofImage: React.FC<ProofImageProps> = ({
     return (
       <div
         data-testid="proof-pdf"
-        className={`flex flex-col items-center justify-center p-4 bg-amber-50/90 border border-amber-200 rounded-lg text-amber-900 text-xs gap-2 select-none ${pdfClassName || className || 'h-36 w-full'}`}
+        className={`flex flex-col items-center justify-center p-4 bg-[var(--warning-bg)] border border-[var(--warning-border)] rounded-lg text-[var(--warning-text)] text-xs gap-2 select-none ${pdfClassName || className || 'h-36 w-full'}`}
         onClick={onClick}
       >
-        <FileText className="w-8 h-8 text-amber-700" />
-        <span className="font-semibold text-center text-xs text-[#12263A]">Berkas Bukti Transfer (PDF)</span>
+        <FileText className="w-8 h-8 text-[#8A6A2F] dark:text-[#D9B877]" />
+        <span className="font-semibold text-center text-xs text-[var(--text)]">Berkas Bukti Transfer (PDF)</span>
         {blobUrl && (
           <a
             href={blobUrl}
@@ -221,9 +221,9 @@ export const ProofImage: React.FC<ProofImageProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#12263A] hover:bg-[#1A3652] text-white rounded-full text-[11px] font-semibold shadow-xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#12263A] dark:bg-[#D9B877] hover:bg-[#1A3652] dark:hover:bg-[#E5C98F] text-white dark:text-[#0B1622] rounded-full text-[11px] font-semibold shadow-xs transition-colors cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5 text-[#D9B877]" />
+            <Download className="w-3.5 h-3.5 text-[#D9B877] dark:text-[#0B1622]" />
             <span>Unduh Berkas PDF</span>
           </a>
         )}
@@ -235,7 +235,7 @@ export const ProofImage: React.FC<ProofImageProps> = ({
     return (
       <div
         data-testid="proof-empty"
-        className={`flex items-center justify-center bg-neutral-100 text-neutral-400 p-4 rounded-lg text-xs ${className || 'h-36 w-full'}`}
+        className={`flex items-center justify-center bg-[var(--surface-2)] text-[var(--text-2)] p-4 rounded-lg text-xs ${className || 'h-36 w-full'}`}
       >
         <span>Belum ada berkas bukti transfer</span>
       </div>

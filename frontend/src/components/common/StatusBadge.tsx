@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '../../lib/utils';
 
 export type BadgeStatusType =
   | 'Menunggu Pembayaran'
@@ -29,52 +30,41 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   className = '',
   size = 'md',
 }) => {
-  let bg = '#EAE8E4';
-  let text = '#6E6862';
+  let badgeClass = 'badge-status-neutral border border-[var(--neutral-badge-border)]';
 
   switch (status) {
     case 'Menunggu Pembayaran':
     case 'Menunggu Verifikasi':
     case 'Menipis':
     case 'Perlu Review':
-      bg = '#FBEFD5';
-      text = '#7A5410';
+      badgeClass = 'badge-status-warning border border-[var(--warning-border)]';
       break;
 
     case 'Lunas & Diproses':
     case 'Dikemas':
-      bg = '#E1ECF7';
-      text = '#1D4E7A';
-      break;
-
     case 'Dikirim':
-      bg = '#DDF1EE';
-      text = '#17625A';
+      badgeClass = 'badge-status-info border border-[var(--info-border)]';
       break;
 
     case 'Selesai':
     case 'Aman':
     case 'Aktif':
     case 'Disetujui':
-      bg = '#E2F1E0';
-      text = '#2B6330';
+      badgeClass = 'badge-status-success border border-[var(--success-border)]';
       break;
 
     case 'Dibatalkan':
     case 'Nonaktif':
-      bg = '#EAE8E4';
-      text = '#6E6862';
+      badgeClass = 'badge-status-neutral border border-[var(--neutral-badge-border)]';
       break;
 
     case 'Habis':
     case 'Ditolak':
-      bg = '#FDE8E8';
-      text = '#9B1C1C';
+      badgeClass = 'badge-status-danger border border-[var(--danger-border)]';
       break;
 
     default:
-      bg = '#EDE6DA';
-      text = '#4A5666';
+      badgeClass = 'badge-status-neutral border border-[var(--neutral-badge-border)]';
   }
 
   const sizeClasses =
@@ -84,11 +74,17 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 
   return (
     <span
-      style={{ backgroundColor: bg, color: text }}
-      className={`inline-flex items-center justify-center rounded-full tracking-wide select-none ${sizeClasses} ${className}`}
+      className={cn(
+        'inline-flex items-center justify-center rounded-full tracking-wide select-none',
+        badgeClass,
+        sizeClasses,
+        className
+      )}
     >
-      <span className="w-1.5 h-1.5 rounded-full mr-1.5 opacity-80" style={{ backgroundColor: text }} />
+      <span className="w-1.5 h-1.5 rounded-full mr-1.5 opacity-80 bg-current shrink-0" />
       {status}
     </span>
   );
 };
+
+export default StatusBadge;

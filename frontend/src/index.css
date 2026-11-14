@@ -15,6 +15,10 @@
   --color-theme-text: var(--text);
   --color-theme-text-muted: var(--text-2);
   --color-theme-accent: var(--accent);
+  --color-surface-muted: var(--surface-muted);
+  --color-theme-border-muted: var(--border-muted);
+  --color-theme-input-bg: var(--input-bg);
+  --color-theme-input-border: var(--input-border);
 
   /* Palette Tokens CD'E Pearls */
   --color-ivory: #FBF8F3;
@@ -51,6 +55,33 @@
   --text-2: #4A5666;
   --accent: #8A6A2F;
 
+  --surface-muted: #F4F1EB;
+  --border-muted: #EFE9E0;
+  --text-muted: #7E8B9B;
+
+  --warning-bg: #FBEFD5;
+  --warning-border: #F3DC9B;
+  --warning-text: #7A5410;
+
+  --info-bg: #E1ECF7;
+  --info-border: #BCD5EE;
+  --info-text: #1D4E7A;
+
+  --success-bg: #E2F1E0;
+  --success-border: #C2E2BE;
+  --success-text: #2B6330;
+
+  --danger-bg: #FDE8E8;
+  --danger-border: #F8B4B4;
+  --danger-text: #9B1C1C;
+
+  --neutral-badge-bg: #EDE6DA;
+  --neutral-badge-border: #D9CFBF;
+  --neutral-badge-text: #4A5666;
+
+  --input-bg: #F4F1EB;
+  --input-border: #E6DDD0;
+
   --ivory: #FBF8F3;
   --champagne: #F3EBDD;
   --blush: #F1E4DC;
@@ -81,6 +112,33 @@ html.dark {
   --text: #F3EDE2;
   --text-2: #B8C3CF;
   --accent: #D9B877;
+
+  --surface-muted: #0E1B28;
+  --border-muted: #1A334B;
+  --text-muted: #8292A3;
+
+  --warning-bg: #33250E;
+  --warning-border: #543D15;
+  --warning-text: #F5CE70;
+
+  --info-bg: #112840;
+  --info-border: #1C4167;
+  --info-text: #93C8FD;
+
+  --success-bg: #12301D;
+  --success-border: #1C4E2E;
+  --success-text: #8CE5A4;
+
+  --danger-bg: #351416;
+  --danger-border: #562125;
+  --danger-text: #F99CA0;
+
+  --neutral-badge-bg: #1B2937;
+  --neutral-badge-border: #2B3D50;
+  --neutral-badge-text: #B8C3CF;
+
+  --input-bg: #0F1D2C;
+  --input-border: #28445F;
 
   --ground-site: #0B1622;
   --ground-dashboard: #0B1622;
@@ -305,6 +363,35 @@ html.dark .pearl-bg {
     background-image: none !important;
     background-color: var(--bg-dash) !important;
   }
+}
+
+/* ========================================================
+   STATUS BADGE SEMANTIC UTILITIES (WCAG >= 4.5:1)
+   ======================================================== */
+.badge-status-warning {
+  background-color: var(--warning-bg) !important;
+  color: var(--warning-text) !important;
+  border-color: var(--warning-border) !important;
+}
+.badge-status-info {
+  background-color: var(--info-bg) !important;
+  color: var(--info-text) !important;
+  border-color: var(--info-border) !important;
+}
+.badge-status-success {
+  background-color: var(--success-bg) !important;
+  color: var(--success-text) !important;
+  border-color: var(--success-border) !important;
+}
+.badge-status-danger {
+  background-color: var(--danger-bg) !important;
+  color: var(--danger-text) !important;
+  border-color: var(--danger-border) !important;
+}
+.badge-status-neutral {
+  background-color: var(--neutral-badge-bg) !important;
+  color: var(--neutral-badge-text) !important;
+  border-color: var(--neutral-badge-border) !important;
 }
 
 /* Reduced motion preference (Q10C: ganti dengan fade pendek 150ms, opacity saja) */
