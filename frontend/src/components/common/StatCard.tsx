@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 interface StatCardProps {
   label: string;
@@ -48,15 +49,18 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <div
-      className={`relative overflow-hidden bg-white/95 backdrop-blur-sm border border-[#E6DDD0] rounded-2xl p-5 lg:p-6 transition-all duration-300 hover:border-[#D9B877] hover:shadow-lg hover:shadow-[#D9B877]/10 flex flex-col justify-between group ${className}`}
+      className={cn(
+        'relative overflow-hidden bg-[var(--surface)]/95 backdrop-blur-sm border border-[var(--border)] rounded-2xl p-4 sm:p-5 lg:p-6 transition-all duration-300 hover:border-[#D9B877] hover:shadow-lg hover:shadow-[#D9B877]/10 flex flex-col justify-between group',
+        className
+      )}
     >
       {/* Top Header */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[11px] uppercase tracking-[0.18em] font-semibold text-[#8A6A2F]">
+        <span className="text-[11px] uppercase tracking-[0.18em] font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
           {label}
         </span>
         {icon && (
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F4F1EB] to-[#EAE3D2] border border-[#D9B877]/40 text-[#8A6A2F] flex items-center justify-center shadow-xs transition-transform duration-300 group-hover:scale-110">
+          <div className="w-10 h-10 rounded-full bg-[var(--surface-2)] border border-[#D9B877]/40 text-[#8A6A2F] dark:text-[#D9B877] flex items-center justify-center shadow-xs transition-transform duration-300 group-hover:scale-110">
             {icon}
           </div>
         )}
@@ -64,7 +68,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
       {/* Main Value & Sparkline */}
       <div className="flex items-baseline justify-between my-1">
-        <div className="font-['Cormorant_Garamond',serif] text-3xl lg:text-4xl font-bold text-[#12263A] tracking-tight transition-colors group-hover:text-[#8A6A2F]">
+        <div className="font-serif text-3xl lg:text-4xl font-bold text-[var(--text)] tracking-tight transition-colors group-hover:text-[#8A6A2F] dark:group-hover:text-[#D9B877]">
           {displayValue}
         </div>
 
@@ -96,16 +100,15 @@ export const StatCard: React.FC<StatCardProps> = ({
 
       {/* Delta pill & note */}
       {(note || deltaPercent !== undefined) && (
-        <div className="mt-2.5 pt-2 border-t border-[#F4F1EB] flex items-center justify-between text-xs">
+        <div className="mt-2.5 pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs">
           {deltaPercent !== undefined && (
             <span
-              className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
-                trend === 'up'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : trend === 'down'
-                  ? 'bg-rose-50 text-rose-700 border-rose-200'
-                  : 'bg-gray-50 text-gray-700 border-gray-200'
-              }`}
+              className={cn(
+                'inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border',
+                trend === 'up' && 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+                trend === 'down' && 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800',
+                (!trend || trend === 'neutral') && 'bg-[var(--surface-2)] text-[var(--text-2)] border-[var(--border)]'
+              )}
             >
               {trend === 'up' && <ArrowUpRight className="w-3 h-3" />}
               {trend === 'down' && <ArrowDownRight className="w-3 h-3" />}
@@ -115,7 +118,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           )}
 
           {note && (
-            <span className="text-[12px] text-[#4A5666] truncate ml-auto">
+            <span className="text-[12px] text-[var(--text-2)] truncate ml-auto">
               {note}
             </span>
           )}
@@ -124,3 +127,5 @@ export const StatCard: React.FC<StatCardProps> = ({
     </div>
   );
 };
+
+export default StatCard;

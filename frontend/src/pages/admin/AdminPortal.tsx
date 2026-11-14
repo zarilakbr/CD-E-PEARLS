@@ -1175,7 +1175,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       {userRole === 'spi' && (
         <div className="mb-6 px-4 py-3 rounded-2xl bg-[#12263A] text-[#D9B877] border border-[#D9B877]/40 flex flex-wrap items-center justify-between gap-3 text-xs font-semibold shadow-md animate-in fade-in">
           <div className="flex items-center gap-2.5">
-            <span className="p-1.5 rounded-lg bg-[#D9B877] text-[#12263A]">
+            <span className="p-1.5 rounded-lg bg-[#D9B877] text-[var(--text)]">
               <ShieldCheck className="w-4 h-4" />
             </span>
             <div>
@@ -1191,7 +1191,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               if (onReturnToSpi) onReturnToSpi();
               else window.location.href = '/spi';
             }}
-            className="min-h-[38px] px-4 rounded-full bg-[#D9B877] text-[#12263A] hover:bg-[#E5C78A] transition-colors cursor-pointer text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs shrink-0"
+            className="min-h-[38px] px-4 rounded-full bg-[#D9B877] text-[var(--text)] hover:bg-[#E5C78A] transition-colors cursor-pointer text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs shrink-0"
           >
             <span>Kembali ke Panel SPI</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -1209,7 +1209,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             actions={
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-[11px] font-medium text-[#4A5666] bg-[#F4F1EB] px-3 py-1.5 rounded-full border border-[#E6DDD0] inline-flex items-center gap-1.5 shadow-2xs">
+                <span className="text-[11px] font-medium text-[var(--text-2)] bg-[var(--surface-muted)] px-3 py-1.5 rounded-full border border-[var(--border)] inline-flex items-center gap-1.5 shadow-2xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span>{lastSyncLabel}</span>
                 </span>
@@ -1239,7 +1239,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           />
 
           {/* 4 StatCards (2 kolom di mobile, 4 kolom di desktop) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             <StatCard
               label="Total Penjualan"
               value={`Rp ${(dashboardStats?.total_revenue || 0).toLocaleString('id-ID')}`}
@@ -1263,19 +1263,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           </div>
 
           {/* Grafik Penjualan (Panel lebar dengan periode) */}
-          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 lg:p-8">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 lg:p-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                   Tren Keuangan
                 </span>
-                <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
+                <h3 className="font-serif text-2xl font-semibold text-[var(--text)]">
                   Grafik Penjualan Harian
                 </h3>
               </div>
 
               {/* Pilihan Periode */}
-              <div className="flex items-center gap-2 bg-[#F4F1EB] p-1 rounded-full border border-[#E6DDD0]">
+              <div className="flex items-center gap-2 bg-[var(--surface-muted)] p-1 rounded-full border border-[var(--border)]">
                 {['7 Hari Terakhir', '30 Hari', 'Bulan Ini'].map((p, idx) => (
                   <button
                     key={p}
@@ -1283,7 +1283,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     className={`min-h-[36px] px-4 rounded-full text-xs font-semibold transition-all ${
                       idx === 0
                         ? 'bg-[#12263A] text-white shadow-xs'
-                        : 'text-[#4A5666] hover:text-[#12263A]'
+                        : 'text-[var(--text-2)] hover:text-[var(--text)]'
                     }`}
                   >
                     {p}
@@ -1330,39 +1330,39 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           {/* Dua Panel Bawah: Stok Menipis & Pesanan Terbaru */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Panel Stok Menipis (1 Col) */}
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 flex flex-col justify-between">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                     Inventaris Kritis
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FBEFD5] text-[#7A5410]">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--warning-bg)] text-[var(--warning-text)] border border-[var(--warning-border)]">
                     Perlu Restock
                   </span>
                 </div>
-                <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-4">
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)] mb-4">
                   Stok Menipis
                 </h3>
 
                 <div className="space-y-3">
                   {stockItems.length === 0 && (
-                    <p className="text-xs text-[#4A5666] py-6 text-center">
+                    <p className="text-xs text-[var(--text-2)] py-6 text-center">
                       Semua stok perhiasan dalam kondisi aman.
                     </p>
                   )}
                   {stockItems.slice(0, 4).map((item) => (
                     <div
                       key={item.id}
-                      className="p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] flex items-center justify-between gap-3"
+                      className="p-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] flex items-center justify-between gap-3"
                     >
                       <div className="min-w-0">
-                        <h4 className="text-[13px] font-medium text-[#12263A] truncate">
+                        <h4 className="text-[13px] font-medium text-[var(--text)] truncate">
                           {item.productName}
                         </h4>
-                        <span className="text-[11px] text-[#4A5666]">{item.sku}</span>
+                        <span className="text-[11px] text-[var(--text-2)]">{item.sku}</span>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="font-serif text-base font-semibold text-[#12263A]">
+                        <span className="font-serif text-base font-semibold text-[var(--text)]">
                           {item.stock} unit
                         </span>
                         <div>
@@ -1377,7 +1377,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveMenu('stock')}
-                className="mt-6 w-full min-h-[44px] rounded-full border border-[#12263A] text-[#12263A] hover:bg-[#12263A] hover:text-white transition-all text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                className="mt-6 w-full min-h-[44px] rounded-full border border-[var(--border)] text-[var(--text)] hover:bg-[#12263A] hover:text-white transition-all text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span>Kelola Seluruh Stok</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -1385,14 +1385,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             </div>
 
             {/* Panel Pesanan Terbaru (2 Cols) */}
-            <div className="lg:col-span-2 bg-white border border-[#E6DDD0] rounded-2xl p-6 flex flex-col justify-between">
+            <div className="lg:col-span-2 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                       Aktivitas Penjualan
                     </span>
-                    <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                    <h3 className="font-serif text-xl font-semibold text-[var(--text)]">
                       Pesanan Terbaru
                     </h3>
                   </div>
@@ -1409,7 +1409,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 <div className="w-full overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse text-[13px]">
                     <thead>
-                      <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-medium">
+                      <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-medium">
                         <th className="py-2.5 px-3">No. Pesanan</th>
                         <th className="py-2.5 px-3">Pelanggan</th>
                         <th className="py-2.5 px-3">Produk</th>
@@ -1420,7 +1420,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     <tbody className="divide-y divide-[#E6DDD0]/60">
                       {orders.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="py-8 text-center text-xs text-[#4A5666]">
+                          <td colSpan={5} className="py-8 text-center text-xs text-[var(--text-2)]">
                             Belum ada transaksi pesanan terbaru.
                           </td>
                         </tr>
@@ -1432,18 +1432,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                             setSelectedOrder(order);
                             setActiveMenu('orders');
                           }}
-                          className="hover:bg-[#F4F1EB]/80 cursor-pointer transition-colors"
+                          className="hover:bg-[var(--surface-muted)]/80 cursor-pointer transition-colors"
                         >
-                          <td className="py-3 px-3 font-mono font-medium text-[#12263A]">
+                          <td className="py-3 px-3 font-mono font-medium text-[var(--text)]">
                             {order.id}
                           </td>
-                          <td className="py-3 px-3 text-[#12263A] font-medium">
+                          <td className="py-3 px-3 text-[var(--text)] font-medium">
                             {order.customerName}
                           </td>
-                          <td className="py-3 px-3 text-[#4A5666] truncate max-w-[180px]">
+                          <td className="py-3 px-3 text-[var(--text-2)] truncate max-w-[180px]">
                             {order.productSummary}
                           </td>
-                          <td className="py-3 px-3 font-serif font-semibold text-[#12263A]">
+                          <td className="py-3 px-3 font-serif font-semibold text-[var(--text)]">
                             Rp {order.total.toLocaleString('id-ID')}
                           </td>
                           <td className="py-3 px-3">
@@ -1494,24 +1494,24 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           />
 
           {/* Toolbar: Kolom Cari, Filter Kategori, Varietas, Grade, Status */}
-          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-4 flex flex-wrap items-center gap-3">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 flex flex-wrap items-center gap-3">
             {/* Search */}
-            <div className="relative flex-1 min-w-[200px]">
+            <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
               <input
                 type="text"
                 placeholder="Cari nama produk atau SKU..."
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}
-                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
               />
-              <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-[var(--text-2)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
             {/* Filter Kategori */}
             <select
               aria-label="Filter Kategori" value={productCatFilter}
               onChange={(e) => setProductCatFilter(e.target.value)}
-              className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
+              className="min-h-[44px] px-4 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-medium text-[var(--text)] focus:outline-none"
             >
               <option value="Semua">Semua Kategori</option>
               {categories.map(c => (
@@ -1523,7 +1523,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             <select
               aria-label="Filter Varietas" value={productVarietyFilter}
               onChange={(e) => setProductVarietyFilter(e.target.value)}
-              className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
+              className="min-h-[44px] px-4 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-medium text-[var(--text)] focus:outline-none"
             >
               <option value="Semua">Semua Varietas</option>
               <option value="South Sea Pearl">South Sea Pearl</option>
@@ -1535,7 +1535,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             <select
               aria-label="Filter Grade" value={productGradeFilter}
               onChange={(e) => setProductGradeFilter(e.target.value)}
-              className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
+              className="min-h-[44px] px-4 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-medium text-[var(--text)] focus:outline-none"
             >
               <option value="Semua">Semua Grade</option>
               <option value="AAA">Grade AAA</option>
@@ -1546,7 +1546,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             <select
               aria-label="Filter Status" value={productStatusFilter}
               onChange={(e) => setProductStatusFilter(e.target.value)}
-              className="min-h-[44px] px-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-medium text-[#12263A] focus:outline-none"
+              className="min-h-[44px] px-4 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-medium text-[var(--text)] focus:outline-none"
             >
               <option value="Semua">Semua Status</option>
               <option value="Aktif">Aktif</option>
@@ -1557,18 +1557,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           {/* Tabel Produk (Thumbnail X 48px, Nama, Kategori, Varietas, Grade, Logam, Harga, Stok, Status, Aksi) */}
           <DataTable
             pagination={
-              <div className="flex items-center justify-between w-full text-xs text-[#4A5666]">
+              <div className="flex items-center justify-between w-full text-xs text-[var(--text-2)]">
                 <span>Menampilkan 1-{products.length} dari {products.length} produk</span>
                 <div className="flex gap-2">
-                  <button type="button" disabled className="px-3 py-1.5 rounded-full border border-[#E6DDD0] opacity-50 cursor-not-allowed">Sebelumnya</button>
+                  <button type="button" disabled className="px-3 py-1.5 rounded-full border border-[var(--border)] opacity-50 cursor-not-allowed">Sebelumnya</button>
                   <button type="button" className="px-3 py-1.5 rounded-full bg-[#12263A] text-white font-semibold">1</button>
-                  <button type="button" disabled className="px-3 py-1.5 rounded-full border border-[#E6DDD0] opacity-50 cursor-not-allowed">Selanjutnya</button>
+                  <button type="button" disabled className="px-3 py-1.5 rounded-full border border-[var(--border)] opacity-50 cursor-not-allowed">Selanjutnya</button>
                 </div>
               </div>
             }
           >
             <thead>
-              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+              <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                 <th className="py-3.5 px-4">Foto X</th>
                 <th className="py-3.5 px-4">Nama Produk</th>
                 <th className="py-3.5 px-4">Kategori</th>
@@ -1589,9 +1589,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 .filter(p => productGradeFilter !== 'Semua' ? p.grade === productGradeFilter : true)
                 .filter(p => productStatusFilter !== 'Semua' ? p.status === productStatusFilter : true)
                 .map((product) => (
-                  <tr key={product.id} className="hover:bg-[#F4F1EB]/60 transition-colors">
+                  <tr key={product.id} className="hover:bg-[var(--surface-muted)]/60 transition-colors">
                     <td className="py-3 px-4">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-[var(--border)] bg-[#12263A] shrink-0 shadow-xs">
                         <img
                           src={resolveMediaUrl(product.image) || getAdminProductImage(product.category, product.name)}
                           alt={product.name}
@@ -1603,22 +1603,22 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="font-medium text-[#12263A] max-w-[200px] truncate">{product.name}</div>
-                      <span className="text-[11px] text-[#4A5666]">{product.pearlSize}</span>
+                      <div className="font-medium text-[var(--text)] max-w-[200px] truncate">{product.name}</div>
+                      <span className="text-[11px] text-[var(--text-2)]">{product.pearlSize}</span>
                     </td>
-                    <td className="py-3 px-4 text-[#4A5666]">{product.category}</td>
-                    <td className="py-3 px-4 text-xs font-medium text-[#12263A]">{product.variety}</td>
+                    <td className="py-3 px-4 text-[var(--text-2)]">{product.category}</td>
+                    <td className="py-3 px-4 text-xs font-medium text-[var(--text)]">{product.variety}</td>
                     <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#F4F1EB] text-[#8A6A2F] border border-[#E6DDD0]">
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--surface-muted)] text-[#8A6A2F] border border-[var(--border)]">
                         {product.grade}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-xs text-[#4A5666]">{product.metal}</td>
-                    <td className="py-3 px-4 font-serif font-semibold text-[#12263A]">
+                    <td className="py-3 px-4 text-xs text-[var(--text-2)]">{product.metal}</td>
+                    <td className="py-3 px-4 font-serif font-semibold text-[var(--text)]">
                       {product.formattedPrice}
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`font-semibold ${product.stock <= 2 ? 'text-[#9B1C1C]' : 'text-[#12263A]'}`}>
+                      <span className={`font-semibold ${product.stock <= 2 ? 'text-[#9B1C1C]' : 'text-[var(--text)]'}`}>
                         {product.stock} unit
                       </span>
                     </td>
@@ -1633,7 +1633,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                             setEditingProduct(product);
                             setIsProductSlideOverOpen(true);
                           }}
-                          className="p-1.5 rounded-lg text-[#12263A] hover:bg-[#F4F1EB] transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
                           title="Ubah Produk"
                         >
                           <Pencil className="w-4 h-4" />
@@ -1692,7 +1692,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
           <DataTable>
             <thead>
-              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+              <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                 <th className="py-3.5 px-4">Foto</th>
                 <th className="py-3.5 px-4">Nama Kategori</th>
                 <th className="py-3.5 px-4">Subjudul</th>
@@ -1704,10 +1704,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             </thead>
             <tbody className="divide-y divide-[#E6DDD0]/60">
               {categories.map((cat) => (
-                <tr key={cat.id} className="hover:bg-[#F4F1EB]/60 transition-colors">
+                <tr key={cat.id} className="hover:bg-[var(--surface-muted)]/60 transition-colors">
                   <td className="py-3 px-4">
                     {cat.image ? (
-                      <div className="w-10 h-10 rounded-lg overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden border border-[var(--border)] bg-[#12263A] shrink-0 shadow-xs">
                         <img
                           src={resolveMediaUrl(cat.image)}
                           alt={cat.name}
@@ -1720,10 +1720,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       </span>
                     )}
                   </td>
-                  <td className="py-3 px-4 font-medium text-[#12263A]">{cat.name}</td>
-                  <td className="py-3 px-4 text-xs text-[#4A5666]">{cat.subtitle}</td>
-                  <td className="py-3 px-4 font-semibold text-[#12263A]">{cat.productsCount} Produk</td>
-                  <td className="py-3 px-4 text-xs text-[#4A5666] font-mono">#{cat.order}</td>
+                  <td className="py-3 px-4 font-medium text-[var(--text)]">{cat.name}</td>
+                  <td className="py-3 px-4 text-xs text-[var(--text-2)]">{cat.subtitle}</td>
+                  <td className="py-3 px-4 font-semibold text-[var(--text)]">{cat.productsCount} Produk</td>
+                  <td className="py-3 px-4 text-xs text-[var(--text-2)] font-mono">#{cat.order}</td>
                   <td className="py-3 px-4">
                     <StatusBadge status={cat.status} size="sm" />
                   </td>
@@ -1735,7 +1735,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                           setEditingCategory({ ...cat });
                           setIsCategoryEditModalOpen(true);
                         }}
-                        className="p-1.5 rounded-lg text-[#12263A] hover:bg-[#F4F1EB] transition-colors"
+                        className="p-1.5 rounded-lg text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
                         title="Ubah Kategori"
                       >
                         <Pencil className="w-4 h-4" />
@@ -1758,9 +1758,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           {/* Modal Form Tambah Kategori */}
           {isCategoryModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-              <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 w-full max-w-md shadow-xl">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-md shadow-xl">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
+                  <h3 className="font-serif text-2xl font-semibold text-[var(--text)]">
                     Tambah Kategori Baru
                   </h3>
                   <button
@@ -1770,9 +1770,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       setCategoryModalError(null);
                       setNewCatImage(null);
                     }}
-                    className="p-1 rounded-full hover:bg-[#F4F1EB]"
+                    className="p-1 rounded-full hover:bg-[var(--surface-muted)]"
                   >
-                    <X className="w-5 h-5 text-[#4A5666]" />
+                    <X className="w-5 h-5 text-[var(--text-2)]" />
                   </button>
                 </div>
 
@@ -1784,7 +1784,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
                 <form onSubmit={handleCreateCategory} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                       Nama Kategori
                     </label>
                     <input
@@ -1793,12 +1793,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       placeholder="Contoh: Bros Mutiara"
                       value={newCatName}
                       onChange={(e) => setNewCatName(e.target.value)}
-                      className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                      className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                       Subjudul / Keterangan
                     </label>
                     <input
@@ -1806,12 +1806,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       placeholder="Contoh: Pin Bros Emas 18K Samudera"
                       value={newCatSubtitle}
                       onChange={(e) => setNewCatSubtitle(e.target.value)}
-                      className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                      className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                       Foto Kategori (Wajib)
                     </label>
                     <input
@@ -1823,14 +1823,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                         setNewCatImage(file);
                         setCategoryModalError(null);
                       }}
-                      className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#12263A] file:text-white hover:file:bg-[#1A3652]"
+                      className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#12263A] file:text-white hover:file:bg-[#1A3652]"
                     />
-                    <p className="text-[11px] text-[#4A5666] mt-1">
+                    <p className="text-[11px] text-[var(--text-2)] mt-1">
                       Maksimal 5 MB, maks. 4000 px sisi terpanjang. Format JPG, PNG, atau WebP. Versi WebP akan dibuat otomatis dan EXIF dibersihkan.
                     </p>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-[#E6DDD0]">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border)]">
                     <button
                       type="button"
                       onClick={() => {
@@ -1838,7 +1838,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                         setCategoryModalError(null);
                         setNewCatImage(null);
                       }}
-                      className="min-h-[44px] px-5 rounded-full border border-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB]"
+                      className="min-h-[44px] px-5 rounded-full border border-[var(--border)] text-xs font-semibold hover:bg-[var(--surface-muted)]"
                     >
                       Batal
                     </button>
@@ -1858,9 +1858,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           {/* Modal Form Ubah Kategori */}
           {isCategoryEditModalOpen && editingCategory && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-              <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 w-full max-w-md shadow-xl">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-md shadow-xl">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
+                  <h3 className="font-serif text-2xl font-semibold text-[var(--text)]">
                     Ubah Data Kategori
                   </h3>
                   <button
@@ -1870,9 +1870,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       setCategoryModalError(null);
                       setEditingCatImage(null);
                     }}
-                    className="p-1 rounded-full hover:bg-[#F4F1EB]"
+                    className="p-1 rounded-full hover:bg-[var(--surface-muted)]"
                   >
-                    <X className="w-5 h-5 text-[#4A5666]" />
+                    <X className="w-5 h-5 text-[var(--text-2)]" />
                   </button>
                 </div>
 
@@ -1884,7 +1884,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
                 <form onSubmit={handleUpdateCategory} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                       Nama Kategori
                     </label>
                     <input
@@ -1892,36 +1892,36 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       required
                       value={editingCategory.name}
                       onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
-                      className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                      className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                       Subjudul
                     </label>
                     <input
                       type="text"
                       value={editingCategory.subtitle}
                       onChange={(e) => setEditingCategory({ ...editingCategory, subtitle: e.target.value })}
-                      className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                      className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                       Foto Kategori {!editingCategory.image ? '(Wajib - Belum ada gambar)' : '(Opsional - Ganti Gambar)'}
                     </label>
                     {editingCategory.image ? (
                       <div className="mb-2 flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden border border-[var(--border)] bg-[#12263A] shrink-0">
                           <img
                             src={resolveMediaUrl(editingCategory.image)}
                             alt={editingCategory.name}
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <span className="text-[11px] text-[#4A5666]">Gambar saat ini aktif. Unggah berkas baru bila ingin menggantinya.</span>
+                        <span className="text-[11px] text-[var(--text-2)]">Gambar saat ini aktif. Unggah berkas baru bila ingin menggantinya.</span>
                       </div>
                     ) : (
                       <div className="mb-2">
@@ -1939,33 +1939,33 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                         setEditingCatImage(file);
                         setCategoryModalError(null);
                       }}
-                      className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#12263A] file:text-white hover:file:bg-[#1A3652]"
+                      className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#12263A] file:text-white hover:file:bg-[#1A3652]"
                     />
-                    <p className="text-[11px] text-[#4A5666] mt-1">
+                    <p className="text-[11px] text-[var(--text-2)] mt-1">
                       Maks. 5 MB, maks. 4000 px sisi terpanjang. Mengganti gambar akan menghapus gambar lama secara permanen.
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                         Urutan Tampil
                       </label>
                       <input
                         type="number"
                         value={editingCategory.order}
                         onChange={(e) => setEditingCategory({ ...editingCategory, order: Number(e.target.value) })}
-                        className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
+                        className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)] focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                         Status
                       </label>
                       <select
                         value={editingCategory.status}
                         onChange={(e) => setEditingCategory({ ...editingCategory, status: e.target.value as 'Aktif' | 'Nonaktif' })}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
+                        className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)] focus:outline-none"
                       >
                         <option value="Aktif">Aktif</option>
                         <option value="Nonaktif">Nonaktif</option>
@@ -1973,7 +1973,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-[#E6DDD0]">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border)]">
                     <button
                       type="button"
                       onClick={() => {
@@ -1981,7 +1981,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                         setCategoryModalError(null);
                         setEditingCatImage(null);
                       }}
-                      className="min-h-[44px] px-5 rounded-full border border-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB]"
+                      className="min-h-[44px] px-5 rounded-full border border-[var(--border)] text-xs font-semibold hover:bg-[var(--surface-muted)]"
                     >
                       Batal
                     </button>
@@ -2011,7 +2011,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           />
 
           {/* Tab Status Pesanan */}
-          <div className="flex flex-wrap items-center gap-2 border-b border-[#E6DDD0] pb-3">
+          <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border)] pb-3">
             {['Semua', 'Verifikasi Pembayaran', 'Menunggu Pembayaran', 'Dikemas', 'Dikirim', 'Selesai', 'Dibatalkan'].map((tab) => {
               const isActive = orderStatusTab === tab;
               const count = tab === 'Semua'
@@ -2026,12 +2026,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   onClick={() => setOrderStatusTab(tab)}
                   className={`min-h-[40px] px-4 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                     isActive
-                      ? 'bg-[#12263A] text-white shadow-xs'
-                      : 'bg-white text-[#4A5666] border border-[#E6DDD0] hover:bg-[#F4F1EB]'
+                      ? 'bg-[#12263A] dark:bg-[#D9B877] text-white dark:text-[#0B1622] shadow-xs'
+                      : 'bg-[var(--surface)] text-[var(--text-2)] border border-[var(--border)] hover:bg-[var(--surface-muted)]'
                   }`}
                 >
                   <span>{tab}</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-[#D9B877] text-[#12263A]' : 'bg-[#EDE6DA] text-[#4A5666]'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-[#D9B877] text-[var(--text)]' : 'bg-[#EDE6DA] text-[var(--text-2)]'}`}>
                     {count}
                   </span>
                 </button>
@@ -2041,8 +2041,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
           {/* Detail Pesanan (Jika sedang dibuka) */}
           {selectedOrder ? (
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 lg:p-8 space-y-6 animate-in fade-in">
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E6DDD0]">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 lg:p-8 space-y-6 animate-in fade-in">
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
                 <div>
                   <button
                     type="button"
@@ -2051,10 +2051,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   >
                     ← Kembali ke daftar pesanan
                   </button>
-                  <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#12263A]">
+                  <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[var(--text)]">
                     Detail Pesanan {selectedOrder.id}
                   </h2>
-                  <span className="text-xs text-[#4A5666]">Dibuat pada {selectedOrder.date}</span>
+                  <span className="text-xs text-[var(--text-2)]">Dibuat pada {selectedOrder.date}</span>
                 </div>
                 <div>
                   <StatusBadge status={selectedOrder.status} />
@@ -2068,9 +2068,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 </h4>
                 <div className="space-y-3">
                   {selectedOrder.items.map((it, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3.5 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0]">
+                    <div key={idx} className="flex items-center justify-between p-3.5 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)]">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
+                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-[var(--border)] bg-[#12263A] shrink-0 shadow-xs">
                           <img
                             src={getAdminProductImage('', it.name)}
                             alt={it.name}
@@ -2078,13 +2078,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                           />
                         </div>
                         <div>
-                          <h5 className="font-medium text-[#12263A] text-sm">{it.name}</h5>
-                          <span className="text-xs text-[#4A5666]">{it.pearlSize} • {it.metal}</span>
+                          <h5 className="font-medium text-[var(--text)] text-sm">{it.name}</h5>
+                          <span className="text-xs text-[var(--text-2)]">{it.pearlSize} • {it.metal}</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs text-[#4A5666]">{it.quantity}x</span>
-                        <div className="font-serif font-semibold text-[#12263A]">
+                        <span className="text-xs text-[var(--text-2)]">{it.quantity}x</span>
+                        <div className="font-serif font-semibold text-[var(--text)]">
                           Rp {(it.price * it.quantity).toLocaleString('id-ID')}
                         </div>
                       </div>
@@ -2094,25 +2094,25 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </div>
 
               {/* Alamat & Pembayaran */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[#E6DDD0]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[var(--border)]">
                 <div>
                   <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] mb-2">
                     Alamat Pengiriman
                   </h4>
-                  <p className="font-medium text-sm text-[#12263A]">{selectedOrder.customerName}</p>
-                  <p className="text-xs text-[#4A5666] mt-1">{selectedOrder.shippingAddress}, {selectedOrder.city}</p>
-                  <p className="text-xs text-[#4A5666] mt-0.5">{selectedOrder.customerPhone}</p>
+                  <p className="font-medium text-sm text-[var(--text)]">{selectedOrder.customerName}</p>
+                  <p className="text-xs text-[var(--text-2)] mt-1">{selectedOrder.shippingAddress}, {selectedOrder.city}</p>
+                  <p className="text-xs text-[var(--text-2)] mt-0.5">{selectedOrder.customerPhone}</p>
                 </div>
 
                 <div>
                   <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] mb-2">
                     Ringkasan Pembayaran
                   </h4>
-                  <div className="text-xs space-y-1.5 text-[#4A5666]">
-                    <div className="flex justify-between"><span>Metode:</span><span className="font-medium text-[#12263A]">{selectedOrder.paymentMethod}</span></div>
+                  <div className="text-xs space-y-1.5 text-[var(--text-2)]">
+                    <div className="flex justify-between"><span>Metode:</span><span className="font-medium text-[var(--text)]">{selectedOrder.paymentMethod}</span></div>
                     <div className="flex justify-between"><span>Subtotal:</span><span>Rp {selectedOrder.subtotal.toLocaleString('id-ID')}</span></div>
                     <div className="flex justify-between"><span>Asuransi:</span><span>Rp {selectedOrder.insuranceCost.toLocaleString('id-ID')}</span></div>
-                    <div className="flex justify-between pt-2 border-t border-[#E6DDD0] text-sm font-semibold text-[#12263A]">
+                    <div className="flex justify-between pt-2 border-t border-[var(--border)] text-sm font-semibold text-[var(--text)]">
                       <span>Total:</span>
                       <span className="font-serif text-lg">Rp {selectedOrder.total.toLocaleString('id-ID')}</span>
                     </div>
@@ -2127,10 +2127,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     <div className="flex items-center gap-2.5">
                       <ShieldCheck className="w-5 h-5 text-amber-700" />
                       <div>
-                        <h4 className="text-sm font-bold text-[#12263A]">
+                        <h4 className="text-sm font-bold text-[var(--text)]">
                           Antrean Verifikasi Bukti Pembayaran
                         </h4>
-                        <p className="text-xs text-[#4A5666]">
+                        <p className="text-xs text-[var(--text-2)]">
                           Pelanggan telah mengunggah bukti transfer. Pastikan dana telah masuk mutasi bank sebelum memverifikasi lunas.
                         </p>
                       </div>
@@ -2141,10 +2141,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   </div>
 
                   {selectedOrder.paymentProofUrl && (
-                    <div className="flex items-center gap-4 p-3.5 rounded-xl bg-white border border-amber-200">
+                    <div className="flex items-center gap-4 p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--warning-border)]">
                       <div
                         onClick={() => setPreviewProofUrl(selectedOrder.paymentProofUrl || null)}
-                        className="w-20 h-20 rounded-lg overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 cursor-pointer shadow-xs hover:opacity-90"
+                        className="w-20 h-20 rounded-lg overflow-hidden border border-[var(--border)] bg-[#12263A] shrink-0 cursor-pointer shadow-xs hover:opacity-90"
                       >
                         <ProofImage
                           src={selectedOrder.paymentProofUrl}
@@ -2156,8 +2156,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                         />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-[#12263A]">Berkas Bukti Transfer Pelanggan</p>
-                        <p className="text-[11px] text-[#4A5666] mt-0.5 truncate">
+                        <p className="text-xs font-bold text-[var(--text)]">Berkas Bukti Transfer Pelanggan</p>
+                        <p className="text-[11px] text-[var(--text-2)] mt-0.5 truncate">
                           Jalur: {selectedOrder.paymentProofPath || 'private/payments/...'}
                         </p>
                         <button
@@ -2199,23 +2199,23 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               )}
 
               {/* Status Logistik & Pengiriman (READ-ONLY untuk Admin - Pengiriman diatur SPI) */}
-              <div className="p-4 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0] space-y-3">
+              <div className="p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] space-y-3">
                 <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                   Informasi Logistik &amp; Pengiriman (Otoritas SPI)
                 </h4>
                 {selectedOrder.status === 'Dikirim' ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs bg-white p-3.5 rounded-xl border border-[#E6DDD0]">
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs bg-[var(--surface)] p-3.5 rounded-xl border border-[var(--border)]">
                     <div>
-                      <span className="text-[#4A5666]">Kurir Pengiriman: </span>
-                      <strong className="text-[#12263A]">{selectedOrder.courier || 'JNE Express'}</strong>
+                      <span className="text-[var(--text-2)]">Kurir Pengiriman: </span>
+                      <strong className="text-[var(--text)]">{selectedOrder.courier || 'JNE Express'}</strong>
                     </div>
                     <div>
-                      <span className="text-[#4A5666]">Nomor Resi: </span>
+                      <span className="text-[var(--text-2)]">Nomor Resi: </span>
                       <span className="font-mono font-bold text-[#8A6A2F]">{selectedOrder.trackingNumber || '-'}</span>
                     </div>
                   </div>
                 ) : selectedOrder.paymentStatus === 'PAID' ? (
-                  <p className="text-xs text-[#4A5666]">
+                  <p className="text-xs text-[var(--text-2)]">
                     ✓ Pembayaran telah lunas. Pengambilan barang di brankas, pengemasan, dan input nomor resi pengiriman diproses oleh Satuan Pengawas Internal (SPI).
                   </p>
                 ) : selectedOrder.status === 'Dibatalkan' ? (
@@ -2223,7 +2223,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     Pesanan ini telah dibatalkan dan stok produk telah dikembalikan ke etalase toko.
                   </p>
                 ) : (
-                  <p className="text-xs text-[#4A5666]">
+                  <p className="text-xs text-[var(--text-2)]">
                     Pesanan masih menunggu pembayaran dari pelanggan. Setelah pelanggan mengunggah bukti transfer, pesanan akan masuk ke antrean tab "Verifikasi Pembayaran".
                   </p>
                 )}
@@ -2233,7 +2233,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             /* Tabel Pesanan */
             <DataTable>
               <thead>
-                <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+                <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                   <th className="py-3.5 px-4">No. Pesanan</th>
                   <th className="py-3.5 px-4">Tanggal</th>
                   <th className="py-3.5 px-4">Pelanggan</th>
@@ -2258,16 +2258,16 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     <tr
                       key={order.id}
                       onClick={() => setSelectedOrder(order)}
-                      className="hover:bg-[#F4F1EB]/60 transition-colors cursor-pointer"
+                      className="hover:bg-[var(--surface-muted)]/60 transition-colors cursor-pointer"
                     >
-                      <td className="py-3.5 px-4 font-mono font-medium text-[#12263A]">{order.id}</td>
-                      <td className="py-3.5 px-4 text-xs text-[#4A5666]">{order.date}</td>
-                      <td className="py-3.5 px-4 font-medium text-[#12263A]">{order.customerName}</td>
-                      <td className="py-3.5 px-4 text-xs text-[#4A5666] truncate max-w-[200px]">{order.productSummary}</td>
-                      <td className="py-3.5 px-4 font-serif font-semibold text-[#12263A]">
+                      <td className="py-3.5 px-4 font-mono font-medium text-[var(--text)]">{order.id}</td>
+                      <td className="py-3.5 px-4 text-xs text-[var(--text-2)]">{order.date}</td>
+                      <td className="py-3.5 px-4 font-medium text-[var(--text)]">{order.customerName}</td>
+                      <td className="py-3.5 px-4 text-xs text-[var(--text-2)] truncate max-w-[200px]">{order.productSummary}</td>
+                      <td className="py-3.5 px-4 font-serif font-semibold text-[var(--text)]">
                         Rp {order.total.toLocaleString('id-ID')}
                       </td>
-                      <td className="py-3.5 px-4 text-xs text-[#4A5666]">{order.paymentMethod}</td>
+                      <td className="py-3.5 px-4 text-xs text-[var(--text-2)]">{order.paymentMethod}</td>
                       <td className="py-3.5 px-4">
                         <StatusBadge status={order.status} size="sm" />
                       </td>
@@ -2293,7 +2293,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           />
 
           {selectedCustomer ? (
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 lg:p-8 space-y-6">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 lg:p-8 space-y-6">
               <button
                 type="button"
                 onClick={() => setSelectedCustomer(null)}
@@ -2302,7 +2302,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 ← Kembali ke daftar pelanggan
               </button>
 
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-[#E6DDD0]">
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#D9B877] shrink-0 shadow-sm">
                     <img
@@ -2312,8 +2312,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     />
                   </div>
                   <div>
-                    <h3 className="font-serif text-2xl font-semibold text-[#12263A]">{selectedCustomer.name}</h3>
-                    <p className="text-xs text-[#4A5666]">{selectedCustomer.email} • Bergabung sejak {selectedCustomer.joinDate}</p>
+                    <h3 className="font-serif text-2xl font-semibold text-[var(--text)]">{selectedCustomer.name}</h3>
+                    <p className="text-xs text-[var(--text-2)]">{selectedCustomer.email} • Bergabung sejak {selectedCustomer.joinDate}</p>
                   </div>
                 </div>
 
@@ -2330,29 +2330,29 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
               {/* 2 Cols: Alamat & Ringkasan Belanja */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0]">
+                <div className="p-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)]">
                   <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] mb-2">
                     Daftar Alamat Tersimpan
                   </h4>
                   {selectedCustomer.addresses.map((addr) => (
-                    <div key={addr.id} className="p-3 bg-white rounded-xl border border-[#E6DDD0] mt-2">
+                    <div key={addr.id} className="p-3 bg-[var(--surface-2)] rounded-xl border border-[var(--border)] mt-2">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-xs text-[#12263A]">{addr.label}</span>
+                        <span className="font-semibold text-xs text-[var(--text)]">{addr.label}</span>
                         {addr.isPrimary && <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#E2F1E0] text-[#2B6330] font-bold">Utama</span>}
                       </div>
-                      <p className="text-xs text-[#4A5666] mt-1">{addr.address}, {addr.city}, {addr.postalCode}</p>
+                      <p className="text-xs text-[var(--text-2)] mt-1">{addr.address}, {addr.city}, {addr.postalCode}</p>
                     </div>
                   ))}
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0]">
+                <div className="p-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)]">
                   <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] mb-2">
                     Aktivitas Akun
                   </h4>
-                  <div className="space-y-2 text-xs text-[#4A5666]">
-                    <div className="flex justify-between"><span>Jumlah Pesanan:</span><span className="font-bold text-[#12263A]">{selectedCustomer.totalOrders} Pesanan</span></div>
-                    <div className="flex justify-between"><span>Total Belanja:</span><span className="font-serif text-base font-bold text-[#12263A]">Rp {selectedCustomer.totalSpend.toLocaleString('id-ID')}</span></div>
-                    <div className="flex justify-between"><span>Kota Utama:</span><span className="text-[#12263A]">{selectedCustomer.city}</span></div>
+                  <div className="space-y-2 text-xs text-[var(--text-2)]">
+                    <div className="flex justify-between"><span>Jumlah Pesanan:</span><span className="font-bold text-[var(--text)]">{selectedCustomer.totalOrders} Pesanan</span></div>
+                    <div className="flex justify-between"><span>Total Belanja:</span><span className="font-serif text-base font-bold text-[var(--text)]">Rp {selectedCustomer.totalSpend.toLocaleString('id-ID')}</span></div>
+                    <div className="flex justify-between"><span>Kota Utama:</span><span className="text-[var(--text)]">{selectedCustomer.city}</span></div>
                   </div>
                 </div>
               </div>
@@ -2360,7 +2360,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           ) : (
             <DataTable>
               <thead>
-                <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+                <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                   <th className="py-3.5 px-4">Avatar X</th>
                   <th className="py-3.5 px-4">Nama Pelanggan</th>
                   <th className="py-3.5 px-4">Email</th>
@@ -2376,7 +2376,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <tr
                     key={c.id}
                     onClick={() => setSelectedCustomer(c)}
-                    className="hover:bg-[#F4F1EB]/60 transition-colors cursor-pointer"
+                    className="hover:bg-[var(--surface-muted)]/60 transition-colors cursor-pointer"
                   >
                     <td className="py-3 px-4">
                       <div className="w-9 h-9 rounded-full overflow-hidden border border-[#D9B877] shrink-0 shadow-xs">
@@ -2387,15 +2387,15 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                         />
                       </div>
                     </td>
-                    <td className="py-3 px-4 font-medium text-[#12263A]">{c.name}</td>
-                    <td className="py-3 px-4 text-xs text-[#4A5666]">{c.email}</td>
-                    <td className="py-3 px-4 text-xs font-mono text-[#12263A]">{c.phone}</td>
-                    <td className="py-3 px-4 text-xs text-[#4A5666]">{c.city}</td>
-                    <td className="py-3 px-4 font-semibold text-[#12263A]">{c.totalOrders}x</td>
-                    <td className="py-3 px-4 font-serif font-semibold text-[#12263A]">
+                    <td className="py-3 px-4 font-medium text-[var(--text)]">{c.name}</td>
+                    <td className="py-3 px-4 text-xs text-[var(--text-2)]">{c.email}</td>
+                    <td className="py-3 px-4 text-xs font-mono text-[var(--text)]">{c.phone}</td>
+                    <td className="py-3 px-4 text-xs text-[var(--text-2)]">{c.city}</td>
+                    <td className="py-3 px-4 font-semibold text-[var(--text)]">{c.totalOrders}x</td>
+                    <td className="py-3 px-4 font-serif font-semibold text-[var(--text)]">
                       Rp {c.totalSpend.toLocaleString('id-ID')}
                     </td>
-                    <td className="py-3 px-4 text-xs text-[#4A5666]">{c.joinDate}</td>
+                    <td className="py-3 px-4 text-xs text-[var(--text-2)]">{c.joinDate}</td>
                   </tr>
                 ))}
               </tbody>
@@ -2436,7 +2436,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           {/* Tabel Stok Produk */}
           <DataTable>
             <thead>
-              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+              <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                 <th className="py-3.5 px-4">Nama Produk</th>
                 <th className="py-3.5 px-4">SKU</th>
                 <th className="py-3.5 px-4">Stok Saat Ini</th>
@@ -2447,11 +2447,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             </thead>
             <tbody className="divide-y divide-[#E6DDD0]/60">
               {stockItems.map((item) => (
-                <tr key={item.id} className="hover:bg-[#F4F1EB]/60 transition-colors">
-                  <td className="py-3 px-4 font-medium text-[#12263A]">{item.productName}</td>
-                  <td className="py-3 px-4 font-mono text-xs text-[#4A5666]">{item.sku}</td>
-                  <td className="py-3 px-4 font-serif text-base font-semibold text-[#12263A]">{item.stock} unit</td>
-                  <td className="py-3 px-4 text-xs text-[#4A5666]">{item.minLimit} unit</td>
+                <tr key={item.id} className="hover:bg-[var(--surface-muted)]/60 transition-colors">
+                  <td className="py-3 px-4 font-medium text-[var(--text)]">{item.productName}</td>
+                  <td className="py-3 px-4 font-mono text-xs text-[var(--text-2)]">{item.sku}</td>
+                  <td className="py-3 px-4 font-serif text-base font-semibold text-[var(--text)]">{item.stock} unit</td>
+                  <td className="py-3 px-4 text-xs text-[var(--text-2)]">{item.minLimit} unit</td>
                   <td className="py-3 px-4">
                     <StatusBadge status={item.status} size="sm" />
                   </td>
@@ -2463,7 +2463,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                         setStockAdjustQty(item.stock);
                         setIsAdjustStockOpen(true);
                       }}
-                      className="px-3.5 py-1.5 rounded-full border border-[#12263A] text-xs font-semibold text-[#12263A] hover:bg-[#12263A] hover:text-white transition-all cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-full border border-[var(--border)] text-xs font-semibold text-[var(--text)] hover:bg-[#12263A] hover:text-white transition-all cursor-pointer"
                     >
                       Sesuaikan
                     </button>
@@ -2474,18 +2474,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           </DataTable>
 
           {/* Riwayat Pergerakan Stok */}
-          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
             <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
               Audit Logistik
             </span>
-            <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-4">
+            <h3 className="font-serif text-xl font-semibold text-[var(--text)] mb-4">
               Riwayat Pergerakan Stok
             </h3>
 
             <div className="w-full overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-medium">
+                  <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-medium">
                     <th className="py-2.5 px-3">Tanggal</th>
                     <th className="py-2.5 px-3">Produk</th>
                     <th className="py-2.5 px-3">Jenis</th>
@@ -2493,10 +2493,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     <th className="py-2.5 px-3">Keterangan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E6DDD0]/60 text-[#12263A]">
+                <tbody className="divide-y divide-[#E6DDD0]/60 text-[var(--text)]">
                   {stockMovements.map((m) => (
-                    <tr key={m.id} className="hover:bg-[#F4F1EB]/50">
-                      <td className="py-2.5 px-3 text-[#4A5666]">{m.date}</td>
+                    <tr key={m.id} className="hover:bg-[var(--surface-muted)]/50">
+                      <td className="py-2.5 px-3 text-[var(--text-2)]">{m.date}</td>
                       <td className="py-2.5 px-3 font-medium">{m.productName}</td>
                       <td className="py-2.5 px-3">
                         <span className={`px-2 py-0.5 rounded-full font-semibold ${m.type === 'Masuk' ? 'bg-[#E2F1E0] text-[#2B6330]' : 'bg-[#E1ECF7] text-[#1D4E7A]'}`}>
@@ -2504,7 +2504,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                         </span>
                       </td>
                       <td className="py-2.5 px-3 font-bold">{m.quantity} Unit</td>
-                      <td className="py-2.5 px-3 text-[#4A5666]">{m.notes}</td>
+                      <td className="py-2.5 px-3 text-[var(--text-2)]">{m.notes}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -2515,30 +2515,30 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           {/* Modal Sesuaikan Stok (Aksi Sensitif Diajukan ke SPI) */}
           {isAdjustStockOpen && selectedStockItem && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-              <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 w-full max-w-md shadow-xl">
-                <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-1">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-md shadow-xl">
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)] mb-1">
                   Pengajuan Penyesuaian Stok ke SPI
                 </h3>
-                <p className="text-xs text-[#4A5666] mb-4">
-                  Produk: <strong className="text-[#12263A]">{selectedStockItem.productName}</strong> ({selectedStockItem.sku})
+                <p className="text-xs text-[var(--text-2)] mb-4">
+                  Produk: <strong className="text-[var(--text)]">{selectedStockItem.productName}</strong> ({selectedStockItem.sku})
                 </p>
 
                 <form onSubmit={submitStockAdjustmentApproval} className="space-y-4">
                   <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="p-2.5 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0]">
-                      <span className="text-[#4A5666] block">Stok Saat Ini:</span>
-                      <span className="font-mono font-bold text-sm text-[#12263A]">{selectedStockItem.stock} unit</span>
+                    <div className="p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)]">
+                      <span className="text-[var(--text-2)] block">Stok Saat Ini:</span>
+                      <span className="font-mono font-bold text-sm text-[var(--text)]">{selectedStockItem.stock} unit</span>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0]">
+                    <div className="p-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
                       <span className="text-[#8A6A2F] block font-semibold">Selisih:</span>
-                      <span className="font-mono font-bold text-sm text-[#12263A]">
+                      <span className="font-mono font-bold text-sm text-[var(--text)]">
                         {stockAdjustQty - selectedStockItem.stock > 0 ? `+${stockAdjustQty - selectedStockItem.stock}` : stockAdjustQty - selectedStockItem.stock} unit
                       </span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                       Jumlah Unit Baru <span className="text-red-600">*</span>
                     </label>
                     <input
@@ -2547,12 +2547,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       min={0}
                       value={stockAdjustQty}
                       onChange={(e) => setStockAdjustQty(Number(e.target.value))}
-                      className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]"
+                      className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                       Catatan Alasan Penyesuaian (Wajib untuk SPI) <span className="text-red-600">*</span>
                     </label>
                     <textarea
@@ -2561,7 +2561,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       value={stockAdjustNotes}
                       onChange={(e) => setStockAdjustNotes(e.target.value)}
                       placeholder="Contoh: Penerimaan panen mutiara baru dari farm Sekotong sebanyak 3 butir lolos uji gemologi."
-                      className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                      className="w-full p-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                     />
                   </div>
 
@@ -2569,7 +2569,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsAdjustStockOpen(false)}
-                      className="min-h-[40px] px-4 rounded-full border border-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB]"
+                      className="min-h-[40px] px-4 rounded-full border border-[var(--border)] text-xs font-semibold hover:bg-[var(--surface-muted)]"
                     >
                       Batal
                     </button>
@@ -2610,7 +2610,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
           <DataTable>
             <thead>
-              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+              <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                 <th className="py-3.5 px-4">No. Sertifikat</th>
                 <th className="py-3.5 px-4">Produk Perhiasan</th>
                 <th className="py-3.5 px-4">Lab Penerbit</th>
@@ -2623,17 +2623,17 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             </thead>
             <tbody className="divide-y divide-[#E6DDD0]/60">
               {certificates.map((cert) => (
-                <tr key={cert.id} className="hover:bg-[#F4F1EB]/60 transition-colors">
-                  <td className="py-3 px-4 font-mono font-medium text-[#12263A]">{cert.certNumber}</td>
-                  <td className="py-3 px-4 font-medium text-[#12263A]">{cert.productName}</td>
-                  <td className="py-3 px-4 text-xs text-[#4A5666]">{cert.issuingLab}</td>
+                <tr key={cert.id} className="hover:bg-[var(--surface-muted)]/60 transition-colors">
+                  <td className="py-3 px-4 font-mono font-medium text-[var(--text)]">{cert.certNumber}</td>
+                  <td className="py-3 px-4 font-medium text-[var(--text)]">{cert.productName}</td>
+                  <td className="py-3 px-4 text-xs text-[var(--text-2)]">{cert.issuingLab}</td>
                   <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#F4F1EB] text-[#8A6A2F] border border-[#E6DDD0]">
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--surface-muted)] text-[#8A6A2F] border border-[var(--border)]">
                       {cert.grade}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-xs text-[#4A5666]">{cert.pearlSize}</td>
-                  <td className="py-3 px-4 text-xs text-[#4A5666]">{cert.issueDate}</td>
+                  <td className="py-3 px-4 text-xs text-[var(--text-2)]">{cert.pearlSize}</td>
+                  <td className="py-3 px-4 text-xs text-[var(--text-2)]">{cert.issueDate}</td>
                   <td className="py-3 px-4">
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#E1ECF7] text-[#1D4E7A]">
                       <FileText className="w-3 h-3" />
@@ -2645,7 +2645,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       <button
                         type="button"
                         onClick={() => setSelectedCertPreview(cert)}
-                        className="p-1.5 rounded-lg text-[#12263A] hover:bg-[#F4F1EB] transition-colors"
+                        className="p-1.5 rounded-lg text-[var(--text)] hover:bg-[var(--surface-muted)] transition-colors"
                         title="Lihat & Cetak Sertifikat Gemologi"
                       >
                         <Eye className="w-4 h-4" />
@@ -2668,24 +2668,24 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           {/* Modal Terbitkan Sertifikat Gemologi */}
           {isCertModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-              <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 w-full max-w-md shadow-xl">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-md shadow-xl">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <span className="text-[11px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                       Gemological Authority
                     </span>
-                    <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
+                    <h3 className="font-serif text-2xl font-semibold text-[var(--text)]">
                       Terbitkan Sertifikat Keaslian
                     </h3>
                   </div>
-                  <button type="button" onClick={() => setIsCertModalOpen(false)} className="p-1 rounded-full hover:bg-[#F4F1EB]">
-                    <X className="w-5 h-5 text-[#4A5666]" />
+                  <button type="button" onClick={() => setIsCertModalOpen(false)} className="p-1 rounded-full hover:bg-[var(--surface-muted)]">
+                    <X className="w-5 h-5 text-[var(--text-2)]" />
                   </button>
                 </div>
 
                 <form onSubmit={handleIssueCertificate} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                       Nomor Registrasi Sertifikat
                     </label>
                     <input
@@ -2694,18 +2694,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       placeholder="Contoh: LAB-LMB-9921 atau CERT-9901"
                       value={newCertNumber}
                       onChange={(e) => setNewCertNumber(e.target.value)}
-                      className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm font-mono text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                      className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm font-mono text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                       Pilih Produk Mutiara
                     </label>
                     <select
                       value={newCertProduct}
                       onChange={(e) => setNewCertProduct(e.target.value)}
-                      className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
+                      className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)] focus:outline-none"
                     >
                       {products.map(p => (
                         <option key={p.id} value={p.name}>{p.name}</option>
@@ -2715,31 +2715,31 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                         Lab Penerbit
                       </label>
                       <input
                         type="text"
                         value={newCertLab}
                         onChange={(e) => setNewCertLab(e.target.value)}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none"
+                        className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                         Grade Gemologi
                       </label>
                       <input
                         type="text"
                         value={newCertGrade}
                         onChange={(e) => setNewCertGrade(e.target.value)}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none"
+                        className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text)] uppercase tracking-wider mb-1">
                       Ukuran Diameter Mutiara
                     </label>
                     <input
@@ -2747,15 +2747,15 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       placeholder="11-12 mm"
                       value={newCertPearlSize}
                       onChange={(e) => setNewCertPearlSize(e.target.value)}
-                      className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A] focus:outline-none"
+                      className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)] focus:outline-none"
                     />
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-[#E6DDD0]">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border)]">
                     <button
                       type="button"
                       onClick={() => setIsCertModalOpen(false)}
-                      className="min-h-[44px] px-5 rounded-full border border-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB]"
+                      className="min-h-[44px] px-5 rounded-full border border-[var(--border)] text-xs font-semibold hover:bg-[var(--surface-muted)]"
                     >
                       Batal
                     </button>
@@ -2783,7 +2783,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             description="Analisis performa pendapatan perhiasan mutiara, distribusi kategori, dan produk terlaris."
             actions={
               <div className="flex items-center gap-2">
-                <div className="flex items-center bg-white p-1 rounded-full border border-[#E6DDD0]">
+                <div className="flex items-center bg-[var(--surface)] p-1 rounded-full border border-[var(--border)]">
                   {['Hari ini', '7 hari', '30 hari', 'Kustom'].map((p) => (
                     <button
                       key={p}
@@ -2792,7 +2792,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       className={`min-h-[36px] px-3.5 rounded-full text-xs font-semibold transition-all ${
                         reportPeriod === p
                           ? 'bg-[#12263A] text-white'
-                          : 'text-[#4A5666] hover:text-[#12263A]'
+                          : 'text-[var(--text-2)] hover:text-[var(--text)]'
                       }`}
                     >
                       {p}
@@ -2812,7 +2812,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   <button
                     type="button"
                     onClick={() => window.open(reportApi.getInventoryCsvDownloadUrl(), '_blank')}
-                    className="min-h-[44px] px-4 rounded-full border border-[#12263A] text-[#12263A] text-xs font-semibold inline-flex items-center gap-2 hover:bg-[#F4F1EB] cursor-pointer"
+                    className="min-h-[44px] px-4 rounded-full border border-[var(--border)] text-[var(--text)] text-xs font-semibold inline-flex items-center gap-2 hover:bg-[var(--surface-muted)] cursor-pointer"
                   >
                     <Download className="w-4 h-4 text-[#8A6A2F]" />
                     <span>Ekspor Stok (CSV)</span>
@@ -2843,11 +2843,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
           {/* Dua Grafik: Penjualan Garis & Kategori Batang */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                 Tren Pendapatan
               </span>
-              <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-4">
+              <h3 className="font-serif text-xl font-semibold text-[var(--text)] mb-4">
                 Penjualan per Periode
               </h3>
               <div className="h-[180px] lg:h-[280px] w-full">
@@ -2863,11 +2863,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </div>
             </div>
 
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                 Distribusi Kategori
               </span>
-              <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-4">
+              <h3 className="font-serif text-xl font-semibold text-[var(--text)] mb-4">
                 Penjualan per Kategori
               </h3>
               <div className="h-[180px] lg:h-[280px] w-full">
@@ -2885,18 +2885,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           </div>
 
           {/* Tabel Produk Terlaris */}
-          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
             <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
               Top Performer
             </span>
-            <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-4">
+            <h3 className="font-serif text-xl font-semibold text-[var(--text)] mb-4">
               Produk Terlaris (Bestsellers)
             </h3>
 
             <div className="w-full overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold uppercase tracking-wider">
+                  <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold uppercase tracking-wider">
                     <th className="py-3 px-3">Peringkat</th>
                     <th className="py-3 px-3">Produk</th>
                     <th className="py-3 px-3">Kategori</th>
@@ -2907,18 +2907,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 <tbody className="divide-y divide-[#E6DDD0]/60">
                   {bestsellers.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-6 text-center text-[#4A5666]">
+                      <td colSpan={5} className="py-6 text-center text-[var(--text-2)]">
                         Belum ada data penjualan tercatat.
                       </td>
                     </tr>
                   ) : (
                     bestsellers.map((b) => (
-                      <tr key={b.rank} className="hover:bg-[#F4F1EB]/50">
+                      <tr key={b.rank} className="hover:bg-[var(--surface-muted)]/50">
                         <td className="py-3 px-3 font-serif font-bold text-sm text-[#8A6A2F]">#{b.rank}</td>
-                        <td className="py-3 px-3 font-medium text-[#12263A]">{b.name}</td>
-                        <td className="py-3 px-3 text-[#4A5666]">{b.category}</td>
-                        <td className="py-3 px-3 font-bold text-[#12263A]">{b.sold} Unit</td>
-                        <td className="py-3 px-3 font-serif font-semibold text-[#12263A]">
+                        <td className="py-3 px-3 font-medium text-[var(--text)]">{b.name}</td>
+                        <td className="py-3 px-3 text-[var(--text-2)]">{b.category}</td>
+                        <td className="py-3 px-3 font-bold text-[var(--text)]">{b.sold} Unit</td>
+                        <td className="py-3 px-3 font-serif font-semibold text-[var(--text)]">
                           Rp {b.revenue.toLocaleString('id-ID')}
                         </td>
                       </tr>
@@ -2942,7 +2942,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           />
 
           {/* Tab di bagian atas konten */}
-          <div className="flex flex-wrap items-center gap-2 border-b border-[#E6DDD0] pb-3">
+          <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border)] pb-3">
             {[
               { id: 'profile', label: 'Profil Toko' },
               { id: 'contact', label: 'Kontak & WhatsApp' },
@@ -2957,8 +2957,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 onClick={() => setActiveSettingsTab(tab.id)}
                 className={`min-h-[40px] px-5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   activeSettingsTab === tab.id
-                    ? 'bg-[#12263A] text-white shadow-xs'
-                    : 'bg-white border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB]'
+                    ? 'bg-[#12263A] dark:bg-[#D9B877] text-white dark:text-[#0B1622] shadow-xs'
+                    : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--surface-muted)]'
                 }`}
               >
                 {tab.label}
@@ -2966,17 +2966,17 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             ))}
           </div>
 
-          <div className={`bg-white border border-[#E6DDD0] rounded-2xl p-6 lg:p-8 ${activeSettingsTab === 'vouchers' ? 'max-w-5xl w-full' : 'max-w-2xl'}`}>
+          <div className={`bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 lg:p-8 ${activeSettingsTab === 'vouchers' ? 'max-w-5xl w-full' : 'max-w-2xl'}`}>
             {activeSettingsTab === 'profile' && (
               <div className="space-y-4">
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">Profil Toko</h3>
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)]">Profil Toko</h3>
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Nama Butik / Toko</label>
-                  <input type="text" defaultValue="CD'E Pearls Lombok Atelier" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Nama Butik / Toko</label>
+                  <input type="text" defaultValue="CD'E Pearls Lombok Atelier" className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Logo Resmi Atelier CD'E Pearls</label>
-                  <div className="p-3 bg-[#FBF8F3] border border-[#E6DDD0] rounded-xl inline-block shadow-xs">
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Logo Resmi Atelier CD'E Pearls</label>
+                  <div className="p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl inline-block shadow-xs">
                     <img
                       src="/images/cde_logo.png"
                       alt="CD'E Pearls Official Logo"
@@ -2985,8 +2985,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Deskripsi Singkat</label>
-                  <textarea rows={3} defaultValue="Atelier mutiara air laut selatan pilihan dari Lombok dengan kilau cermin alami dan sertifikasi gemologi resmi." className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Deskripsi Singkat</label>
+                  <textarea rows={3} defaultValue="Atelier mutiara air laut selatan pilihan dari Lombok dengan kilau cermin alami dan sertifikasi gemologi resmi." className="w-full p-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)]" />
                 </div>
                 <button type="button" onClick={() => toast.success('Perubahan profil toko perhiasan berhasil disimpan.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
               </div>
@@ -2994,18 +2994,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {activeSettingsTab === 'contact' && (
               <div className="space-y-4">
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">Kontak &amp; WhatsApp Concierge</h3>
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)]">Kontak &amp; WhatsApp Concierge</h3>
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Nomor WhatsApp Concierge</label>
-                  <input type="text" defaultValue="+62 812-3900-1122" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Nomor WhatsApp Concierge</label>
+                  <input type="text" defaultValue="+62 812-3900-1122" className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Akun Instagram</label>
-                  <input type="text" defaultValue="@cdepearlslombok" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Akun Instagram</label>
+                  <input type="text" defaultValue="@cdepearlslombok" className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Alamat Atelier</label>
-                  <textarea rows={2} defaultValue="Kawasan Pesisir Sire, Tanjung, Kabupaten Lombok Utara, Nusa Tenggara Barat 83352" className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Alamat Atelier</label>
+                  <textarea rows={2} defaultValue="Kawasan Pesisir Sire, Tanjung, Kabupaten Lombok Utara, Nusa Tenggara Barat 83352" className="w-full p-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)]" />
                 </div>
                 <button type="button" onClick={() => toast.success('Pengaturan kontak concierge berhasil disimpan.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Perubahan</button>
               </div>
@@ -3013,18 +3013,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {activeSettingsTab === 'shipping' && (
               <div className="space-y-4">
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">Pengiriman &amp; Asuransi</h3>
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)]">Pengiriman &amp; Asuransi</h3>
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-xs text-[#12263A]">
-                    <input type="checkbox" defaultChecked className="accent-[#12263A] w-4 h-4" />
+                  <label className="flex items-center gap-2 text-xs text-[var(--text)]">
+                    <input type="checkbox" defaultChecked className="accent-[var(--accent)] w-4 h-4" />
                     <span>JNE Express (YES &amp; Reguler Berasuransi)</span>
                   </label>
-                  <label className="flex items-center gap-2 text-xs text-[#12263A]">
-                    <input type="checkbox" defaultChecked className="accent-[#12263A] w-4 h-4" />
+                  <label className="flex items-center gap-2 text-xs text-[var(--text)]">
+                    <input type="checkbox" defaultChecked className="accent-[var(--accent)] w-4 h-4" />
                     <span>TIKI ONS (Over Night Services Berasuransi)</span>
                   </label>
-                  <label className="flex items-center gap-2 text-xs text-[#12263A]">
-                    <input type="checkbox" defaultChecked className="accent-[#12263A] w-4 h-4" />
+                  <label className="flex items-center gap-2 text-xs text-[var(--text)]">
+                    <input type="checkbox" defaultChecked className="accent-[var(--accent)] w-4 h-4" />
                     <span>Wajibkan Asuransi Penuh untuk Nilai Tinggi</span>
                   </label>
                 </div>
@@ -3034,14 +3034,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {activeSettingsTab === 'payment' && (
               <div className="space-y-4">
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">Metode Pembayaran</h3>
-                <div className="p-3 bg-[#F4F1EB] rounded-xl text-xs space-y-1">
-                  <p className="font-semibold text-[#12263A]">Rekening Utama BCA Atelier:</p>
-                  <p className="font-mono text-[#12263A]">056-118-9900 a.n. PT CD'E Pearls Lombok</p>
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)]">Metode Pembayaran</h3>
+                <div className="p-3 bg-[var(--surface-muted)] rounded-xl text-xs space-y-1">
+                  <p className="font-semibold text-[var(--text)]">Rekening Utama BCA Atelier:</p>
+                  <p className="font-mono text-[var(--text)]">056-118-9900 a.n. PT CD'E Pearls Lombok</p>
                 </div>
-                <div className="p-3 bg-[#F4F1EB] rounded-xl text-xs space-y-1">
-                  <p className="font-semibold text-[#12263A]">Rekening Mandiri Bisnis:</p>
-                  <p className="font-mono text-[#12263A]">142-00-9922881-0 a.n. CD'E Pearls Official</p>
+                <div className="p-3 bg-[var(--surface-muted)] rounded-xl text-xs space-y-1">
+                  <p className="font-semibold text-[var(--text)]">Rekening Mandiri Bisnis:</p>
+                  <p className="font-mono text-[var(--text)]">142-00-9922881-0 a.n. CD'E Pearls Official</p>
                 </div>
                 <button type="button" onClick={() => toast.success('Informasi rekening pembayaran bank berhasil diperbarui.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Perbarui Rekening</button>
               </div>
@@ -3049,18 +3049,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             {activeSettingsTab === 'security' && (
               <div className="space-y-4">
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">Akun &amp; Keamanan</h3>
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)]">Akun &amp; Keamanan</h3>
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Nama Petugas</label>
-                  <input type="text" placeholder="Nama Petugas" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Nama Petugas</label>
+                  <input type="text" placeholder="Nama Petugas" className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Email Login</label>
-                  <input type="email" placeholder="admin@cdepearls.com" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Email Login</label>
+                  <input type="email" placeholder="admin@cdepearls.com" className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Kata Sandi Baru</label>
-                  <input type="password" placeholder="••••••••••••" className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-sm text-[#12263A]" />
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Kata Sandi Baru</label>
+                  <input type="password" placeholder="••••••••••••" className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm text-[var(--text)]" />
                 </div>
                 <button type="button" onClick={() => toast.success('Kredensial keamanan akun staf telah diperbarui.')} className="min-h-[44px] px-6 rounded-full bg-[#12263A] text-white text-xs font-semibold cursor-pointer">Simpan Keamanan</button>
               </div>
@@ -3070,8 +3070,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                    <h3 className="font-serif text-xl font-semibold text-[#12263A]">Voucher &amp; Promosi</h3>
-                    <p className="text-xs text-[#4A5666] mt-0.5">Kelola kupon diskon, kuota pemakaian, dan minimal belanja untuk pelanggan.</p>
+                    <h3 className="font-serif text-xl font-semibold text-[var(--text)]">Voucher &amp; Promosi</h3>
+                    <p className="text-xs text-[var(--text-2)] mt-0.5">Kelola kupon diskon, kuota pemakaian, dan minimal belanja untuk pelanggan.</p>
                   </div>
                   <button
                     type="button"
@@ -3084,18 +3084,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 </div>
 
                 {isLoadingVouchers ? (
-                  <div className="p-8 text-center text-xs text-[#4A5666]">Memuat data voucher...</div>
+                  <div className="p-8 text-center text-xs text-[var(--text-2)]">Memuat data voucher...</div>
                 ) : vouchers.length === 0 ? (
-                  <div className="p-8 text-center bg-[#F4F1EB] rounded-2xl border border-[#E6DDD0] space-y-2">
+                  <div className="p-8 text-center bg-[var(--surface-muted)] rounded-2xl border border-[var(--border)] space-y-2">
                     <Tag className="w-8 h-8 text-[#A08A5B] mx-auto" />
-                    <p className="font-semibold text-sm text-[#12263A]">Belum Ada Voucher</p>
-                    <p className="text-xs text-[#4A5666]">Klik tombol "Tambah Voucher" untuk membuat kode diskon baru.</p>
+                    <p className="font-semibold text-sm text-[var(--text)]">Belum Ada Voucher</p>
+                    <p className="text-xs text-[var(--text-2)]">Klik tombol "Tambah Voucher" untuk membuat kode diskon baru.</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto -mx-2 sm:mx-0">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b border-[#E6DDD0] text-[#8A6A2F] uppercase text-[10px] tracking-wider">
+                        <tr className="border-b border-[var(--border)] text-[#8A6A2F] uppercase text-[10px] tracking-wider">
                           <th className="py-3 px-3">Kode</th>
                           <th className="py-3 px-3">Potongan</th>
                           <th className="py-3 px-3">Min. Belanja</th>
@@ -3106,22 +3106,22 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       </thead>
                       <tbody className="divide-y divide-[#E6DDD0]">
                         {vouchers.map((v) => (
-                          <tr key={v.id} className="hover:bg-[#FBF8F3] transition-colors">
-                            <td className="py-3 px-3 font-mono font-bold text-[#12263A]">
-                              <span className="px-2.5 py-1 bg-[#F4F1EB] rounded-lg border border-[#E6DDD0]">
+                          <tr key={v.id} className="hover:bg-[var(--surface-2)] transition-colors">
+                            <td className="py-3 px-3 font-mono font-bold text-[var(--text)]">
+                              <span className="px-2.5 py-1 bg-[var(--surface-muted)] rounded-lg border border-[var(--border)]">
                                 {v.code}
                               </span>
                             </td>
-                            <td className="py-3 px-3 text-[#12263A] font-semibold">
+                            <td className="py-3 px-3 text-[var(--text)] font-semibold">
                               {v.type === 'percent'
                                 ? `${v.value}%`
                                 : `Rp ${Number(v.value).toLocaleString('id-ID')}`}
                             </td>
-                            <td className="py-3 px-3 text-[#4A5666]">
+                            <td className="py-3 px-3 text-[var(--text-2)]">
                               Rp {Number(v.min_spend || 0).toLocaleString('id-ID')}
                             </td>
-                            <td className="py-3 px-3 text-[#4A5666]">
-                              <span className="font-semibold text-[#12263A]">{v.used_count || 0}</span> / {v.quota ? v.quota : '∞'}
+                            <td className="py-3 px-3 text-[var(--text-2)]">
+                              <span className="font-semibold text-[var(--text)]">{v.used_count || 0}</span> / {v.quota ? v.quota : '∞'}
                             </td>
                             <td className="py-3 px-3">
                               <span
@@ -3138,7 +3138,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => openEditVoucherModal(v)}
-                                className="p-1.5 rounded-lg text-[#12263A] hover:bg-[#F4F1EB] cursor-pointer"
+                                className="p-1.5 rounded-lg text-[var(--text)] hover:bg-[var(--surface-muted)] cursor-pointer"
                                 title="Edit Voucher"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
@@ -3172,32 +3172,32 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
          ======================================================== */}
       {isPaymentApprovalModalOpen && paymentApprovalOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4 animate-in zoom-in-95">
+          <div className="bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-3xl w-[calc(100%-1.5rem)] max-w-md max-h-[92dvh] overflow-y-auto p-5 sm:p-8 shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#12263A] text-[#D9B877] flex items-center justify-center font-bold">
                 <FileText className="w-5 h-5 text-[#D9B877]" />
               </div>
               <div>
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)]">
                   Ajukan Konfirmasi Pembayaran
                 </h3>
-                <p className="text-xs text-[#4A5666]">
-                  Pesanan: <span className="font-mono font-bold text-[#12263A]">{paymentApprovalOrder.id}</span>
+                <p className="text-xs text-[var(--text-2)]">
+                  Pesanan: <span className="font-mono font-bold text-[var(--text)]">{paymentApprovalOrder.id}</span>
                 </p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs space-y-1.5">
+            <div className="p-3.5 rounded-2xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs space-y-1.5">
               <div className="flex justify-between">
-                <span className="text-[#4A5666]">Pelanggan:</span>
-                <span className="font-semibold text-[#12263A]">{paymentApprovalOrder.customerName}</span>
+                <span className="text-[var(--text-2)]">Pelanggan:</span>
+                <span className="font-semibold text-[var(--text)]">{paymentApprovalOrder.customerName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#4A5666]">Metode Pembayaran:</span>
-                <span className="font-semibold text-[#12263A]">{paymentApprovalOrder.paymentMethod}</span>
+                <span className="text-[var(--text-2)]">Metode Pembayaran:</span>
+                <span className="font-semibold text-[var(--text)]">{paymentApprovalOrder.paymentMethod}</span>
               </div>
-              <div className="flex justify-between border-t border-[#E6DDD0] pt-1.5">
-                <span className="text-[#4A5666]">Total Tagihan:</span>
+              <div className="flex justify-between border-t border-[var(--border)] pt-1.5">
+                <span className="text-[var(--text-2)]">Total Tagihan:</span>
                 <span className="font-mono font-bold text-[#8A6A2F]">
                   Rp {paymentApprovalOrder.total.toLocaleString('id-ID')}
                 </span>
@@ -3206,7 +3206,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             <form onSubmit={submitPaymentApproval} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                   Catatan Admin (Wajib Diisi untuk Verifikasi SPI) <span className="text-red-600">*</span>
                 </label>
                 <textarea
@@ -3215,7 +3215,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   value={paymentApprovalNotes}
                   onChange={(e) => setPaymentApprovalNotes(e.target.value)}
                   placeholder="Contoh: Bukti mutasi transfer telah terverifikasi masuk rekening butik atas nama pemesan."
-                  className="w-full p-3 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
+                  className="w-full p-3 rounded-2xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)] focus:bg-[var(--surface)]"
                 />
               </div>
 
@@ -3226,7 +3226,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     setIsPaymentApprovalModalOpen(false);
                     setPaymentApprovalOrder(null);
                   }}
-                  className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold cursor-pointer"
+                  className="min-h-[42px] px-5 rounded-full border border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--surface-muted)] text-xs font-semibold cursor-pointer"
                 >
                   Batal
                 </button>
@@ -3249,28 +3249,28 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
          ======================================================== */}
       {isRejectPaymentModalOpen && selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4 animate-in zoom-in-95">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold">
                 <X className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)]">
                   Tolak Bukti Pembayaran
                 </h3>
-                <p className="text-xs text-[#4A5666]">
-                  Pesanan: <span className="font-mono font-bold text-[#12263A]">{selectedOrder.id}</span>
+                <p className="text-xs text-[var(--text-2)]">
+                  Pesanan: <span className="font-mono font-bold text-[var(--text)]">{selectedOrder.id}</span>
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-[#4A5666]">
+            <p className="text-xs text-[var(--text-2)]">
               Pesanan akan dikembalikan ke status <strong>Menunggu Pembayaran</strong> dan pembeli akan melihat alasan penolakan di akun mereka untuk mengunggah ulang bukti transfer.
             </p>
 
             <form onSubmit={handleRejectPaymentDirect} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                   Alasan Penolakan Pembayaran (Minimal 5 Karakter) <span className="text-red-600">*</span>
                 </label>
                 <textarea
@@ -3279,7 +3279,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   value={rejectPaymentReason}
                   onChange={(e) => setRejectPaymentReason(e.target.value)}
                   placeholder="Contoh: Bukti transfer buram/tidak terbaca, nominal tidak cocok, atau mutasi bank belum masuk."
-                  className="w-full p-3 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#8A6A2F]"
+                  className="w-full p-3 rounded-2xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[#8A6A2F]"
                 />
               </div>
 
@@ -3290,7 +3290,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     setIsRejectPaymentModalOpen(false);
                     setRejectPaymentReason('');
                   }}
-                  className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold cursor-pointer"
+                  className="min-h-[42px] px-5 rounded-full border border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--surface-muted)] text-xs font-semibold cursor-pointer"
                 >
                   Batal
                 </button>
@@ -3316,20 +3316,20 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           onClick={() => setPreviewProofUrl(null)}
         >
           <div
-            className="relative max-w-2xl w-full bg-white rounded-3xl p-4 shadow-2xl overflow-hidden"
+            className="relative w-[calc(100%-1.5rem)] max-w-2xl max-h-[92dvh] overflow-y-auto bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-3xl p-4 sm:p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0] mb-3">
-              <h4 className="font-semibold text-sm text-[#12263A]">Pratinjau Bukti Transfer</h4>
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)] mb-3">
+              <h4 className="font-semibold text-sm text-[var(--text)]">Pratinjau Bukti Transfer</h4>
               <button
                 type="button"
                 onClick={() => setPreviewProofUrl(null)}
-                className="p-1 rounded-full hover:bg-[#F4F1EB] text-[#4A5666] cursor-pointer"
+                className="p-1 rounded-full hover:bg-[var(--surface-muted)] text-[var(--text-2)] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="max-h-[75vh] overflow-auto flex items-center justify-center bg-[#F4F1EB] rounded-2xl p-2">
+            <div className="max-h-[75vh] overflow-auto flex items-center justify-center bg-[var(--surface-muted)] rounded-2xl p-2">
               <ProofImage
                 src={previewProofUrl}
                 orderId={selectedOrder?.id}
@@ -3349,16 +3349,16 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
          ======================================================== */}
       {isPriceApprovalModalOpen && priceApprovalProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4 animate-in zoom-in-95">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#FBEFD5] text-[#7A5410] flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-full bg-[var(--warning-bg)] text-[var(--warning-text)] border border-[var(--warning-border)] flex items-center justify-center font-bold">
                 %
               </div>
               <div>
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)]">
                   Otorisasi SPI: Ubah Harga &gt;{APPROVAL_RULES.PRICE_CHANGE_PERCENT_THRESHOLD}%
                 </h3>
-                <p className="text-xs text-[#4A5666]">
+                <p className="text-xs text-[var(--text-2)]">
                   {priceApprovalProduct.product.name}
                 </p>
               </div>
@@ -3381,7 +3381,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             <form onSubmit={submitPriceChangeApproval} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                   Catatan Justifikasi Perubahan Harga (Wajib) <span className="text-red-600">*</span>
                 </label>
                 <textarea
@@ -3390,7 +3390,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   value={priceApprovalNotes}
                   onChange={(e) => setPriceApprovalNotes(e.target.value)}
                   placeholder="Contoh: Kenaikan harga emas 18K dunia dan sertifikasi grade AAA mirror luster."
-                  className="w-full p-3 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                  className="w-full p-3 rounded-2xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                 />
               </div>
 
@@ -3401,7 +3401,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     setIsPriceApprovalModalOpen(false);
                     setPriceApprovalProduct(null);
                   }}
-                  className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold cursor-pointer"
+                  className="min-h-[42px] px-5 rounded-full border border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--surface-muted)] text-xs font-semibold cursor-pointer"
                 >
                   Batal
                 </button>
@@ -3423,35 +3423,35 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
          ======================================================== */}
       {isCancelOrderApprovalModalOpen && cancelOrderCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4 animate-in zoom-in-95">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-800 flex items-center justify-center font-bold">
                 <X className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)]">
                   Ajukan Pembatalan Pesanan
                 </h3>
-                <p className="text-xs text-[#4A5666]">
-                  Pesanan: <span className="font-mono font-bold text-[#12263A]">{cancelOrderCandidate.id}</span>
+                <p className="text-xs text-[var(--text-2)]">
+                  Pesanan: <span className="font-mono font-bold text-[var(--text)]">{cancelOrderCandidate.id}</span>
                 </p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs space-y-1">
+            <div className="p-3.5 rounded-2xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs space-y-1">
               <div className="flex justify-between">
-                <span className="text-[#4A5666]">Pelanggan:</span>
-                <span className="font-semibold text-[#12263A]">{cancelOrderCandidate.customerName}</span>
+                <span className="text-[var(--text-2)]">Pelanggan:</span>
+                <span className="font-semibold text-[var(--text)]">{cancelOrderCandidate.customerName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#4A5666]">Total Pesanan:</span>
-                <span className="font-mono font-bold text-[#12263A]">Rp {cancelOrderCandidate.total.toLocaleString('id-ID')}</span>
+                <span className="text-[var(--text-2)]">Total Pesanan:</span>
+                <span className="font-mono font-bold text-[var(--text)]">Rp {cancelOrderCandidate.total.toLocaleString('id-ID')}</span>
               </div>
             </div>
 
             <form onSubmit={submitCancelOrderApproval} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                   Catatan Alasan Pembatalan (Wajib untuk SPI) <span className="text-red-600">*</span>
                 </label>
                 <textarea
@@ -3460,7 +3460,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   value={cancelOrderNotes}
                   onChange={(e) => setCancelOrderNotes(e.target.value)}
                   placeholder="Contoh: Permintaan pembeli karena ingin mengganti pesanan dengan ukuran mutiara yang lebih besar."
-                  className="w-full p-3 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                  className="w-full p-3 rounded-2xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                 />
               </div>
 
@@ -3471,7 +3471,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     setIsCancelOrderApprovalModalOpen(false);
                     setCancelOrderCandidate(null);
                   }}
-                  className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold cursor-pointer"
+                  className="min-h-[42px] px-5 rounded-full border border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--surface-muted)] text-xs font-semibold cursor-pointer"
                 >
                   Batal
                 </button>
@@ -3500,55 +3500,55 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
          ======================================================== */}
       {selectedCertPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#D9B877] rounded-3xl max-w-lg w-full p-8 shadow-2xl relative animate-in fade-in zoom-in-95">
+          <div className="bg-[var(--surface)] border-2 border-[#D9B877] rounded-3xl w-[calc(100%-1.5rem)] max-w-lg max-h-[92dvh] overflow-y-auto p-5 sm:p-8 shadow-2xl relative animate-in fade-in zoom-in-95 text-[var(--text)]">
             {/* Header Sertifikat */}
-            <div className="text-center border-b border-[#E6DDD0] pb-6 mb-6">
+            <div className="text-center border-b border-[var(--border)] pb-6 mb-6">
               <div className="w-14 h-14 mx-auto rounded-full bg-[#12263A] text-[#D9B877] flex items-center justify-center mb-3 shadow-md border-2 border-[#D9B877]">
                 <Award className="w-7 h-7" />
               </div>
               <span className="text-[11px] uppercase tracking-[0.22em] font-semibold text-[#8A6A2F] block">
                 Certificate of Authenticity &amp; Gemology
               </span>
-              <h3 className="font-serif text-3xl font-bold text-[#12263A] mt-1">
+              <h3 className="font-serif text-3xl font-bold text-[var(--text)] mt-1">
                 CD'E Pearls Lombok
               </h3>
-              <p className="text-xs text-[#4A5666] font-mono mt-1">
+              <p className="text-xs text-[var(--text-2)] font-mono mt-1">
                 Registrasi Resmi: {selectedCertPreview.certNumber}
               </p>
             </div>
 
             {/* Spesifikasi Mutiara */}
-            <div className="space-y-3 text-xs bg-[#FBF8F3] p-5 rounded-2xl border border-[#E6DDD0]">
-              <div className="flex justify-between border-b border-[#E6DDD0]/60 pb-2">
-                <span className="text-[#4A5666]">Produk Perhiasan:</span>
-                <span className="font-semibold text-[#12263A] text-right">{selectedCertPreview.productName}</span>
+            <div className="space-y-3 text-xs bg-[var(--surface-2)] p-5 rounded-2xl border border-[var(--border)]">
+              <div className="flex justify-between border-b border-[var(--border)]/60 pb-2">
+                <span className="text-[var(--text-2)]">Produk Perhiasan:</span>
+                <span className="font-semibold text-[var(--text)] text-right">{selectedCertPreview.productName}</span>
               </div>
-              <div className="flex justify-between border-b border-[#E6DDD0]/60 pb-2">
-                <span className="text-[#4A5666]">Laboratorium Gemologi:</span>
-                <span className="font-semibold text-[#12263A]">{selectedCertPreview.issuingLab}</span>
+              <div className="flex justify-between border-b border-[var(--border)]/60 pb-2">
+                <span className="text-[var(--text-2)]">Laboratorium Gemologi:</span>
+                <span className="font-semibold text-[var(--text)]">{selectedCertPreview.issuingLab}</span>
               </div>
-              <div className="flex justify-between border-b border-[#E6DDD0]/60 pb-2">
-                <span className="text-[#4A5666]">Grade &amp; Kilau (Luster):</span>
+              <div className="flex justify-between border-b border-[var(--border)]/60 pb-2">
+                <span className="text-[var(--text-2)]">Grade &amp; Kilau (Luster):</span>
                 <span className="font-bold text-[#8A6A2F]">{selectedCertPreview.grade}</span>
               </div>
-              <div className="flex justify-between border-b border-[#E6DDD0]/60 pb-2">
-                <span className="text-[#4A5666]">Ukuran Diameter:</span>
-                <span className="font-semibold text-[#12263A]">{selectedCertPreview.pearlSize}</span>
+              <div className="flex justify-between border-b border-[var(--border)]/60 pb-2">
+                <span className="text-[var(--text-2)]">Ukuran Diameter:</span>
+                <span className="font-semibold text-[var(--text)]">{selectedCertPreview.pearlSize}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#4A5666]">Tanggal Penerbitan:</span>
-                <span className="font-mono text-[#12263A]">{selectedCertPreview.issueDate}</span>
+                <span className="text-[var(--text-2)]">Tanggal Penerbitan:</span>
+                <span className="font-mono text-[var(--text)]">{selectedCertPreview.issueDate}</span>
               </div>
             </div>
 
             {/* Seal & QR Verification */}
-            <div className="flex items-center justify-between gap-4 mt-6 pt-4 border-t border-[#E6DDD0]">
+            <div className="flex items-center justify-between gap-4 mt-6 pt-4 border-t border-[var(--border)]">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-[#12263A] rounded-xl flex items-center justify-center text-[#D9B877] font-bold font-mono text-[10px] text-center leading-none p-1">
                   QR VERIFIED
                 </div>
-                <div className="text-[11px] text-[#4A5666]">
-                  <span className="font-semibold text-[#12263A] block">100% Genuine South Sea Pearl</span>
+                <div className="text-[11px] text-[var(--text-2)]">
+                  <span className="font-semibold text-[var(--text)] block">100% Genuine South Sea Pearl</span>
                   <span>Budidaya Perairan Pesisir Sire Lombok</span>
                 </div>
               </div>
@@ -3565,7 +3565,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             <button
               type="button"
               onClick={() => setSelectedCertPreview(null)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#F4F1EB] text-[#4A5666]"
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-[var(--surface-muted)] text-[var(--text-2)]"
             >
               <X className="w-5 h-5" />
             </button>
@@ -3579,26 +3579,26 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       {/* 1. Hapus Produk (Aksi Sensitif Diajukan ke SPI) */}
       {productToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white border border-[#E6DDD0] rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95 text-[#12263A]">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95 text-[var(--text)]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
                 <Trash2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">Ajukan Hapus Produk ke SPI</h3>
-                <p className="text-xs text-[#4A5666]">Penghapusan SKU mutiara membutuhkan persetujuan resmi SPI.</p>
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)]">Ajukan Hapus Produk ke SPI</h3>
+                <p className="text-xs text-[var(--text-2)]">Penghapusan SKU mutiara membutuhkan persetujuan resmi SPI.</p>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs space-y-1">
-              <div><span className="text-[#4A5666]">Nama Produk:</span> <strong className="text-[#12263A]">{productToDelete.name}</strong></div>
-              <div><span className="text-[#4A5666]">Kategori:</span> {productToDelete.category} • <span className="text-[#4A5666]">Stok:</span> {productToDelete.stock} unit</div>
-              <div><span className="text-[#4A5666]">Harga:</span> {productToDelete.formattedPrice}</div>
+            <div className="p-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs space-y-1">
+              <div><span className="text-[var(--text-2)]">Nama Produk:</span> <strong className="text-[var(--text)]">{productToDelete.name}</strong></div>
+              <div><span className="text-[var(--text-2)]">Kategori:</span> {productToDelete.category} • <span className="text-[var(--text-2)]">Stok:</span> {productToDelete.stock} unit</div>
+              <div><span className="text-[var(--text-2)]">Harga:</span> {productToDelete.formattedPrice}</div>
             </div>
 
             <form onSubmit={submitDeleteProductApproval} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                   Catatan Alasan Penghapusan (Wajib Diisi) <span className="text-red-600">*</span>
                 </label>
                 <textarea
@@ -3607,7 +3607,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   value={deleteProductNotes}
                   onChange={(e) => setDeleteProductNotes(e.target.value)}
                   placeholder="Contoh: Perhiasan mutiara ini sudah discontinued oleh perajin dan tidak lagi diproduksi."
-                  className="w-full p-3 rounded-2xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                  className="w-full p-3 rounded-2xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                 />
               </div>
 
@@ -3618,7 +3618,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     setProductToDelete(null);
                     setDeleteProductNotes('');
                   }}
-                  className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold"
+                  className="min-h-[42px] px-5 rounded-full border border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--surface-muted)] text-xs font-semibold"
                 >
                   Batal
                 </button>
@@ -3639,19 +3639,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       {/* 2. Hapus Kategori */}
       {categoryToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
             <div className="w-12 h-12 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center">
               <Trash2 className="w-6 h-6" />
             </div>
-            <h3 className="font-serif text-xl font-semibold text-[#12263A]">Hapus Kategori?</h3>
-            <p className="text-xs text-[#4A5666]">
-              Kategori <strong className="text-[#12263A]">{categoryToDelete.name}</strong> akan dihapus dari daftar etalase.
+            <h3 className="font-serif text-xl font-semibold text-[var(--text)]">Hapus Kategori?</h3>
+            <p className="text-xs text-[var(--text-2)]">
+              Kategori <strong className="text-[var(--text)]">{categoryToDelete.name}</strong> akan dihapus dari daftar etalase.
             </p>
             <div className="flex justify-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setCategoryToDelete(null)}
-                className="min-h-[40px] px-5 rounded-full border border-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB]"
+                className="min-h-[40px] px-5 rounded-full border border-[var(--border)] text-xs font-semibold hover:bg-[var(--surface-muted)]"
               >
                 Batal
               </button>
@@ -3670,19 +3670,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       {/* 3. Hapus Sertifikat */}
       {certToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
             <div className="w-12 h-12 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center">
               <Trash2 className="w-6 h-6" />
             </div>
-            <h3 className="font-serif text-xl font-semibold text-[#12263A]">Cabut Sertifikat Gemologi?</h3>
-            <p className="text-xs text-[#4A5666]">
-              Sertifikat <strong className="text-[#12263A] font-mono">{certToDelete.certNumber}</strong> untuk produk {certToDelete.productName} akan dicabut.
+            <h3 className="font-serif text-xl font-semibold text-[var(--text)]">Cabut Sertifikat Gemologi?</h3>
+            <p className="text-xs text-[var(--text-2)]">
+              Sertifikat <strong className="text-[var(--text)] font-mono">{certToDelete.certNumber}</strong> untuk produk {certToDelete.productName} akan dicabut.
             </p>
             <div className="flex justify-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setCertToDelete(null)}
-                className="min-h-[40px] px-5 rounded-full border border-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB]"
+                className="min-h-[40px] px-5 rounded-full border border-[var(--border)] text-xs font-semibold hover:bg-[var(--surface-muted)]"
               >
                 Batal
               </button>
@@ -3703,20 +3703,20 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
          ======================================================== */}
       {isVoucherModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)]">
                   {editingVoucher ? 'Edit Voucher' : 'Tambah Voucher Baru'}
                 </h3>
-                <p className="text-xs text-[#4A5666] mt-0.5">
+                <p className="text-xs text-[var(--text-2)] mt-0.5">
                   Atur kode diskon dan parameter penggunaan promosi atelier.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsVoucherModalOpen(false)}
-                className="p-2 text-[#4A5666] hover:text-[#12263A] rounded-full hover:bg-[#F4F1EB]"
+                className="p-2 text-[var(--text-2)] hover:text-[var(--text)] rounded-full hover:bg-[var(--surface-muted)]"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -3724,7 +3724,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
             <form onSubmit={handleSaveVoucher} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                   Kode Voucher <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3733,19 +3733,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   value={voucherFormData.code}
                   onChange={(e) => setVoucherFormData({ ...voucherFormData, code: e.target.value.toUpperCase() })}
                   placeholder="Misal: CDEKEMILAU10"
-                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] font-mono text-sm uppercase text-[#12263A]"
+                  className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] font-mono text-sm uppercase text-[var(--text)]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                     Tipe Diskon <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={voucherFormData.type}
                     onChange={(e) => setVoucherFormData({ ...voucherFormData, type: e.target.value as 'fixed' | 'percent' })}
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                   >
                     <option value="fixed">Nominal Tetap (Rp)</option>
                     <option value="percent">Persentase (%)</option>
@@ -3753,7 +3753,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                     Nilai Diskon <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -3763,14 +3763,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     value={voucherFormData.value}
                     onChange={(e) => setVoucherFormData({ ...voucherFormData, value: e.target.value })}
                     placeholder={voucherFormData.type === 'percent' ? 'Contoh: 10' : 'Contoh: 50000'}
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                     Minimal Belanja (Rp)
                   </label>
                   <input
@@ -3779,12 +3779,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     value={voucherFormData.min_spend}
                     onChange={(e) => setVoucherFormData({ ...voucherFormData, min_spend: e.target.value })}
                     placeholder="0 = Tanpa minimal"
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                     Kuota Penggunaan
                   </label>
                   <input
@@ -3793,54 +3793,54 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                     value={voucherFormData.quota}
                     onChange={(e) => setVoucherFormData({ ...voucherFormData, quota: e.target.value })}
                     placeholder="Kosongkan jika tak terbatas"
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                     Mulai Berlaku
                   </label>
                   <input
                     type="datetime-local"
                     value={voucherFormData.starts_at}
                     onChange={(e) => setVoucherFormData({ ...voucherFormData, starts_at: e.target.value })}
-                    className="w-full min-h-[44px] px-2 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    className="w-full min-h-[44px] px-2 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                     Berakhir Pada
                   </label>
                   <input
                     type="datetime-local"
                     value={voucherFormData.expires_at}
                     onChange={(e) => setVoucherFormData({ ...voucherFormData, expires_at: e.target.value })}
-                    className="w-full min-h-[44px] px-2 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    className="w-full min-h-[44px] px-2 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                   />
                 </div>
               </div>
 
               <div className="pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-[#12263A] font-semibold">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-[var(--text)] font-semibold">
                   <input
                     type="checkbox"
                     checked={voucherFormData.is_active}
                     onChange={(e) => setVoucherFormData({ ...voucherFormData, is_active: e.target.checked })}
-                    className="w-4 h-4 rounded-sm border-[#E6DDD0] accent-[#12263A]"
+                    className="w-4 h-4 rounded-sm border-[var(--border)] accent-[var(--accent)]"
                   />
                   <span>Voucher Aktif &amp; Dapat Digunakan</span>
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#E6DDD0]">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[var(--border)]">
                 <button
                   type="button"
                   onClick={() => setIsVoucherModalOpen(false)}
-                  className="min-h-[42px] px-5 rounded-full border border-[#12263A] text-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB] cursor-pointer"
+                  className="min-h-[42px] px-5 rounded-full border border-[var(--border)] text-[var(--text)] text-xs font-semibold hover:bg-[var(--surface-muted)] cursor-pointer"
                 >
                   Batal
                 </button>
@@ -3862,14 +3862,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
          ======================================================== */}
       {isDeleteVoucherModalOpen && voucherToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4 animate-in zoom-in-95">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4 animate-in zoom-in-95">
             <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
               <Trash2 className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-serif text-lg font-semibold text-[#12263A]">Hapus Voucher?</h3>
-              <p className="text-xs text-[#4A5666] mt-1">
-                Apakah Anda yakin ingin menghapus voucher <strong className="font-mono text-[#12263A]">{voucherToDelete.code}</strong>? Tindakan ini tidak dapat dibatalkan.
+              <h3 className="font-serif text-lg font-semibold text-[var(--text)]">Hapus Voucher?</h3>
+              <p className="text-xs text-[var(--text-2)] mt-1">
+                Apakah Anda yakin ingin menghapus voucher <strong className="font-mono text-[var(--text)]">{voucherToDelete.code}</strong>? Tindakan ini tidak dapat dibatalkan.
               </p>
             </div>
             <div className="flex justify-center gap-3 pt-2">
@@ -3879,7 +3879,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   setIsDeleteVoucherModalOpen(false);
                   setVoucherToDelete(null);
                 }}
-                className="min-h-[40px] px-5 rounded-full border border-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB] cursor-pointer"
+                className="min-h-[40px] px-5 rounded-full border border-[var(--border)] text-xs font-semibold hover:bg-[var(--surface-muted)] cursor-pointer"
               >
                 Batal
               </button>

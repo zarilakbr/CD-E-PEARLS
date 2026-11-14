@@ -504,7 +504,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         {/* ========================================================
             3. MAIN CONTENT
            ======================================================== */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className={`flex-1 p-3.5 sm:p-6 lg:p-8 ${userRole === 'user' ? 'pb-24 lg:pb-8' : ''}`}>
           {children}
         </main>
       </div>

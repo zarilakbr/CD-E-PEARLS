@@ -528,14 +528,14 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               description="Data metrik integritas transaksi, omzet database riil, produk terlaris, dan stok menipis CD'E Pearls Lombok."
             />
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-medium text-[#4A5666] bg-[#F4F1EB] px-3 py-1.5 rounded-full border border-[#E6DDD0] inline-flex items-center gap-1.5 shadow-2xs">
+              <span className="text-[11px] font-medium text-[var(--text-2)] bg-[var(--surface-muted)] px-3 py-1.5 rounded-full border border-[var(--border)] inline-flex items-center gap-1.5 shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>{lastSyncLabel}</span>
               </span>
               <button
                 type="button"
                 onClick={fetchSummary}
-                className="min-h-[42px] px-4 rounded-full border border-[#E6DDD0] text-[#12263A] hover:bg-[#F4F1EB] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-all"
+                className="min-h-[42px] px-4 rounded-full border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-muted)] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-all"
                 title="Muat ulang data ringkasan"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingSummary ? 'animate-spin' : ''}`} />
@@ -553,14 +553,14 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           </div>
 
           {/* Sub-tab Navigation (U-10: 5 Menu SPI dengan Audit Log sebagai sub-tab di Ringkasan) */}
-          <div className="flex items-center gap-2 border-b border-[#E6DDD0] pb-2">
+          <div className="flex items-center gap-2 border-b border-[var(--border)] pb-2">
             <button
               type="button"
               onClick={() => setSummarySubTab('metrics')}
               className={`min-h-[38px] px-4 rounded-full text-xs font-semibold cursor-pointer transition-all ${
                 summarySubTab === 'metrics'
                   ? 'bg-[#12263A] text-[#D9B877] shadow-sm'
-                  : 'bg-white text-[#4A5666] hover:bg-[#F4F1EB] border border-[#E6DDD0]'
+                  : 'bg-[var(--surface)] text-[var(--text-2)] hover:bg-[var(--surface-muted)] border border-[var(--border)]'
               }`}
             >
               Metrik & Analisis
@@ -574,7 +574,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               className={`min-h-[38px] px-4 rounded-full text-xs font-semibold cursor-pointer transition-all ${
                 summarySubTab === 'audit-log'
                   ? 'bg-[#12263A] text-[#D9B877] shadow-sm'
-                  : 'bg-white text-[#4A5666] hover:bg-[#F4F1EB] border border-[#E6DDD0]'
+                  : 'bg-[var(--surface)] text-[var(--text-2)] hover:bg-[var(--surface-muted)] border border-[var(--border)]'
               }`}
             >
               Log Audit Forensik
@@ -583,22 +583,22 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
 
           {summarySubTab === 'audit-log' ? (
             <div className="space-y-6">
-              <div className="bg-white p-4 rounded-2xl border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-4">
-                <div className="relative flex-1 min-w-[240px] max-w-md">
+              <div className="bg-[var(--surface)] p-4 rounded-2xl border border-[var(--border)] flex flex-wrap items-center justify-between gap-4">
+                <div className="relative flex-1 min-w-0 sm:min-w-[240px] max-w-md">
                   <input
                     type="text"
                     placeholder="Cari pelaku, jenis aksi, IP address..."
                     value={auditSearch}
                     onChange={(e) => setAuditSearch(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && fetchAuditLogs()}
-                    className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
+                    className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)] focus:bg-[var(--surface)]"
                   />
-                  <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Search className="w-4 h-4 text-[var(--text-2)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
                 <button
                   type="button"
                   onClick={fetchAuditLogs}
-                  className="min-h-[40px] px-4 rounded-full border border-[#E6DDD0] text-[#12263A] hover:bg-[#F4F1EB] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer"
+                  className="min-h-[40px] px-4 rounded-full border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-muted)] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${loadingAudit ? 'animate-spin' : ''}`} />
                   <span>Segarkan Log</span>
@@ -607,7 +607,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
 
               <DataTable>
                 <thead>
-                  <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+                  <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                     <th className="py-3.5 px-4 text-left">Waktu &amp; Tanggal</th>
                     <th className="py-3.5 px-4 text-left">Pelaku &amp; Peran</th>
                     <th className="py-3.5 px-4 text-left">Aksi Sistem</th>
@@ -619,8 +619,8 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                 </thead>
                 <tbody className="divide-y divide-[#E6DDD0]/60 text-xs">
                   {auditLogList.map((log) => (
-                    <tr key={log.id} className="hover:bg-[#FBF8F3] transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-[11px] text-[#4A5666] whitespace-nowrap">
+                    <tr key={log.id} className="hover:bg-[var(--surface-2)] transition-colors">
+                      <td className="py-3.5 px-4 font-mono text-[11px] text-[var(--text-2)] whitespace-nowrap">
                         {new Date(log.created_at).toLocaleDateString('id-ID', {
                           year: 'numeric',
                           month: 'short',
@@ -631,11 +631,11 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                         })}
                       </td>
                       <td className="py-3.5 px-4">
-                        <div className="font-semibold text-[#12263A]">{log.actor_name}</div>
-                        <span className="text-[10px] text-[#4A5666] uppercase">{log.actor_role}</span>
+                        <div className="font-semibold text-[var(--text)]">{log.actor_name}</div>
+                        <span className="text-[10px] text-[var(--text-2)] uppercase">{log.actor_role}</span>
                       </td>
-                      <td className="py-3.5 px-4 font-medium text-[#12263A]">{log.action}</td>
-                      <td className="py-3.5 px-4 text-[#4A5666] font-mono text-[11px]">
+                      <td className="py-3.5 px-4 font-medium text-[var(--text)]">{log.action}</td>
+                      <td className="py-3.5 px-4 text-[var(--text-2)] font-mono text-[11px]">
                         {log.target_type}:{log.target_id}
                       </td>
                       <td className="py-3.5 px-4 text-red-700 font-mono text-[11px] max-w-[140px] truncate" title={JSON.stringify(log.old_value)}>
@@ -644,14 +644,14 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                       <td className="py-3.5 px-4 text-emerald-700 font-mono text-[11px] max-w-[140px] truncate" title={JSON.stringify(log.new_value)}>
                         {log.new_value ? JSON.stringify(log.new_value) : '-'}
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-[#4A5666] text-[11px]">
+                      <td className="py-3.5 px-4 font-mono text-[var(--text-2)] text-[11px]">
                         {log.ip_address || '127.0.0.1'}
                       </td>
                     </tr>
                   ))}
                   {auditLogList.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-xs text-[#4A5666]">
+                      <td colSpan={7} className="py-8 text-center text-xs text-[var(--text-2)]">
                         Belum ada rekaman audit log.
                       </td>
                     </tr>
@@ -662,7 +662,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           ) : (
             <>
               {/* Revenue & Key Metrics */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <StatCard
               label="Omzet Hari Ini"
               value={`Rp ${(summaryData?.revenue?.today || 0).toLocaleString('id-ID')}`}
@@ -688,9 +688,9 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           {/* 2-Columns: Pesanan per Status + Produk Terlaris */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Box 1: Status Pesanan */}
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 shadow-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
-                <h3 className="font-serif text-lg font-semibold text-[#12263A]">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 shadow-xs">
+              <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+                <h3 className="font-serif text-lg font-semibold text-[var(--text)]">
                   Jumlah Pesanan Berdasarkan Status
                 </h3>
                 <button
@@ -705,14 +705,14 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                 {Object.entries(summaryData?.orders_by_status || {}).map(([status, count]) => (
                   <div
                     key={status}
-                    className="p-3.5 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0]/70 flex flex-col justify-between"
+                    className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border)]/70 flex flex-col justify-between"
                   >
-                    <span className="text-[11px] font-medium text-[#4A5666] uppercase truncate">{status}</span>
-                    <span className="font-serif text-xl font-bold text-[#12263A] mt-1">{count}</span>
+                    <span className="text-[11px] font-medium text-[var(--text-2)] uppercase truncate">{status}</span>
+                    <span className="font-serif text-xl font-bold text-[var(--text)] mt-1">{count}</span>
                   </div>
                 ))}
                 {(!summaryData?.orders_by_status || Object.keys(summaryData.orders_by_status).length === 0) && (
-                  <div className="col-span-full py-6 text-center text-xs text-[#4A5666]">
+                  <div className="col-span-full py-6 text-center text-xs text-[var(--text-2)]">
                     Belum ada riwayat pesanan dalam database.
                   </div>
                 )}
@@ -720,23 +720,23 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
             </div>
 
             {/* Box 2: Produk Terlaris */}
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 shadow-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
-                <h3 className="font-serif text-lg font-semibold text-[#12263A]">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 shadow-xs">
+              <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+                <h3 className="font-serif text-lg font-semibold text-[var(--text)]">
                   5 Produk Mutiara Terlaris
                 </h3>
-                <span className="text-xs text-[#4A5666]">Berdasarkan Kuantitas Terjual</span>
+                <span className="text-xs text-[var(--text-2)]">Berdasarkan Kuantitas Terjual</span>
               </div>
               <div className="mt-4 space-y-3">
                 {summaryData?.top_products?.map((item, idx) => (
                   <div
                     key={idx}
-                    className="p-3 rounded-xl bg-[#F4F1EB]/50 border border-[#E6DDD0]/70 flex items-center justify-between text-xs"
+                    className="p-3 rounded-xl bg-[var(--surface-muted)]/50 border border-[var(--border)]/70 flex items-center justify-between text-xs"
                   >
                     <div>
-                      <div className="font-semibold text-[#12263A]">{item.product_name}</div>
-                      <div className="text-[11px] text-[#4A5666] mt-0.5">
-                        Terjual: <strong className="text-[#12263A]">{item.total_sold} unit</strong>
+                      <div className="font-semibold text-[var(--text)]">{item.product_name}</div>
+                      <div className="text-[11px] text-[var(--text-2)] mt-0.5">
+                        Terjual: <strong className="text-[var(--text)]">{item.total_sold} unit</strong>
                       </div>
                     </div>
                     <div className="font-mono font-semibold text-[#8A6A2F]">
@@ -745,7 +745,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   </div>
                 ))}
                 {(!summaryData?.top_products || summaryData.top_products.length === 0) && (
-                  <div className="py-6 text-center text-xs text-[#4A5666]">
+                  <div className="py-6 text-center text-xs text-[var(--text-2)]">
                     Belum ada data penjualan produk.
                   </div>
                 )}
@@ -754,11 +754,11 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           </div>
 
           {/* Stok Menipis (Alert Table) */}
-          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 shadow-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 shadow-xs">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
-                <h3 className="font-serif text-lg font-semibold text-[#12263A]">
+                <h3 className="font-serif text-lg font-semibold text-[var(--text)]">
                   Peringatan Stok Menipis (Stok ≤ 3 Unit)
                 </h3>
               </div>
@@ -773,7 +773,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold bg-[#F4F1EB]/50">
+                  <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold bg-[var(--surface-muted)]/50">
                     <th className="py-2.5 px-3">Kode</th>
                     <th className="py-2.5 px-3">Nama Produk Mutiara</th>
                     <th className="py-2.5 px-3">Kategori</th>
@@ -783,15 +783,15 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                 </thead>
                 <tbody className="divide-y divide-[#E6DDD0]/60">
                   {summaryData?.low_stock_products?.map((prod) => (
-                    <tr key={prod.id} className="hover:bg-[#FBF8F3]">
+                    <tr key={prod.id} className="hover:bg-[var(--surface-2)]">
                       <td className="py-2.5 px-3 font-mono text-[#8A6A2F] font-bold">{prod.code}</td>
-                      <td className="py-2.5 px-3 font-medium text-[#12263A]">
+                      <td className="py-2.5 px-3 font-medium text-[var(--text)]">
                         <div className="flex items-center gap-2">
                           {prod.image && (
                             <img
                               src={resolveMediaUrl(prod.image, '/images/placeholder_jewelry.svg')}
                               alt={prod.name}
-                              className="w-7 h-7 rounded-md object-cover border border-[#E6DDD0] shrink-0"
+                              className="w-7 h-7 rounded-md object-cover border border-[var(--border)] shrink-0"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).src = '/images/placeholder_jewelry.svg';
                               }}
@@ -800,7 +800,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                           <span>{prod.name}</span>
                         </div>
                       </td>
-                      <td className="py-2.5 px-3 text-[#4A5666] capitalize">{prod.category_slug}</td>
+                      <td className="py-2.5 px-3 text-[var(--text-2)] capitalize">{prod.category_slug}</td>
                       <td className="py-2.5 px-3 text-right font-mono">
                         Rp {Number(prod.price).toLocaleString('id-ID')}
                       </td>
@@ -813,7 +813,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   ))}
                   {(!summaryData?.low_stock_products || summaryData.low_stock_products.length === 0) && (
                     <tr>
-                      <td colSpan={5} className="py-4 text-center text-xs text-[#4A5666]">
+                      <td colSpan={5} className="py-4 text-center text-xs text-[var(--text-2)]">
                         ✓ Semua stok mutiara berada di batas aman (&gt; 3 unit).
                       </td>
                     </tr>
@@ -848,21 +848,21 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           </div>
 
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-4">
-            <div className="relative flex-1 min-w-[240px] max-w-md">
+          <div className="bg-[var(--surface)] p-4 rounded-2xl border border-[var(--border)] flex flex-wrap items-center justify-between gap-4">
+            <div className="relative flex-1 min-w-0 sm:min-w-[240px] max-w-md">
               <input
                 type="text"
                 placeholder="Cari nomor pesanan, nama pelanggan, telepon..."
                 value={orderSearch}
                 onChange={(e) => setOrderSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchOrders()}
-                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
+                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)] focus:bg-[var(--surface)]"
               />
-              <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-[var(--text-2)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-[#4A5666]">Status:</span>
+              <span className="text-xs font-semibold text-[var(--text-2)]">Status:</span>
               {[
                 { id: 'all', label: 'Semua' },
                 { id: 'PENDING_PAYMENT', label: 'Menunggu Bayar' },
@@ -878,7 +878,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   className={`min-h-[36px] px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     orderStatusFilter === s.id
                       ? 'bg-[#12263A] text-white'
-                      : 'bg-[#F4F1EB] text-[#4A5666] hover:bg-[#EDE6DA]'
+                      : 'bg-[var(--surface-muted)] text-[#4A5666] hover:bg-[#EDE6DA]'
                   }`}
                 >
                   {s.label}
@@ -890,7 +890,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           {/* Orders Table */}
           <DataTable>
             <thead>
-              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+              <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                 <th className="py-3.5 px-4 text-left">No. Pesanan</th>
                 <th className="py-3.5 px-4 text-left">Waktu</th>
                 <th className="py-3.5 px-4 text-left">Pelanggan</th>
@@ -902,11 +902,11 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
             </thead>
             <tbody className="divide-y divide-[#E6DDD0]/60 text-xs">
               {orders.map((ord) => (
-                <tr key={ord.id} className="hover:bg-[#FBF8F3] transition-colors">
+                <tr key={ord.id} className="hover:bg-[var(--surface-2)] transition-colors">
                   <td className="py-3.5 px-4 font-mono font-bold text-[#8A6A2F]">
                     {ord.order_number}
                   </td>
-                  <td className="py-3.5 px-4 text-[#4A5666] whitespace-nowrap">
+                  <td className="py-3.5 px-4 text-[var(--text-2)] whitespace-nowrap">
                     {new Date(ord.created_at).toLocaleDateString('id-ID', {
                       year: 'numeric',
                       month: 'short',
@@ -916,10 +916,10 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                     })}
                   </td>
                   <td className="py-3.5 px-4">
-                    <div className="font-semibold text-[#12263A]">{ord.customer_name}</div>
-                    <div className="text-[11px] text-[#4A5666]">{ord.customer_phone || '-'}</div>
+                    <div className="font-semibold text-[var(--text)]">{ord.customer_name}</div>
+                    <div className="text-[11px] text-[var(--text-2)]">{ord.customer_phone || '-'}</div>
                   </td>
-                  <td className="py-3.5 px-4 text-right font-mono font-bold text-[#12263A]">
+                  <td className="py-3.5 px-4 text-right font-mono font-bold text-[var(--text)]">
                     Rp {Number(ord.total).toLocaleString('id-ID')}
                   </td>
                   <td className="py-3.5 px-4 text-center">
@@ -970,7 +970,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               ))}
               {orders.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-xs text-[#4A5666]">
+                  <td colSpan={7} className="py-8 text-center text-xs text-[var(--text-2)]">
                     Tidak ditemukan data pesanan yang cocok.
                   </td>
                 </tr>
@@ -981,20 +981,20 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           {/* Modal Detail & Update Status */}
           {selectedOrder && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#12263A]/60 backdrop-blur-xs animate-in fade-in">
-              <div className="relative w-full max-w-2xl bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-2xl text-[#12263A] space-y-5 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
+              <div className="relative w-[calc(100%-1.5rem)] max-w-2xl max-h-[92dvh] overflow-y-auto bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-5 sm:p-8 shadow-2xl text-[var(--text)] space-y-5 animate-in zoom-in-95">
+                <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
                   <div>
-                    <h3 className="font-serif text-xl font-bold text-[#12263A]">
+                    <h3 className="font-serif text-xl font-bold text-[var(--text)]">
                       Rincian Pesanan #{selectedOrder.order_number}
                     </h3>
-                    <p className="text-xs text-[#4A5666] mt-0.5">
-                      Pelanggan: <strong className="text-[#12263A]">{selectedOrder.customer_name}</strong> ({selectedOrder.customer_phone})
+                    <p className="text-xs text-[var(--text-2)] mt-0.5">
+                      Pelanggan: <strong className="text-[var(--text)]">{selectedOrder.customer_name}</strong> ({selectedOrder.customer_phone})
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setSelectedOrder(null)}
-                    className="p-2 rounded-full hover:bg-[#F4F1EB] text-[#4A5666]"
+                    className="p-2 rounded-full hover:bg-[var(--surface-muted)] text-[var(--text-2)]"
                   >
                     <XCircle className="w-5 h-5" />
                   </button>
@@ -1002,15 +1002,15 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
 
                 {/* Items List */}
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-xs text-[#12263A] uppercase tracking-wider">
+                  <h4 className="font-semibold text-xs text-[var(--text)] uppercase tracking-wider">
                     Daftar Barang Dipesan:
                   </h4>
-                  <div className="divide-y divide-[#E6DDD0] border border-[#E6DDD0] rounded-xl overflow-hidden text-xs">
+                  <div className="divide-y divide-[#E6DDD0] border border-[var(--border)] rounded-xl overflow-hidden text-xs">
                     {selectedOrder.items?.map((item: any) => (
-                      <div key={item.id} className="p-3 bg-[#FBF8F3] flex items-center justify-between">
+                      <div key={item.id} className="p-3 bg-[var(--surface-2)] flex items-center justify-between">
                         <div>
-                          <div className="font-bold text-[#12263A]">{item.product_name}</div>
-                          <div className="text-[11px] text-[#4A5666]">
+                          <div className="font-bold text-[var(--text)]">{item.product_name}</div>
+                          <div className="text-[11px] text-[var(--text-2)]">
                             {item.quantity} x Rp {Number(item.price).toLocaleString('id-ID')}
                           </div>
                         </div>
@@ -1023,20 +1023,20 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                 </div>
 
                 {/* Summary Financials */}
-                <div className="p-3.5 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs space-y-1 font-mono">
+                <div className="p-3.5 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs space-y-1 font-mono">
                   <div className="flex justify-between">
-                    <span className="text-[#4A5666]">Subtotal:</span>
+                    <span className="text-[var(--text-2)]">Subtotal:</span>
                     <span>Rp {Number(selectedOrder.subtotal || 0).toLocaleString('id-ID')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#4A5666]">Ongkos Kirim:</span>
+                    <span className="text-[var(--text-2)]">Ongkos Kirim:</span>
                     <span>Rp {Number(selectedOrder.shipping_cost || 0).toLocaleString('id-ID')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#4A5666]">Diskon:</span>
+                    <span className="text-[var(--text-2)]">Diskon:</span>
                     <span>- Rp {Number(selectedOrder.discount_amount || 0).toLocaleString('id-ID')}</span>
                   </div>
-                  <div className="flex justify-between border-t border-[#E6DDD0] pt-1.5 font-bold text-sm text-[#12263A]">
+                  <div className="flex justify-between border-t border-[var(--border)] pt-1.5 font-bold text-sm text-[var(--text)]">
                     <span>Total Pembayaran:</span>
                     <span className="text-[#8A6A2F]">Rp {Number(selectedOrder.total).toLocaleString('id-ID')}</span>
                   </div>
@@ -1047,9 +1047,9 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   const latestPayment = getLatestPayment(selectedOrder.payments);
                   if (!latestPayment) return null;
                   return (
-                    <div className="p-3.5 rounded-xl bg-white border border-[#E6DDD0] text-xs space-y-2">
+                    <div className="p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-xs space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-[#12263A]">Audit Bukti Pembayaran (Read-Only)</span>
+                        <span className="font-semibold text-[var(--text)]">Audit Bukti Pembayaran (Read-Only)</span>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${selectedOrder.payment_status === 'PAID' ? 'bg-[#E2F1E0] text-[#2B6330]' : 'bg-amber-100 text-amber-800'}`}>
                           Status Bayar: {selectedOrder.payment_status}
                         </span>
@@ -1059,12 +1059,12 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                           <button
                             type="button"
                             onClick={() => setSpiPreviewProofUrl(`/api/v1/orders/${selectedOrder.id}/payments/${latestPayment.id}/proof`)}
-                            className="px-3 py-1.5 rounded-lg bg-[#F4F1EB] hover:bg-[#EAE4D9] text-[#12263A] font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer border border-[#E6DDD0]"
+                            className="px-3 py-1.5 rounded-lg bg-[var(--surface-muted)] hover:bg-[#EAE4D9] text-[var(--text)] font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer border border-[var(--border)]"
                           >
                             <Eye className="w-3.5 h-3.5 text-[#8A6A2F]" />
                             <span>Lihat Berkas Bukti Transfer</span>
                           </button>
-                          <span className="text-[11px] text-[#4A5666] truncate font-mono">
+                          <span className="text-[11px] text-[var(--text-2)] truncate font-mono">
                             {latestPayment.proof_path}
                           </span>
                         </div>
@@ -1074,17 +1074,17 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                 })()}
 
                 {/* State Machine Update Form */}
-                <form onSubmit={handleUpdateOrderStatus} className="space-y-3 pt-2 border-t border-[#E6DDD0] text-xs">
-                  <h4 className="font-bold text-[#12263A] uppercase tracking-wider">
+                <form onSubmit={handleUpdateOrderStatus} className="space-y-3 pt-2 border-t border-[var(--border)] text-xs">
+                  <h4 className="font-bold text-[var(--text)] uppercase tracking-wider">
                     Ubah Status Pesanan (State Machine Logistik SPI)
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[#4A5666] mb-1 font-semibold">Pilih Status Baru:</label>
+                      <label className="block text-[var(--text-2)] mb-1 font-semibold">Pilih Status Baru:</label>
                       <select
                         value={newOrderStatus}
                         onChange={(e) => setNewOrderStatus(e.target.value)}
-                        className="w-full min-h-[42px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-semibold text-[#12263A]"
+                        className="w-full min-h-[42px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-semibold text-[var(--text)]"
                       >
                         <option value="PENDING_PAYMENT">PENDING_PAYMENT (Menunggu Bayar)</option>
                         <option value="PROCESSING">PROCESSING (Sedang Diproses/Dikemas)</option>
@@ -1094,13 +1094,13 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[#4A5666] mb-1 font-semibold">Catatan Otorisasi SPI:</label>
+                      <label className="block text-[var(--text-2)] mb-1 font-semibold">Catatan Otorisasi SPI:</label>
                       <input
                         type="text"
                         value={orderStatusNotes}
                         onChange={(e) => setOrderStatusNotes(e.target.value)}
                         placeholder="Contoh: Resi JNE telah diverifikasi valid"
-                        className="w-full min-h-[42px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                        className="w-full min-h-[42px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                       />
                     </div>
                   </div>
@@ -1109,7 +1109,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   {newOrderStatus === 'SHIPPED' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-blue-50/70 border border-blue-200">
                       <div>
-                        <label className="block text-[#12263A] mb-1 font-semibold">
+                        <label className="block text-[var(--text)] mb-1 font-semibold">
                           Kurir Pengiriman <span className="text-red-600">*</span>
                         </label>
                         <input
@@ -1118,11 +1118,11 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                           value={spiCourier}
                           onChange={(e) => setSpiCourier(e.target.value)}
                           placeholder="Contoh: JNE Express, J&T, SiCepat"
-                          className="w-full min-h-[42px] px-3 rounded-xl bg-white border border-blue-300 text-xs text-[#12263A] focus:outline-none"
+                          className="w-full min-h-[42px] px-3 rounded-xl bg-[var(--surface)] border border-blue-300 dark:border-blue-700 text-xs text-[var(--text)] focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-[#12263A] mb-1 font-semibold">
+                        <label className="block text-[var(--text)] mb-1 font-semibold">
                           Nomor Resi Pengiriman <span className="text-red-600">*</span>
                         </label>
                         <input
@@ -1131,7 +1131,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                           value={spiTrackingNumber}
                           onChange={(e) => setSpiTrackingNumber(e.target.value)}
                           placeholder="Contoh: JNE-9988221190"
-                          className="w-full min-h-[42px] px-3 rounded-xl bg-white border border-blue-300 text-xs font-mono font-bold text-[#12263A] focus:outline-none"
+                          className="w-full min-h-[42px] px-3 rounded-xl bg-[var(--surface)] border border-blue-300 dark:border-blue-700 text-xs font-mono font-bold text-[var(--text)] focus:outline-none"
                         />
                       </div>
                     </div>
@@ -1141,7 +1141,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                     <button
                       type="button"
                       onClick={() => setSelectedOrder(null)}
-                      className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold cursor-pointer"
+                      className="min-h-[42px] px-5 rounded-full border border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--surface-muted)] text-xs font-semibold cursor-pointer"
                     >
                       Tutup
                     </button>
@@ -1165,20 +1165,20 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               onClick={() => setSpiPreviewProofUrl(null)}
             >
               <div
-                className="relative max-w-2xl w-full bg-white rounded-3xl p-4 shadow-2xl overflow-hidden"
+                className="relative w-[calc(100%-1.5rem)] max-w-2xl max-h-[92dvh] overflow-y-auto bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-4 sm:p-6 shadow-2xl text-[var(--text)]"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0] mb-3">
-                  <h4 className="font-semibold text-sm text-[#12263A]">Audit Bukti Pembayaran</h4>
+                <div className="flex items-center justify-between pb-3 border-b border-[var(--border)] mb-3">
+                  <h4 className="font-semibold text-sm text-[var(--text)]">Audit Bukti Pembayaran</h4>
                   <button
                     type="button"
                     onClick={() => setSpiPreviewProofUrl(null)}
-                    className="p-1 rounded-full hover:bg-[#F4F1EB] text-[#4A5666] cursor-pointer"
+                    className="p-1 rounded-full hover:bg-[var(--surface-muted)] text-[var(--text-2)] cursor-pointer"
                   >
                     <XCircle className="w-5 h-5" />
                   </button>
                 </div>
-                <div className="max-h-[75vh] overflow-auto flex items-center justify-center bg-[#F4F1EB] rounded-2xl p-2">
+                <div className="max-h-[75vh] overflow-auto flex items-center justify-center bg-[var(--surface-muted)] rounded-2xl p-2">
                   <ProofImage
                     src={spiPreviewProofUrl}
                     orderId={selectedOrder?.id}
@@ -1206,26 +1206,26 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           />
 
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-4">
-            <div className="relative flex-1 min-w-[240px] max-w-md">
+          <div className="bg-[var(--surface)] p-4 rounded-2xl border border-[var(--border)] flex flex-wrap items-center justify-between gap-4">
+            <div className="relative flex-1 min-w-0 sm:min-w-[240px] max-w-md">
               <input
                 type="text"
                 placeholder="Cari nama perhiasan atau kode SKU..."
                 value={stockSearch}
                 onChange={(e) => setStockSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchStock()}
-                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
+                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)] focus:bg-[var(--surface)]"
               />
-              <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-[var(--text-2)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-xs font-semibold text-[#12263A] cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-xs font-semibold text-[var(--text)] cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={lowStockOnly}
                   onChange={(e) => setLowStockOnly(e.target.checked)}
-                  className="rounded text-[#12263A] focus:ring-[#D9B877]"
+                  className="rounded text-[var(--text)] focus:ring-[#D9B877]"
                 />
                 <span>Hanya Tampilkan Stok Menipis (≤ 3 Unit)</span>
               </label>
@@ -1235,7 +1235,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           {/* Stock Table */}
           <DataTable>
             <thead>
-              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+              <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                 <th className="py-3.5 px-4 text-left">Kode SKU</th>
                 <th className="py-3.5 px-4 text-left">Nama Produk Mutiara</th>
                 <th className="py-3.5 px-4 text-left">Kategori &amp; Varietas</th>
@@ -1247,14 +1247,14 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
             </thead>
             <tbody className="divide-y divide-[#E6DDD0]/60 text-xs">
               {stockList.map((prod) => (
-                <tr key={prod.id} className="hover:bg-[#FBF8F3] transition-colors">
+                <tr key={prod.id} className="hover:bg-[var(--surface-2)] transition-colors">
                   <td className="py-3.5 px-4 font-mono font-bold text-[#8A6A2F]">
                     {prod.code}
                   </td>
-                  <td className="py-3.5 px-4 font-medium text-[#12263A]">
+                  <td className="py-3.5 px-4 font-medium text-[var(--text)]">
                     {prod.name}
                   </td>
-                  <td className="py-3.5 px-4 text-[#4A5666]">
+                  <td className="py-3.5 px-4 text-[var(--text-2)]">
                     <span className="capitalize">{prod.category_slug}</span> • {prod.pearl_variety || 'South Sea'}
                   </td>
                   <td className="py-3.5 px-4 text-right font-mono font-semibold">
@@ -1302,7 +1302,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               ))}
               {stockList.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-xs text-[#4A5666]">
+                  <td colSpan={7} className="py-8 text-center text-xs text-[var(--text-2)]">
                     Tidak ditemukan data produk.
                   </td>
                 </tr>
@@ -1313,36 +1313,36 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           {/* Modal Koreksi Stok */}
           {stockModalProduct && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#12263A]/60 backdrop-blur-xs animate-in fade-in">
-              <div className="relative w-full max-w-md bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-2xl text-[#12263A] space-y-4 animate-in zoom-in-95">
-                <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
-                  <h3 className="font-serif text-xl font-bold text-[#12263A]">
+              <div className="relative w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-6 sm:p-8 shadow-2xl text-[var(--text)] space-y-4 animate-in zoom-in-95">
+                <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+                  <h3 className="font-serif text-xl font-bold text-[var(--text)]">
                     Koreksi Stok Fisik Mutiara
                   </h3>
                   <button
                     type="button"
                     onClick={() => setStockModalProduct(null)}
-                    className="p-1 rounded-full text-[#4A5666] hover:bg-[#F4F1EB]"
+                    className="p-1 rounded-full text-[var(--text-2)] hover:bg-[var(--surface-muted)]"
                   >
                     <XCircle className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0] text-xs space-y-1">
-                  <div className="font-bold text-[#12263A]">{stockModalProduct.name}</div>
-                  <div className="text-[#4A5666]">Kode SKU: <strong className="font-mono text-[#8A6A2F]">{stockModalProduct.code}</strong></div>
-                  <div className="text-[#4A5666]">Stok Saat Ini: <strong className="text-[#12263A]">{stockModalProduct.stock} unit</strong></div>
+                <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] text-xs space-y-1">
+                  <div className="font-bold text-[var(--text)]">{stockModalProduct.name}</div>
+                  <div className="text-[var(--text-2)]">Kode SKU: <strong className="font-mono text-[#8A6A2F]">{stockModalProduct.code}</strong></div>
+                  <div className="text-[var(--text-2)]">Stok Saat Ini: <strong className="text-[var(--text)]">{stockModalProduct.stock} unit</strong></div>
                 </div>
 
                 <form onSubmit={handleAdjustStock} className="space-y-4 text-xs">
                   <div>
-                    <label className="block font-semibold text-[#12263A] mb-1">
+                    <label className="block font-semibold text-[var(--text)] mb-1">
                       Nilai Penyesuaian (Delta):
                     </label>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => setStockDelta((prev) => prev - 1)}
-                        className="w-10 h-10 rounded-xl bg-[#F4F1EB] hover:bg-[#EDE6DA] text-[#12263A] flex items-center justify-center font-bold"
+                        className="w-10 h-10 rounded-xl bg-[var(--surface-muted)] hover:bg-[#EDE6DA] text-[var(--text)] flex items-center justify-center font-bold"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
@@ -1351,17 +1351,17 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                         required
                         value={stockDelta}
                         onChange={(e) => setStockDelta(parseInt(e.target.value) || 0)}
-                        className="flex-1 min-h-[40px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-center font-mono font-bold text-sm text-[#12263A]"
+                        className="flex-1 min-h-[40px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-center font-mono font-bold text-sm text-[var(--text)]"
                       />
                       <button
                         type="button"
                         onClick={() => setStockDelta((prev) => prev + 1)}
-                        className="w-10 h-10 rounded-xl bg-[#F4F1EB] hover:bg-[#EDE6DA] text-[#12263A] flex items-center justify-center font-bold"
+                        className="w-10 h-10 rounded-xl bg-[var(--surface-muted)] hover:bg-[#EDE6DA] text-[var(--text)] flex items-center justify-center font-bold"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
-                    <p className="text-[11px] text-[#4A5666] mt-1">
+                    <p className="text-[11px] text-[var(--text-2)] mt-1">
                       Stok akhir setelah penyesuaian:{' '}
                       <strong className="text-[#8A6A2F]">
                         {Math.max(0, stockModalProduct.stock + stockDelta)} unit
@@ -1370,7 +1370,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-[#12263A] mb-1">
+                    <label className="block font-semibold text-[var(--text)] mb-1">
                       Alasan Koreksi (Wajib untuk Audit): <span className="text-red-600">*</span>
                     </label>
                     <textarea
@@ -1379,7 +1379,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                       value={stockReason}
                       onChange={(e) => setStockReason(e.target.value)}
                       placeholder="Contoh: Hasil stock opname brankas mutiara fisik butik Mataram"
-                      className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                      className="w-full p-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                     />
                   </div>
 
@@ -1387,7 +1387,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                     <button
                       type="button"
                       onClick={() => setStockModalProduct(null)}
-                      className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] font-semibold"
+                      className="min-h-[42px] px-5 rounded-full border border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--surface-muted)] font-semibold"
                     >
                       Batal
                     </button>
@@ -1417,21 +1417,21 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           />
 
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-4">
-            <div className="relative flex-1 min-w-[240px] max-w-md">
+          <div className="bg-[var(--surface)] p-4 rounded-2xl border border-[var(--border)] flex flex-wrap items-center justify-between gap-4">
+            <div className="relative flex-1 min-w-0 sm:min-w-[240px] max-w-md">
               <input
                 type="text"
                 placeholder="Cari nama pengguna, email, nomor HP..."
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
-                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
+                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)] focus:bg-[var(--surface)]"
               />
-              <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-[var(--text-2)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#4A5666]">Peran:</span>
+              <span className="text-xs font-semibold text-[var(--text-2)]">Peran:</span>
               {(['all', 'admin', 'spi', 'user'] as const).map((r) => (
                 <button
                   key={r}
@@ -1440,7 +1440,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   className={`min-h-[36px] px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     userRoleFilter === r
                       ? 'bg-[#12263A] text-white'
-                      : 'bg-[#F4F1EB] text-[#4A5666] hover:bg-[#EDE6DA]'
+                      : 'bg-[var(--surface-muted)] text-[#4A5666] hover:bg-[#EDE6DA]'
                   }`}
                 >
                   {r === 'all' ? 'Semua' : r.toUpperCase()}
@@ -1452,7 +1452,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           {/* Users Table */}
           <DataTable>
             <thead>
-              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+              <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                 <th className="py-3.5 px-4 text-left">Nama &amp; Kontak</th>
                 <th className="py-3.5 px-4 text-left">Email</th>
                 <th className="py-3.5 px-4 text-left">Peran Saat Ini</th>
@@ -1466,19 +1466,19 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                 const isCurrentUser = user?.id && Number(user.id) === Number(u.id);
                 const isActive = u.status === 'active';
                 return (
-                  <tr key={u.id} className="hover:bg-[#FBF8F3] transition-colors">
+                  <tr key={u.id} className="hover:bg-[var(--surface-2)] transition-colors">
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold text-[#12263A] flex items-center gap-1.5">
+                      <div className="font-semibold text-[var(--text)] flex items-center gap-1.5">
                         <span>{u.name}</span>
                         {isCurrentUser && (
-                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#D9B877] text-[#12263A]">
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#D9B877] text-[var(--text)]">
                             Anda (SPI)
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-[#4A5666]">{u.phone || '-'}</div>
+                      <div className="text-[11px] text-[var(--text-2)]">{u.phone || '-'}</div>
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-[#4A5666]">{u.email}</td>
+                    <td className="py-3.5 px-4 font-mono text-[var(--text-2)]">{u.email}</td>
                     <td className="py-3.5 px-4">
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
@@ -1505,7 +1505,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                       <select
                         value={u.role}
                         onChange={(e) => handleUpdateRole(u, e.target.value)}
-                        className="px-2.5 py-1 rounded-lg bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-semibold text-[#12263A] cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-semibold text-[var(--text)] cursor-pointer"
                         title={isCurrentUser ? 'SPI dilarang menurunkan dirinya sendiri' : 'Ubah peran'}
                       >
                         <option value="user">Pelanggan (user)</option>
@@ -1533,7 +1533,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               })}
               {userList.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-xs text-[#4A5666]">
+                  <td colSpan={6} className="py-8 text-center text-xs text-[var(--text-2)]">
                     Tidak ada pengguna yang cocok.
                   </td>
                 </tr>
@@ -1554,23 +1554,23 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           />
 
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-[#E6DDD0] flex flex-wrap items-center justify-between gap-4">
-            <div className="relative flex-1 min-w-[240px] max-w-md">
+          <div className="bg-[var(--surface)] p-4 rounded-2xl border border-[var(--border)] flex flex-wrap items-center justify-between gap-4">
+            <div className="relative flex-1 min-w-0 sm:min-w-[240px] max-w-md">
               <input
                 type="text"
                 placeholder="Cari pelaku, jenis aksi, IP address..."
                 value={auditSearch}
                 onChange={(e) => setAuditSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchAuditLogs()}
-                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A] focus:bg-white"
+                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)] focus:bg-[var(--surface)]"
               />
-              <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-[var(--text-2)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
             <button
               type="button"
               onClick={fetchAuditLogs}
-              className="min-h-[40px] px-4 rounded-full border border-[#E6DDD0] text-[#12263A] hover:bg-[#F4F1EB] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer"
+              className="min-h-[40px] px-4 rounded-full border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-muted)] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loadingAudit ? 'animate-spin' : ''}`} />
               <span>Segarkan Log</span>
@@ -1580,7 +1580,7 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
           {/* Audit Logs Table */}
           <DataTable>
             <thead>
-              <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+              <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                 <th className="py-3.5 px-4 text-left">Waktu &amp; Tanggal</th>
                 <th className="py-3.5 px-4 text-left">Pelaku &amp; Peran</th>
                 <th className="py-3.5 px-4 text-left">Aksi Sistem</th>
@@ -1592,8 +1592,8 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
             </thead>
             <tbody className="divide-y divide-[#E6DDD0]/60 text-xs">
               {auditLogList.map((log) => (
-                <tr key={log.id} className="hover:bg-[#FBF8F3] transition-colors">
-                  <td className="py-3.5 px-4 font-mono text-[11px] text-[#4A5666] whitespace-nowrap">
+                <tr key={log.id} className="hover:bg-[var(--surface-2)] transition-colors">
+                  <td className="py-3.5 px-4 font-mono text-[11px] text-[var(--text-2)] whitespace-nowrap">
                     {new Date(log.created_at).toLocaleDateString('id-ID', {
                       year: 'numeric',
                       month: 'short',
@@ -1604,11 +1604,11 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                     })}
                   </td>
                   <td className="py-3.5 px-4">
-                    <div className="font-semibold text-[#12263A]">{log.actor_name}</div>
-                    <span className="text-[10px] text-[#4A5666] uppercase">{log.actor_role}</span>
+                    <div className="font-semibold text-[var(--text)]">{log.actor_name}</div>
+                    <span className="text-[10px] text-[var(--text-2)] uppercase">{log.actor_role}</span>
                   </td>
-                  <td className="py-3.5 px-4 font-medium text-[#12263A]">{log.action}</td>
-                  <td className="py-3.5 px-4 text-[#4A5666] font-mono text-[11px]">
+                  <td className="py-3.5 px-4 font-medium text-[var(--text)]">{log.action}</td>
+                  <td className="py-3.5 px-4 text-[var(--text-2)] font-mono text-[11px]">
                     {log.target_type}:{log.target_id}
                   </td>
                   <td className="py-3.5 px-4 text-red-700 font-mono text-[11px] max-w-[140px] truncate" title={JSON.stringify(log.old_value)}>
@@ -1617,14 +1617,14 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   <td className="py-3.5 px-4 text-emerald-700 font-mono text-[11px] max-w-[140px] truncate" title={JSON.stringify(log.new_value)}>
                     {log.new_value ? JSON.stringify(log.new_value) : '-'}
                   </td>
-                  <td className="py-3.5 px-4 font-mono text-[#4A5666] text-[11px]">
+                  <td className="py-3.5 px-4 font-mono text-[var(--text-2)] text-[11px]">
                     {log.ip_address || '127.0.0.1'}
                   </td>
                 </tr>
               ))}
               {auditLogList.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-xs text-[#4A5666]">
+                  <td colSpan={7} className="py-8 text-center text-xs text-[var(--text-2)]">
                     Belum ada rekaman audit log.
                   </td>
                 </tr>
@@ -1644,10 +1644,10 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
             description="Konfigurasi parameter dasar operasional butik CD'E Pearls Lombok yang diawasi langsung oleh Satuan Pengawas Internal."
           />
 
-          <div className="bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-xs max-w-3xl">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-6 sm:p-8 shadow-xs max-w-3xl">
             <form onSubmit={handleSaveSettings} className="space-y-5 text-xs">
               <div>
-                <label htmlFor="store_name" className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                <label htmlFor="store_name" className="block font-semibold text-[var(--text)] uppercase tracking-wider mb-1.5">
                   Nama Resmi Toko / Butik <span className="text-red-600">*</span>
                 </label>
                 <input
@@ -1656,12 +1656,12 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   id="store_name" value={settingsForm.store_name}
                   onChange={(e) => setSettingsForm({ ...settingsForm, store_name: e.target.value })}
                   placeholder="CD'E Pearls Lombok"
-                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                  className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                 />
               </div>
 
               <div>
-                <label htmlFor="contact_phone" className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                <label htmlFor="contact_phone" className="block font-semibold text-[var(--text)] uppercase tracking-wider mb-1.5">
                   Nomor Kontak / WhatsApp Resmi <span className="text-red-600">*</span>
                 </label>
                 <input
@@ -1670,12 +1670,12 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   id="contact_phone" value={settingsForm.contact_phone}
                   onChange={(e) => setSettingsForm({ ...settingsForm, contact_phone: e.target.value })}
                   placeholder="081239887733"
-                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                  className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                 />
               </div>
 
               <div>
-                <label htmlFor="bank_accounts" className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                <label htmlFor="bank_accounts" className="block font-semibold text-[var(--text)] uppercase tracking-wider mb-1.5">
                   Daftar Rekening Bank untuk Transfer Manual <span className="text-red-600">*</span>
                 </label>
                 <textarea
@@ -1684,16 +1684,16 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                   id="bank_accounts" value={settingsForm.bank_accounts}
                   onChange={(e) => setSettingsForm({ ...settingsForm, bank_accounts: e.target.value })}
                   placeholder="BCA 056-8899-221 a.n CD'E Pearls Lombok; Mandiri 161-00-8877-112 a.n CD'E Pearls"
-                  className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                  className="w-full p-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                 />
-                <p className="text-[11px] text-[#4A5666] mt-1">
+                <p className="text-[11px] text-[var(--text-2)] mt-1">
                   Pisahkan rekening dengan tanda titik koma (;). Rekening ini muncul pada faktur pembayaran manual.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="shipping_flat_cost" className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                  <label htmlFor="shipping_flat_cost" className="block font-semibold text-[var(--text)] uppercase tracking-wider mb-1.5">
                     Tarif Ongkir Standar Flat (Rp) <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -1702,12 +1702,12 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                     min={0}
                     id="shipping_flat_cost" value={settingsForm.shipping_flat_cost}
                     onChange={(e) => setSettingsForm({ ...settingsForm, shipping_flat_cost: parseFloat(e.target.value) || 0 })}
-                    className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-mono text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                    className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-mono text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="payment_timeout_hours" className="block font-semibold text-[#12263A] uppercase tracking-wider mb-1.5">
+                  <label htmlFor="payment_timeout_hours" className="block font-semibold text-[var(--text)] uppercase tracking-wider mb-1.5">
                     Batas Waktu Bayar Pesanan (Jam) <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -1717,12 +1717,12 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
                     max={168}
                     id="payment_timeout_hours" value={settingsForm.payment_timeout_hours}
                     onChange={(e) => setSettingsForm({ ...settingsForm, payment_timeout_hours: parseInt(e.target.value) || 24 })}
-                    className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs font-mono text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                    className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-mono text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E6DDD0]">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border)]">
                 <button
                   type="submit"
                   disabled={savingSettings}
@@ -1742,55 +1742,55 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
          ======================================================================= */}
       {isExportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#12263A]/60 backdrop-blur-xs animate-in fade-in">
-          <div className="relative w-full max-w-md bg-white border border-[#E6DDD0] rounded-3xl p-6 sm:p-8 shadow-2xl text-[#12263A] space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
+          <div className="relative w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-6 sm:p-8 shadow-2xl text-[var(--text)] space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
               <div className="flex items-center gap-2">
                 <Download className="w-5 h-5 text-[#8A6A2F]" />
-                <h3 className="font-serif text-xl font-bold text-[#12263A]">
+                <h3 className="font-serif text-xl font-bold text-[var(--text)]">
                   Ekspor Laporan Penjualan Excel (.xlsx)
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsExportModalOpen(false)}
-                className="p-1 rounded-full text-[#4A5666] hover:bg-[#F4F1EB]"
+                className="p-1 rounded-full text-[var(--text-2)] hover:bg-[var(--surface-muted)]"
               >
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-[#4A5666]">
+            <p className="text-xs text-[var(--text-2)]">
               Laporan terstruktur dengan 3 Sheet resmi (Ringkasan, Rincian Pesanan, Rincian Barang) yang dihasilkan secara streaming di server.
             </p>
 
             <div className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#4A5666] font-semibold mb-1">Mulai Tanggal:</label>
+                  <label className="block text-[var(--text-2)] font-semibold mb-1">Mulai Tanggal:</label>
                   <input
                     type="date"
                     value={exportStartDate}
                     onChange={(e) => setExportStartDate(e.target.value)}
-                    className="w-full min-h-[40px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    className="w-full min-h-[40px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[#4A5666] font-semibold mb-1">Sampai Tanggal:</label>
+                  <label className="block text-[var(--text-2)] font-semibold mb-1">Sampai Tanggal:</label>
                   <input
                     type="date"
                     value={exportEndDate}
                     onChange={(e) => setExportEndDate(e.target.value)}
-                    className="w-full min-h-[40px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    className="w-full min-h-[40px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[#4A5666] font-semibold mb-1">Filter Status Pesanan:</label>
+                <label className="block text-[var(--text-2)] font-semibold mb-1">Filter Status Pesanan:</label>
                 <select
                   value={exportStatus}
                   onChange={(e) => setExportStatus(e.target.value)}
-                  className="w-full min-h-[40px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                 >
                   <option value="all">Semua Status</option>
                   <option value="COMPLETED">COMPLETED (Selesai)</option>
@@ -1802,11 +1802,11 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               </div>
 
               <div>
-                <label className="block text-[#4A5666] font-semibold mb-1">Filter Kategori Produk:</label>
+                <label className="block text-[var(--text-2)] font-semibold mb-1">Filter Kategori Produk:</label>
                 <select
                   value={exportCategory}
                   onChange={(e) => setExportCategory(e.target.value)}
-                  className="w-full min-h-[40px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                  className="w-full min-h-[40px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                 >
                   <option value="all">Semua Kategori</option>
                   <option value="kalung">Kalung</option>
@@ -1819,11 +1819,11 @@ export const SpiPortal: React.FC<SpiPortalProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E6DDD0]">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border)]">
               <button
                 type="button"
                 onClick={() => setIsExportModalOpen(false)}
-                className="min-h-[42px] px-5 rounded-full border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB] text-xs font-semibold"
+                className="min-h-[42px] px-5 rounded-full border border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--surface-muted)] text-xs font-semibold"
               >
                 Batal
               </button>

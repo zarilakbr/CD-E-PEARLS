@@ -720,7 +720,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                         if (onAddToCart) onAddToCart(ord.items[0]?.name);
                         toast.success(`✓ Ditambahkan ke keranjang belanja`);
                       }}
-                      className="px-3 py-1.5 rounded-lg bg-[#D9B877] text-[#12263A] text-xs font-semibold hover:bg-[#E5C98F] transition-colors"
+                      className="px-3 py-1.5 rounded-lg bg-[#D9B877] text-[var(--text)] text-xs font-semibold hover:bg-[#E5C98F] transition-colors"
                     >
                       Beli lagi
                     </button>
@@ -765,7 +765,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 title={`Halo, ${profileData.name}`}
                 description="Selamat datang di akun pribadi perhiasan CD'E Pearls. Pantau pesanan aktif Anda dan koleksi mutiara favorit."
               />
-              <span className="text-[11px] font-medium text-[#4A5666] bg-[#F4F1EB] px-3 py-1.5 rounded-full border border-[#E6DDD0] inline-flex items-center gap-1.5 self-start sm:self-auto shrink-0 shadow-2xs">
+              <span className="text-[11px] font-medium text-[var(--text-2)] bg-[var(--surface-muted)] px-3 py-1.5 rounded-full border border-[var(--border)] inline-flex items-center gap-1.5 self-start sm:self-auto shrink-0 shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>{lastSyncLabel}</span>
               </span>
@@ -798,7 +798,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                     Pelacak Logistik
                   </span>
-                  <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
+                  <h3 className="font-serif text-2xl font-semibold text-[var(--text)]">
                     Lacak Pesanan Terkini {orders[0].id}
                   </h3>
                 </div>
@@ -840,16 +840,16 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           {/* Dua Kolom: Profil Saya & Riwayat Pesanan Ringkas */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Profil Saya (1 Col) */}
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 flex flex-col justify-between">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 flex flex-col justify-between">
               <div>
                 <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                   Data Akun
                 </span>
-                <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-4">
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)] mb-4">
                   Profil Saya
                 </h3>
 
-                <div className="flex items-center gap-3.5 mb-4 pb-4 border-b border-[#E6DDD0]">
+                <div className="flex items-center gap-3.5 mb-4 pb-4 border-b border-[var(--border)]">
                   <div className="w-13 h-13 rounded-full overflow-hidden border-2 border-[#D9B877] shrink-0 shadow-sm">
                     <img
                       src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80"
@@ -858,18 +858,18 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     />
                   </div>
                   <div>
-                    <h4 className="font-serif text-lg font-semibold text-[#12263A]">{profileData.name}</h4>
-                    <span className="text-xs text-[#4A5666]">{profileData.email}</span>
+                    <h4 className="font-serif text-lg font-semibold text-[var(--text)]">{profileData.name}</h4>
+                    <span className="text-xs text-[var(--text-2)]">{profileData.email}</span>
                   </div>
                 </div>
 
-                <div className="space-y-2 text-xs text-[#4A5666]">
+                <div className="space-y-2 text-xs text-[var(--text-2)]">
                   <div>
-                    <span className="block text-[11px] font-semibold uppercase text-[#12263A]">WhatsApp</span>
+                    <span className="block text-[11px] font-semibold uppercase text-[var(--text)]">WhatsApp</span>
                     <span>{profileData.phone}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] font-semibold uppercase text-[#12263A]">Alamat Utama</span>
+                    <span className="block text-[11px] font-semibold uppercase text-[var(--text)]">Alamat Utama</span>
                     <span>{addresses[0]?.fullAddress}, {addresses[0]?.city}</span>
                   </div>
                 </div>
@@ -878,21 +878,21 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveMenu('profile')}
-                className="mt-6 w-full min-h-[44px] rounded-full border border-[#12263A] text-[#12263A] hover:bg-[#12263A] hover:text-white transition-all text-xs font-semibold cursor-pointer"
+                className="mt-6 w-full min-h-[44px] rounded-full border border-[var(--border)] text-[var(--text)] hover:bg-[#12263A] hover:text-white transition-all text-xs font-semibold cursor-pointer"
               >
                 Ubah Profil Akun
               </button>
             </div>
 
             {/* Riwayat Pesanan Ringkas (2 Cols) */}
-            <div className="lg:col-span-2 bg-white border border-[#E6DDD0] rounded-2xl p-6 flex flex-col justify-between">
+            <div className="lg:col-span-2 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                       Transaksi
                     </span>
-                    <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                    <h3 className="font-serif text-xl font-semibold text-[var(--text)]">
                       Riwayat Pesanan
                     </h3>
                   </div>
@@ -908,7 +908,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 <div className="w-full overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b border-[#E6DDD0] text-[#4A5666]">
+                      <tr className="border-b border-[var(--border)] text-[var(--text-2)]">
                         <th className="py-2.5 px-3">No. Pesanan</th>
                         <th className="py-2.5 px-3">Tanggal</th>
                         <th className="py-2.5 px-3">Produk</th>
@@ -919,7 +919,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     <tbody className="divide-y divide-[#E6DDD0]/60">
                       {orders.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="py-8 text-center text-xs text-[#4A5666]">
+                          <td colSpan={5} className="py-8 text-center text-xs text-[var(--text-2)]">
                             Belum ada riwayat pesanan.
                           </td>
                         </tr>
@@ -931,12 +931,12 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                             setSelectedOrder(o);
                             setActiveMenu('my_orders');
                           }}
-                          className="hover:bg-[#F4F1EB] cursor-pointer"
+                          className="hover:bg-[var(--surface-muted)] cursor-pointer"
                         >
-                          <td className="py-3 px-3 font-mono font-medium text-[#12263A]">{o.id}</td>
-                          <td className="py-3 px-3 text-[#4A5666]">{o.date}</td>
-                          <td className="py-3 px-3 text-[#12263A] font-medium truncate max-w-[180px]">{o.productSummary}</td>
-                          <td className="py-3 px-3 font-serif font-semibold text-[#12263A]">Rp {o.total.toLocaleString('id-ID')}</td>
+                          <td className="py-3 px-3 font-mono font-medium text-[var(--text)]">{o.id}</td>
+                          <td className="py-3 px-3 text-[var(--text-2)]">{o.date}</td>
+                          <td className="py-3 px-3 text-[var(--text)] font-medium truncate max-w-[180px]">{o.productSummary}</td>
+                          <td className="py-3 px-3 font-serif font-semibold text-[var(--text)]">Rp {o.total.toLocaleString('id-ID')}</td>
                           <td className="py-3 px-3"><StatusBadge status={o.status} size="sm" /></td>
                         </tr>
                       ))}
@@ -954,7 +954,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                   Wishlist
                 </span>
-                <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
+                <h3 className="font-serif text-2xl font-semibold text-[var(--text)]">
                   Koleksi Favorit Anda
                 </h3>
               </div>
@@ -1002,8 +1002,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
           {selectedOrder ? (
             /* Detail Pesanan Pelanggan */
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 lg:p-8 space-y-6 animate-in fade-in">
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E6DDD0]">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 lg:p-8 space-y-6 animate-in fade-in">
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
                 <div>
                   <button
                     type="button"
@@ -1012,10 +1012,10 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   >
                     ← Kembali ke daftar pesanan
                   </button>
-                  <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#12263A]">
+                  <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[var(--text)]">
                     Rincian Pesanan {selectedOrder.id}
                   </h2>
-                  <span className="text-xs text-[#4A5666]">Dipesan pada {selectedOrder.date}</span>
+                  <span className="text-xs text-[var(--text-2)]">Dipesan pada {selectedOrder.date}</span>
                 </div>
                 <div>
                   <StatusBadge status={selectedOrder.status} />
@@ -1023,7 +1023,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               </div>
 
               {/* Linimasa Status Pesanan 5 Tahap */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-[#FBF8F3] border border-[#E6DDD0] space-y-3">
+              <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface-2)] border border-[var(--border)] space-y-3">
                 <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                   Linimasa Status Pesanan
                 </h4>
@@ -1047,7 +1047,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                             ? 'bg-[#12263A] text-[#D9B877] border-[#12263A] font-bold shadow-xs'
                             : st.done
                             ? 'bg-[#E2F1E0] text-[#2B6330] border-[#C3E4C0] font-medium'
-                            : 'bg-white text-[#8A95A5] border-[#E6DDD0]'
+                            : 'bg-[var(--surface)] text-[var(--text-2)] border-[var(--border)]'
                         }`}
                       >
                         <div className="text-[10px] uppercase tracking-wider mb-0.5">Langkah {st.step}</div>
@@ -1084,14 +1084,14 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
                 {/* Berkas Bukti Transfer Pelanggan (jika ada) */}
                 {selectedOrder.paymentProofUrl && (
-                  <div className="p-3.5 rounded-xl bg-white border border-[#E6DDD0] text-xs space-y-2">
+                  <div className="p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-xs space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#12263A]">Bukti Transfer Pembayaran</span>
+                      <span className="font-semibold text-[var(--text)]">Bukti Transfer Pembayaran</span>
                       <span className="text-[11px] text-[#8A6A2F]">
                         {selectedOrder.paymentStatus === 'PAID' ? '✓ Telah Terverifikasi' : 'Sedang Ditinjau'}
                       </span>
                     </div>
-                    <div className="w-28 h-28 rounded-lg overflow-hidden border border-[#E6DDD0] bg-[#12263A] shadow-xs">
+                    <div className="w-28 h-28 rounded-lg overflow-hidden border border-[var(--border)] bg-[#12263A] shadow-xs">
                       <ProofImage
                         src={selectedOrder.paymentProofUrl}
                         orderId={selectedOrder.id}
@@ -1115,7 +1115,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     </div>
                     <div>
                       <span className="text-[11px] text-blue-700">Nomor Resi: </span>
-                      <strong className="font-mono text-sm text-[#12263A] bg-white px-2.5 py-1 rounded-md border border-blue-300">
+                      <strong className="font-mono text-sm text-[var(--text)] bg-[var(--surface)] px-2.5 py-1 rounded-md border border-blue-300 dark:border-blue-700">
                         {selectedOrder.trackingNumber || '-'}
                       </strong>
                     </div>
@@ -1129,9 +1129,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   Daftar Item Perhiasan
                 </h4>
                 {selectedOrder.items.map((it, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0]">
+                  <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)]">
                     <div className="flex items-center gap-3">
-                      <div className="w-13 h-13 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
+                      <div className="w-13 h-13 rounded-xl overflow-hidden border border-[var(--border)] bg-[#12263A] shrink-0 shadow-xs">
                         <img
                           src={getItemImage(it)}
                           alt={it.name}
@@ -1139,13 +1139,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                         />
                       </div>
                       <div>
-                        <h5 className="font-serif font-semibold text-[#12263A] text-base">{it.name}</h5>
-                        <p className="text-xs text-[#4A5666]">{it.pearlSize} • {it.metal}</p>
+                        <h5 className="font-serif font-semibold text-[var(--text)] text-base">{it.name}</h5>
+                        <p className="text-xs text-[var(--text-2)]">{it.pearlSize} • {it.metal}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs text-[#4A5666]">{it.quantity} barang</span>
-                      <div className="font-serif font-bold text-base text-[#12263A]">
+                      <span className="text-xs text-[var(--text-2)]">{it.quantity} barang</span>
+                      <div className="font-serif font-bold text-base text-[var(--text)]">
                         Rp {(it.price * it.quantity).toLocaleString('id-ID')}
                       </div>
                     </div>
@@ -1154,25 +1154,25 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               </div>
 
               {/* Alamat & Ringkasan Pembayaran */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[#E6DDD0]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[var(--border)]">
                 <div>
                   <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] mb-1">
                     Alamat Pengantaran
                   </h4>
-                  <p className="text-sm font-semibold text-[#12263A]">{selectedOrder.customerName}</p>
-                  <p className="text-xs text-[#4A5666] mt-0.5">{selectedOrder.shippingAddress}, {selectedOrder.city}</p>
-                  <p className="text-xs text-[#4A5666] mt-0.5">{selectedOrder.customerPhone}</p>
+                  <p className="text-sm font-semibold text-[var(--text)]">{selectedOrder.customerName}</p>
+                  <p className="text-xs text-[var(--text-2)] mt-0.5">{selectedOrder.shippingAddress}, {selectedOrder.city}</p>
+                  <p className="text-xs text-[var(--text-2)] mt-0.5">{selectedOrder.customerPhone}</p>
                 </div>
 
                 <div>
                   <h4 className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] mb-1">
                     Ringkasan Pembayaran
                   </h4>
-                  <div className="text-xs space-y-1 text-[#4A5666]">
-                    <div className="flex justify-between"><span>Metode:</span><span className="font-medium text-[#12263A]">{selectedOrder.paymentMethod}</span></div>
+                  <div className="text-xs space-y-1 text-[var(--text-2)]">
+                    <div className="flex justify-between"><span>Metode:</span><span className="font-medium text-[var(--text)]">{selectedOrder.paymentMethod}</span></div>
                     <div className="flex justify-between"><span>Subtotal:</span><span>Rp {selectedOrder.subtotal.toLocaleString('id-ID')}</span></div>
                     <div className="flex justify-between"><span>Asuransi Pengiriman:</span><span>Rp {selectedOrder.insuranceCost.toLocaleString('id-ID')}</span></div>
-                    <div className="flex justify-between pt-2 border-t border-[#E6DDD0] text-sm font-bold text-[#12263A]">
+                    <div className="flex justify-between pt-2 border-t border-[var(--border)] text-sm font-bold text-[var(--text)]">
                       <span>Total Tagihan:</span>
                       <span className="font-serif text-lg">Rp {selectedOrder.total.toLocaleString('id-ID')}</span>
                     </div>
@@ -1181,12 +1181,12 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               </div>
 
               {/* Tombol Aksi: Bayar Sekarang & WhatsApp */}
-              <div className="pt-6 border-t border-[#E6DDD0] flex flex-wrap items-center justify-between gap-3">
+              <div className="pt-6 border-t border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
                 <a
                   href={`https://wa.me/6281239001122?text=Halo%20Atelier%20CDE%20Pearls,%20saya%20ingin%20menanyakan%20pesanan%20${selectedOrder.id}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="min-h-[44px] px-6 rounded-full border border-[#12263A] text-[#12263A] hover:bg-[#F4F1EB] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer"
+                  className="min-h-[44px] px-6 rounded-full border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-muted)] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer"
                 >
                   <MessageCircle className="w-4 h-4 text-[#8A6A2F]" />
                   <span>Hubungi via WhatsApp</span>
@@ -1221,13 +1221,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               {/* Modal Unggah Bukti Bayar */}
               {isProofModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-                  <div className="bg-white border border-[#E6DDD0] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4">
-                    <div className="flex items-center justify-between pb-3 border-b border-[#E6DDD0]">
+                  <div className="bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-3xl w-[calc(100%-1.5rem)] max-w-md max-h-[92dvh] overflow-y-auto p-5 sm:p-8 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
                       <div>
-                        <h3 className="font-serif text-xl font-semibold text-[#12263A]">
+                        <h3 className="font-serif text-xl font-semibold text-[var(--text)]">
                           Unggah Bukti Pembayaran
                         </h3>
-                        <p className="text-xs text-[#4A5666] mt-0.5">
+                        <p className="text-xs text-[var(--text-2)] mt-0.5">
                           Pesanan {selectedOrder.id} • Total Rp {selectedOrder.total.toLocaleString('id-ID')}
                         </p>
                       </div>
@@ -1238,7 +1238,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                           setProofFile(null);
                           setProofNotes('');
                         }}
-                        className="text-[#4A5666] hover:text-[#12263A] text-lg font-bold"
+                        className="text-[var(--text-2)] hover:text-[var(--text)] text-lg font-bold"
                       >
                         ✕
                       </button>
@@ -1246,7 +1246,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
                     <form onSubmit={handleUploadProofSubmit} className="space-y-4">
                       <div>
-                        <label className="block text-xs font-semibold text-[#12263A] mb-1.5">
+                        <label className="block text-xs font-semibold text-[var(--text)] mb-1.5">
                           Foto Bukti Transfer (JPG, PNG, atau WebP, maks. 5 MB) *
                         </label>
                         <input
@@ -1258,7 +1258,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                               setProofFile(e.target.files[0]);
                             }
                           }}
-                          className="w-full text-xs text-[#4A5666] file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#12263A] file:text-white hover:file:bg-[#1A3652] cursor-pointer"
+                          className="w-full text-xs text-[var(--text-2)] file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#12263A] file:text-white hover:file:bg-[#1A3652] cursor-pointer"
                         />
                         {proofFile && (
                           <p className="text-[11px] text-[#8A6A2F] mt-1 font-medium">
@@ -1268,7 +1268,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-[#12263A] mb-1.5">
+                        <label className="block text-xs font-semibold text-[var(--text)] mb-1.5">
                           Catatan / Referensi Transfer (Opsional)
                         </label>
                         <textarea
@@ -1276,11 +1276,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                           value={proofNotes}
                           onChange={(e) => setProofNotes(e.target.value)}
                           placeholder="Contoh: Transfer via m-BCA a.n. Siti Rahma"
-                          className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                          className="w-full p-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                         />
                       </div>
 
-                      <div className="pt-3 border-t border-[#E6DDD0] flex items-center justify-end gap-2">
+                      <div className="pt-3 border-t border-[var(--border)] flex items-center justify-end gap-2">
                         <button
                           type="button"
                           onClick={() => {
@@ -1288,7 +1288,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                             setProofFile(null);
                             setProofNotes('');
                           }}
-                          className="min-h-[42px] px-5 rounded-full border border-[#12263A] text-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB]"
+                          className="min-h-[42px] px-5 rounded-full border border-[var(--border)] text-[var(--text)] text-xs font-semibold hover:bg-[var(--surface-muted)]"
                         >
                           Batal
                         </button>
@@ -1319,7 +1319,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     className={`min-h-[38px] px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                       orderStatusTab === tab
                         ? 'bg-[#12263A] text-white'
-                        : 'bg-white border border-[#E6DDD0] text-[#4A5666] hover:bg-[#F4F1EB]'
+                        : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--surface-muted)]'
                     }`}
                   >
                     {tab}
@@ -1329,7 +1329,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
               <DataTable>
                 <thead>
-                  <tr className="border-b border-[#E6DDD0] text-[#4A5666] font-semibold text-xs uppercase tracking-wider bg-[#F4F1EB]/50">
+                  <tr className="border-b border-[var(--border)] text-[var(--text-2)] font-semibold text-xs uppercase tracking-wider bg-[var(--surface-muted)]/50">
                     <th className="py-3.5 px-4">No. Pesanan</th>
                     <th className="py-3.5 px-4">Tanggal</th>
                     <th className="py-3.5 px-4">Perhiasan</th>
@@ -1345,12 +1345,12 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       <tr
                         key={order.id}
                         onClick={() => setSelectedOrder(order)}
-                        className="hover:bg-[#F4F1EB]/60 cursor-pointer transition-colors"
+                        className="hover:bg-[var(--surface-muted)]/60 cursor-pointer transition-colors"
                       >
-                        <td className="py-3.5 px-4 font-mono font-medium text-[#12263A]">{order.id}</td>
-                        <td className="py-3.5 px-4 text-xs text-[#4A5666]">{order.date}</td>
-                        <td className="py-3.5 px-4 font-medium text-[#12263A] truncate max-w-[220px]">{order.productSummary}</td>
-                        <td className="py-3.5 px-4 font-serif font-semibold text-[#12263A]">
+                        <td className="py-3.5 px-4 font-mono font-medium text-[var(--text)]">{order.id}</td>
+                        <td className="py-3.5 px-4 text-xs text-[var(--text-2)]">{order.date}</td>
+                        <td className="py-3.5 px-4 font-medium text-[var(--text)] truncate max-w-[220px]">{order.productSummary}</td>
+                        <td className="py-3.5 px-4 font-serif font-semibold text-[var(--text)]">
                           Rp {order.total.toLocaleString('id-ID')}
                         </td>
                         <td className="py-3.5 px-4">
@@ -1379,7 +1379,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           />
 
           {/* Kolom Cari: Masukkan Nomor Pesanan atau Nomor Resi */}
-          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 max-w-2xl">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 max-w-2xl">
             <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] block mb-2">
               Pencarian Resi &amp; Pesanan
             </span>
@@ -1390,9 +1390,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   placeholder="Masukkan no. pesanan misal #[ORD-2026-081] atau no. resi JNE"
                   value={trackingQuery}
                   onChange={(e) => setTrackingQuery(e.target.value)}
-                  className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                  className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--border)]"
                 />
-                <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-[var(--text-2)] absolute left-3.5 top-1/2 -translate-y-1/2" />
               </div>
               <button
                 type="submit"
@@ -1418,45 +1418,45 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               />
 
               {/* Daftar Riwayat Perjalanan (Tanggal, Lokasi, Keterangan) */}
-              <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
                 <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                   Log Manifest Logistik
                 </span>
-                <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-4">
+                <h3 className="font-serif text-xl font-semibold text-[var(--text)] mb-4">
                   Riwayat Perjalanan Pengiriman
                 </h3>
 
-                <div className="relative pl-6 space-y-6 border-l-2 border-[#E6DDD0] ml-3">
+                <div className="relative pl-6 space-y-6 border-l-2 border-[var(--border)] ml-3">
                   <div className="relative">
                     <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-[#8A6A2F] ring-4 ring-[#F4F1EB]" />
                     <span className="text-xs text-[#8A6A2F] font-bold">29 Okt 2026, 09:15 WITA</span>
-                    <h4 className="font-semibold text-sm text-[#12263A] mt-0.5">Diserahkan ke Kurir Logistik [Mataram]</h4>
-                    <p className="text-xs text-[#4A5666]">Paket perhiasan berbalut kotak segel anti-rusak telah diterima agen JNE Mataram.</p>
+                    <h4 className="font-semibold text-sm text-[var(--text)] mt-0.5">Diserahkan ke Kurir Logistik [Mataram]</h4>
+                    <p className="text-xs text-[var(--text-2)]">Paket perhiasan berbalut kotak segel anti-rusak telah diterima agen JNE Mataram.</p>
                   </div>
 
                   <div className="relative">
                     <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-[#12263A] ring-4 ring-[#F4F1EB]" />
-                    <span className="text-xs text-[#4A5666]">28 Okt 2026, 16:30 WITA</span>
-                    <h4 className="font-semibold text-sm text-[#12263A] mt-0.5">Pemeriksaan Gemologi &amp; Pengemasan [Atelier Sire]</h4>
-                    <p className="text-xs text-[#4A5666]">Pemasangan sertifikat keaslian dan pembungkusan beludru premium.</p>
+                    <span className="text-xs text-[var(--text-2)]">28 Okt 2026, 16:30 WITA</span>
+                    <h4 className="font-semibold text-sm text-[var(--text)] mt-0.5">Pemeriksaan Gemologi &amp; Pengemasan [Atelier Sire]</h4>
+                    <p className="text-xs text-[var(--text-2)]">Pemasangan sertifikat keaslian dan pembungkusan beludru premium.</p>
                   </div>
 
                   <div className="relative">
                     <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-[#12263A] ring-4 ring-[#F4F1EB]" />
-                    <span className="text-xs text-[#4A5666]">28 Okt 2026, 15:00 WITA</span>
-                    <h4 className="font-semibold text-sm text-[#12263A] mt-0.5">Verifikasi Pembayaran Berhasil</h4>
-                    <p className="text-xs text-[#4A5666]">Transaksi pesanan #[ORD-2026-081] terkonfirmasi lunas.</p>
+                    <span className="text-xs text-[var(--text-2)]">28 Okt 2026, 15:00 WITA</span>
+                    <h4 className="font-semibold text-sm text-[var(--text)] mt-0.5">Verifikasi Pembayaran Berhasil</h4>
+                    <p className="text-xs text-[var(--text-2)]">Transaksi pesanan #[ORD-2026-081] terkonfirmasi lunas.</p>
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-10 text-center">
-              <div className="w-16 h-16 rounded-full bg-[#FBF8F3] border border-[#E6DDD0] mx-auto mb-3 flex items-center justify-center text-[#8A6A2F]">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-10 text-center">
+              <div className="w-16 h-16 rounded-full bg-[var(--surface-2)] border border-[var(--border)] mx-auto mb-3 flex items-center justify-center text-[#8A6A2F]">
                 <Truck className="w-8 h-8 stroke-[1.5]" />
               </div>
-              <p className="text-sm font-semibold text-[#12263A]">Nomor resi atau pesanan tidak ditemukan.</p>
-              <p className="text-xs text-[#4A5666] mt-1">Pastikan format nomor yang Anda masukkan sudah sesuai.</p>
+              <p className="text-sm font-semibold text-[var(--text)]">Nomor resi atau pesanan tidak ditemukan.</p>
+              <p className="text-xs text-[var(--text-2)] mt-1">Pastikan format nomor yang Anda masukkan sudah sesuai.</p>
             </div>
           )}
         </div>
@@ -1474,7 +1474,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               <button
                 type="button"
                 onClick={onNavigateCatalog}
-                className="min-h-[44px] px-6 rounded-full border border-[#12263A] text-[#12263A] hover:bg-[#12263A] hover:text-white text-xs font-semibold transition-all cursor-pointer"
+                className="min-h-[44px] px-6 rounded-full border border-[var(--border)] text-[var(--text)] hover:bg-[#12263A] hover:text-white text-xs font-semibold transition-all cursor-pointer"
               >
                 Jelajahi Koleksi Lengkap
               </button>
@@ -1512,14 +1512,14 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             </div>
           ) : (
             /* Keadaan Kosong: teks & tombol */
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-12 text-center max-w-md mx-auto">
-              <div className="w-20 h-20 rounded-full bg-[#FBF8F3] border border-[#E6DDD0] mx-auto mb-4 flex items-center justify-center text-[#8A6A2F]">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-12 text-center max-w-md mx-auto">
+              <div className="w-20 h-20 rounded-full bg-[var(--surface-2)] border border-[var(--border)] mx-auto mb-4 flex items-center justify-center text-[#8A6A2F]">
                 <Heart className="w-9 h-9 stroke-[1.5]" />
               </div>
-              <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
+              <h3 className="font-serif text-2xl font-semibold text-[var(--text)]">
                 Belum ada koleksi favorit
               </h3>
-              <p className="text-xs text-[#4A5666] mt-2 mb-6">
+              <p className="text-xs text-[var(--text-2)] mt-2 mb-6">
                 Tandai perhiasan mutiara yang Anda impikan dengan menekan ikon hati pada halaman katalog.
               </p>
               <button
@@ -1558,13 +1558,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             {addresses.map((addr) => (
               <div
                 key={addr.id}
-                className={`bg-white border rounded-2xl p-6 flex flex-col justify-between transition-all ${
-                  addr.isPrimary ? 'border-[#8A6A2F] ring-2 ring-[#8A6A2F]/15' : 'border-[#E6DDD0]'
+                className={`bg-[var(--surface)] border rounded-2xl p-6 flex flex-col justify-between transition-all ${
+                  addr.isPrimary ? 'border-[#8A6A2F] dark:border-[#D9B877] ring-2 ring-[#8A6A2F]/15' : 'border-[var(--border)]'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#F4F1EB] text-[#12263A] border border-[#E6DDD0]">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[var(--surface-muted)] text-[var(--text)] border border-[var(--border)]">
                       {addr.label}
                     </span>
                     {addr.isPrimary && (
@@ -1574,14 +1574,14 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     )}
                   </div>
 
-                  <h4 className="font-semibold text-base text-[#12263A]">{addr.recipient}</h4>
-                  <p className="text-xs text-[#4A5666] mt-0.5">{addr.phone}</p>
-                  <p className="text-xs text-[#4A5666] mt-2 leading-relaxed">
+                  <h4 className="font-semibold text-base text-[var(--text)]">{addr.recipient}</h4>
+                  <p className="text-xs text-[var(--text-2)] mt-0.5">{addr.phone}</p>
+                  <p className="text-xs text-[var(--text-2)] mt-2 leading-relaxed">
                     {addr.fullAddress}, Kec. {addr.district}, {addr.city}, {addr.province} {addr.postalCode}
                   </p>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-[#E6DDD0] flex items-center justify-between gap-2">
+                <div className="pt-4 mt-4 border-t border-[var(--border)] flex items-center justify-between gap-2">
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -1599,7 +1599,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                         });
                         setIsAddressModalOpen(true);
                       }}
-                      className="text-xs font-semibold text-[#12263A] hover:underline cursor-pointer"
+                      className="text-xs font-semibold text-[var(--text)] hover:underline cursor-pointer"
                     >
                       Ubah
                     </button>
@@ -1630,9 +1630,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           {/* Modal Tambah/Ubah Alamat */}
           {isAddressModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-              <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 w-full max-w-lg shadow-xl">
+              <div className="bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-2xl w-[calc(100%-1.5rem)] max-w-lg max-h-[92dvh] overflow-y-auto p-5 sm:p-6 shadow-xl">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-serif text-2xl font-semibold text-[#12263A]">
+                  <h3 className="font-serif text-2xl font-semibold text-[var(--text)]">
                     {editingAddress ? 'Ubah Alamat Pengiriman' : 'Tambah Alamat Baru'}
                   </h3>
                   <button
@@ -1649,74 +1649,74 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 <form onSubmit={handleSaveAddress} className="space-y-3.5">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-[#12263A] mb-1">Label Alamat</label>
+                      <label className="block text-xs font-semibold text-[var(--text)] mb-1">Label Alamat</label>
                       <input
                         type="text"
                         required
                         placeholder="Contoh: Rumah, Kantor"
                         value={newAddress.label}
                         onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                        className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#12263A] mb-1">Nama Penerima</label>
+                      <label className="block text-xs font-semibold text-[var(--text)] mb-1">Nama Penerima</label>
                       <input
                         type="text"
                         required
                         placeholder="Nama Lengkap Penerima"
                         value={newAddress.recipient}
                         onChange={(e) => setNewAddress({ ...newAddress, recipient: e.target.value })}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                        className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-[#12263A] mb-1">Nomor Telepon / WA</label>
+                      <label className="block text-xs font-semibold text-[var(--text)] mb-1">Nomor Telepon / WA</label>
                       <input
                         type="text"
                         required
                         placeholder="+62 812..."
                         value={newAddress.phone}
                         onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                        className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#12263A] mb-1">Kota / Kabupaten</label>
+                      <label className="block text-xs font-semibold text-[var(--text)] mb-1">Kota / Kabupaten</label>
                       <input
                         type="text"
                         required
                         placeholder="Jakarta Pusat"
                         value={newAddress.city}
                         onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                        className="w-full min-h-[44px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">Alamat Lengkap</label>
+                    <label className="block text-xs font-semibold text-[var(--text)] mb-1">Alamat Lengkap</label>
                     <textarea
                       rows={2}
                       required
                       placeholder="Nama jalan, nomor rumah, RT/RW, patokan..."
                       value={newAddress.fullAddress}
                       onChange={(e) => setNewAddress({ ...newAddress, fullAddress: e.target.value })}
-                      className="w-full p-3 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                      className="w-full p-3 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                     />
                   </div>
 
-                  <div className="flex justify-end gap-2 pt-3 border-t border-[#E6DDD0]">
+                  <div className="flex justify-end gap-2 pt-3 border-t border-[var(--border)]">
                     <button
                       type="button"
                       onClick={() => {
                         setIsAddressModalOpen(false);
                         setEditingAddress(null);
                       }}
-                      className="min-h-[44px] px-5 rounded-full border border-[#12263A] text-xs font-semibold"
+                      className="min-h-[44px] px-5 rounded-full border border-[var(--border)] text-xs font-semibold"
                     >
                       Batal
                     </button>
@@ -1769,16 +1769,16 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           </div>
 
           {isLoadingNotifications ? (
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-12 text-center text-[#4A5666] text-sm">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-12 text-center text-[var(--text-2)] text-sm">
               Memuat notifikasi...
             </div>
           ) : notifications.length === 0 ? (
-            <div className="bg-white border border-[#E6DDD0] rounded-2xl p-12 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-[#F4F1EB] text-[#12263A] flex items-center justify-center mx-auto">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-12 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-[var(--surface-muted)] text-[var(--text)] flex items-center justify-center mx-auto">
                 <Bell className="w-6 h-6 text-[#A08A5B]" />
               </div>
-              <h3 className="font-serif text-lg font-semibold text-[#12263A]">Belum Ada Notifikasi</h3>
-              <p className="text-xs text-[#4A5666] max-w-sm mx-auto">
+              <h3 className="font-serif text-lg font-semibold text-[var(--text)]">Belum Ada Notifikasi</h3>
+              <p className="text-xs text-[var(--text-2)] max-w-sm mx-auto">
                 Pembaruan status pesanan, verifikasi pembayaran, dan resi pengiriman Anda akan muncul di sini.
               </p>
             </div>
@@ -1787,24 +1787,24 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               {notifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`bg-white border rounded-2xl p-4 sm:p-5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                    notif.read_at ? 'border-[#E6DDD0] opacity-80' : 'border-[#D9B877] shadow-xs bg-[#FBF8F3]/40'
+                  className={`bg-[var(--surface)] border rounded-2xl p-4 sm:p-5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                    notif.read_at ? 'border-[var(--border)] opacity-80' : 'border-[#D9B877] shadow-xs bg-[var(--surface-2)]/40'
                   }`}
                 >
                   <div className="flex items-start gap-3.5">
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                      notif.read_at ? 'bg-[#F4F1EB] text-[#4A5666]' : 'bg-[#12263A] text-[#D9B877]'
+                      notif.read_at ? 'bg-[var(--surface-muted)] text-[var(--text-2)]' : 'bg-[var(--surface-2)] text-[#8A6A2F] dark:text-[#D9B877] border border-[#D9B877]/30'
                     }`}>
                       <Bell className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-semibold text-[#12263A]">{notif.title}</h4>
+                        <h4 className="text-sm font-semibold text-[var(--text)]">{notif.title}</h4>
                         {!notif.read_at && (
                           <span className="w-2 h-2 rounded-full bg-[#D9B877] inline-block" />
                         )}
                       </div>
-                      <p className="text-xs text-[#4A5666] mt-0.5 leading-relaxed">{notif.message}</p>
+                      <p className="text-xs text-[var(--text-2)] mt-0.5 leading-relaxed">{notif.message}</p>
                       {notif.created_at && (
                         <p className="text-[11px] text-[#A08A5B] mt-1.5 font-mono">
                           {new Date(notif.created_at).toLocaleString('id-ID', {
@@ -1821,7 +1821,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleMarkAsRead(notif.id)}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#F4F1EB] hover:bg-[#E6DDD0] text-[#12263A] cursor-pointer"
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--surface-muted)] hover:bg-[var(--border)] text-[var(--text)] cursor-pointer"
                       >
                         Tandai Dibaca
                       </button>
@@ -1852,13 +1852,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             description="Perbarui informasi data diri dan kata sandi keamanan Anda."
           />
 
-          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 lg:p-8 max-w-xl space-y-6">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 lg:p-8 max-w-xl space-y-6">
             {/* Bagian Data Diri */}
             <div>
               <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                 Data Pribadi
               </span>
-              <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-4">
+              <h3 className="font-serif text-xl font-semibold text-[var(--text)] mb-4">
                 Informasi Pelanggan
               </h3>
 
@@ -1874,52 +1874,52 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   <button
                     type="button"
                     onClick={() => toast.success('Foto profil disinkronkan dengan akun pelanggan Anda.')}
-                    className="min-h-[38px] px-4 rounded-full border border-[#12263A] text-xs font-semibold text-[#12263A] hover:bg-[#F4F1EB]"
+                    className="min-h-[38px] px-4 rounded-full border border-[var(--border)] text-xs font-semibold text-[var(--text)] hover:bg-[var(--surface-muted)]"
                   >
                     Ganti Foto
                   </button>
-                  <span className="block text-[11px] text-[#4A5666] mt-1">Format JPG atau PNG</span>
+                  <span className="block text-[11px] text-[var(--text-2)] mt-1">Format JPG atau PNG</span>
                 </div>
               </div>
 
               <div className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Nama Lengkap</label>
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Nama Lengkap</label>
                   <input
                     type="text"
                     value={profileData.name}
                     onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                    className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Alamat Email</label>
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Alamat Email</label>
                   <input
                     type="email"
                     value={profileData.email}
                     onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                    className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">Nomor WhatsApp</label>
+                    <label className="block text-xs font-semibold text-[var(--text)] mb-1">Nomor WhatsApp</label>
                     <input
                       type="text"
                       value={profileData.phone}
                       onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                      className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                      className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">Tanggal Lahir</label>
+                    <label className="block text-xs font-semibold text-[var(--text)] mb-1">Tanggal Lahir</label>
                     <input
                       type="date"
                       value={profileData.birthDate}
                       onChange={(e) => setProfileData({ ...profileData, birthDate: e.target.value })}
-                      className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                      className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                     />
                   </div>
                 </div>
@@ -1927,48 +1927,48 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             </div>
 
             {/* Bagian Keamanan */}
-            <form onSubmit={handleUpdatePassword} className="pt-6 border-t border-[#E6DDD0]">
+            <form onSubmit={handleUpdatePassword} className="pt-6 border-t border-[var(--border)]">
               <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F]">
                 Kredensial
               </span>
-              <h3 className="font-serif text-xl font-semibold text-[#12263A] mb-4">
+              <h3 className="font-serif text-xl font-semibold text-[var(--text)] mb-4">
                 Keamanan &amp; Kata Sandi
               </h3>
 
               <div className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-[#12263A] mb-1">Kata Sandi Saat Ini</label>
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Kata Sandi Saat Ini</label>
                   <input
                     type="password"
                     required
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                    className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">Kata Sandi Baru (Min. 12 Karakter)</label>
+                    <label className="block text-xs font-semibold text-[var(--text)] mb-1">Kata Sandi Baru (Min. 12 Karakter)</label>
                     <input
                       type="password"
                       required
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                      className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-[#12263A] mb-1">Konfirmasi Kata Sandi</label>
+                    <label className="block text-xs font-semibold text-[var(--text)] mb-1">Konfirmasi Kata Sandi</label>
                     <input
                       type="password"
                       required
                       value={newPasswordConfirmation}
                       onChange={(e) => setNewPasswordConfirmation(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A]"
+                      className="w-full min-h-[44px] px-4 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text)]"
                     />
                   </div>
                 </div>
@@ -1987,7 +1987,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   <button
                     type="submit"
                     disabled={isUpdatingPassword}
-                    className="min-h-[40px] px-5 rounded-full border border-[#12263A] text-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB] disabled:opacity-50"
+                    className="min-h-[40px] px-5 rounded-full border border-[var(--border)] text-[var(--text)] text-xs font-semibold hover:bg-[var(--surface-muted)] disabled:opacity-50"
                   >
                     {isUpdatingPassword ? 'Memperbarui...' : 'Perbarui Kata Sandi'}
                   </button>
@@ -2002,11 +2002,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             )}
 
             {/* Tombol: Simpan Perubahan (utama) & Batal */}
-            <div className="pt-4 border-t border-[#E6DDD0] flex items-center justify-end gap-3">
+            <div className="pt-4 border-t border-[var(--border)] flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setActiveMenu('summary')}
-                className="min-h-[44px] px-6 rounded-full border border-[#12263A] text-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB] cursor-pointer"
+                className="min-h-[44px] px-6 rounded-full border border-[var(--border)] text-[var(--text)] text-xs font-semibold hover:bg-[var(--surface-muted)] cursor-pointer"
               >
                 Batal
               </button>
@@ -2038,15 +2038,15 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
          ======================================================== */}
       {isLogoutDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white border border-[#E6DDD0] rounded-2xl p-6 w-full max-w-sm shadow-xl text-center">
+          <div className="bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-2xl w-[calc(100%-1.5rem)] max-w-sm max-h-[92dvh] overflow-y-auto p-5 sm:p-6 shadow-xl text-center">
             <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-3">
               <LogOut className="w-6 h-6" />
             </div>
 
-            <h3 className="font-serif text-2xl font-semibold text-[#12263A] mb-2">
+            <h3 className="font-serif text-2xl font-semibold text-[var(--text)] mb-2">
               Keluar dari akun?
             </h3>
-            <p className="text-xs text-[#4A5666] mb-6">
+            <p className="text-xs text-[var(--text-2)] mb-6">
               Anda perlu masuk kembali untuk mengakses keranjang belanja dan riwayat pesanan Anda.
             </p>
 
@@ -2054,7 +2054,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               <button
                 type="button"
                 onClick={() => setIsLogoutDialogOpen(false)}
-                className="min-h-[44px] flex-1 rounded-full border border-[#12263A] text-[#12263A] text-xs font-semibold hover:bg-[#F4F1EB] cursor-pointer"
+                className="min-h-[44px] flex-1 rounded-full border border-[var(--border)] text-[var(--text)] text-xs font-semibold hover:bg-[var(--surface-muted)] cursor-pointer"
               >
                 Batal
               </button>
