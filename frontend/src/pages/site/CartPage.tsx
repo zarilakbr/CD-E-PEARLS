@@ -279,10 +279,10 @@ export const CartPage: React.FC<CartPageProps> = ({
       <div className="hidden lg:block w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 space-y-12">
         {/* Title */}
         <div>
-          <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] block mb-1">
+          <span className="text-[12px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] dark:text-[#D9B877] block mb-1">
             Keranjang Belanja
           </span>
-          <h1 className="font-serif text-3xl sm:text-4xl font-medium text-[#12263A]">
+          <h1 className="font-serif text-3xl sm:text-4xl font-medium text-[var(--text)]">
             Tas Perhiasan Anda
           </h1>
         </div>
@@ -290,15 +290,15 @@ export const CartPage: React.FC<CartPageProps> = ({
         {cartItems.length > 0 ? (
           <div className="grid grid-cols-12 gap-10 items-start">
             {/* Kolom Kiri: Daftar Item */}
-            <div className="col-span-8 bg-white border border-[#E6DDD0] rounded-2xl p-6 sm:p-8 space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-[#E6DDD0]">
-                <span className="text-xs uppercase tracking-wider font-semibold text-[#4A5666]">
+            <div className="col-span-8 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 sm:p-8 space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
+                <span className="text-xs uppercase tracking-wider font-semibold text-[var(--text-2)]">
                   Perhiasan Mutiara ({cartItems.length} item)
                 </span>
                 <button
                   type="button"
                   onClick={() => clearCart()}
-                  className="text-xs text-red-600 hover:underline cursor-pointer"
+                  className="text-xs text-red-600 dark:text-red-400 hover:underline cursor-pointer"
                 >
                   Kosongkan Keranjang
                 </button>
@@ -311,11 +311,11 @@ export const CartPage: React.FC<CartPageProps> = ({
                   return (
                     <div
                       key={item.product.id}
-                      className="flex flex-row items-center justify-between gap-4 p-4 rounded-xl bg-[#FBF8F3] border border-[#E6DDD0]"
+                      className="flex flex-row items-center justify-between gap-4 p-4 rounded-xl bg-[var(--surface-muted)] border border-[var(--border)]"
                     >
                       <div className="flex items-center gap-4">
                         {/* Foto Perhiasan Mewah */}
-                        <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#E6DDD0] bg-[#12263A] shrink-0 shadow-xs">
+                        <div className="w-16 h-16 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--surface-2)] shrink-0 shadow-xs">
                           <img
                             src={getItemImage(item.product.category, item.product.image)}
                             alt={`${item.product.name} — Perhiasan Mutiara`}
@@ -327,16 +327,16 @@ export const CartPage: React.FC<CartPageProps> = ({
                           />
                         </div>
                         <div>
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A6A2F]">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A6A2F] dark:text-[#D9B877]">
                             {typeof item.product.category === 'object' ? item.product.category?.name : (item.product.category || 'Mutiara South Sea')}
                           </span>
-                          <h3 className="font-serif text-lg font-medium text-[#12263A] leading-tight mt-0.5">
+                          <h3 className="font-serif text-lg font-medium text-[var(--text)] leading-tight mt-0.5">
                             {item.product.name}
                           </h3>
-                          <p className="text-xs text-[#4A5666] mt-1">
+                          <p className="text-xs text-[var(--text-2)] mt-1">
                             {item.product.pearlSize || item.product.pearl_size || '12 mm'} • {item.product.metal || 'Emas 18K'} • Grade AAA
                             {item.product.stock !== undefined && (
-                              <span className="ml-2 font-semibold text-[#8A6A2F]">
+                              <span className="ml-2 font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
                                 [Stok Tersedia: {item.product.stock}]
                               </span>
                             )}
@@ -346,22 +346,22 @@ export const CartPage: React.FC<CartPageProps> = ({
 
                       <div className="flex items-center justify-end gap-6">
                         {/* Quantity controls */}
-                        <div className="flex items-center border border-[#E6DDD0] rounded-full bg-white">
+                        <div className="flex items-center border border-[var(--border)] rounded-full bg-[var(--surface)]">
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                            className="p-1.5 hover:bg-[#EDE6DA] rounded-l-full text-[#12263A] cursor-pointer"
+                            className="p-1.5 hover:bg-[var(--surface-muted)] rounded-l-full text-[var(--text)] cursor-pointer"
                             aria-label="Kurangi jumlah"
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </button>
-                          <span className="px-3 text-xs font-semibold text-[#12263A]">{item.quantity}</span>
+                          <span className="px-3 text-xs font-semibold text-[var(--text)]">{item.quantity}</span>
                           <button
                             type="button"
                             disabled={isMaxStock}
                             onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                             title={isMaxStock ? 'Stok perhiasan maksimal telah tercapai' : 'Tambah jumlah'}
-                            className="p-1.5 hover:bg-[#EDE6DA] rounded-r-full text-[#12263A] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="p-1.5 hover:bg-[var(--surface-muted)] rounded-r-full text-[var(--text)] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                             aria-label="Tambah jumlah"
                           >
                             <Plus className="w-3.5 h-3.5" />
@@ -370,7 +370,7 @@ export const CartPage: React.FC<CartPageProps> = ({
 
                         {/* Price */}
                         <div className="text-right">
-                          <div className="font-serif text-base sm:text-lg font-semibold text-[#12263A]">
+                          <div className="font-serif text-base sm:text-lg font-semibold text-[var(--text)]">
                             Rp {(item.product.price * item.quantity).toLocaleString('id-ID')}
                           </div>
                         </div>
@@ -379,7 +379,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                         <button
                           type="button"
                           onClick={() => removeFromCart(item.product.id)}
-                          className="p-1.5 text-[#4A5666] hover:text-red-600 cursor-pointer"
+                          className="p-1.5 text-[var(--text-2)] hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
                           title="Hapus"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -390,7 +390,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                 })}
               </div>
 
-              <div className="pt-4 flex items-center justify-between text-xs text-[#8A6A2F]">
+              <div className="pt-4 flex items-center justify-between text-xs text-[#8A6A2F] dark:text-[#D9B877]">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4" />
                   <span>Pengiriman dilindungi asuransi perhiasan resmi hingga tujuan.</span>
@@ -406,28 +406,28 @@ export const CartPage: React.FC<CartPageProps> = ({
             </div>
 
             {/* Kolom Kanan: Ringkasan Total & Checkout */}
-            <div className="col-span-4 bg-white border border-[#E6DDD0] rounded-2xl p-6 sm:p-8 space-y-6">
-              <h3 className="font-serif text-xl font-medium text-[#12263A] pb-3 border-b border-[#E6DDD0]">
+            <div className="col-span-4 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 sm:p-8 space-y-6">
+              <h3 className="font-serif text-xl font-medium text-[var(--text)] pb-3 border-b border-[var(--border)]">
                 Ringkasan Pembelian
               </h3>
 
-              <div className="space-y-3 text-xs text-[#4A5666]">
+              <div className="space-y-3 text-xs text-[var(--text-2)]">
                 <div className="flex justify-between">
                   <span>Subtotal Perhiasan</span>
-                  <span className="font-semibold text-[#12263A]">Rp {activeSubtotal.toLocaleString('id-ID')}</span>
+                  <span className="font-semibold text-[var(--text)]">Rp {activeSubtotal.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Asuransi Gemologi Penuh</span>
-                  <span className="font-semibold text-[#12263A]">Rp {activeInsurance.toLocaleString('id-ID')}</span>
+                  <span className="font-semibold text-[var(--text)]">Rp {activeInsurance.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Ongkos Kirim Domestik</span>
-                  <span className="font-semibold text-emerald-700">Gratis (Promo Atelier)</span>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">Gratis (Promo Atelier)</span>
                 </div>
 
-                <div className="pt-4 border-t border-[#E6DDD0] flex justify-between items-baseline">
-                  <span className="font-serif text-base font-medium text-[#12263A]">Total Pembayaran</span>
-                  <span className="font-serif text-2xl font-semibold text-[#8A6A2F]">
+                <div className="pt-4 border-t border-[var(--border)] flex justify-between items-baseline">
+                  <span className="font-serif text-base font-medium text-[var(--text)]">Total Pembayaran</span>
+                  <span className="font-serif text-2xl font-semibold text-[#8A6A2F] dark:text-[#D9B877]">
                     Rp {activeTotal.toLocaleString('id-ID')}
                   </span>
                 </div>
@@ -437,14 +437,14 @@ export const CartPage: React.FC<CartPageProps> = ({
                 type="button"
                 onClick={handleCheckoutClick}
                 disabled={selectedItems.length === 0}
-                className="w-full min-h-[48px] px-6 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all active:scale-98 disabled:opacity-50"
+                className="w-full min-h-[48px] px-6 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] dark:bg-[#D9B877] dark:text-[#12263A] dark:hover:bg-[#C9A968] text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all active:scale-98 disabled:opacity-50"
               >
                 <span>Lanjut ke Pembayaran ({selectedItems.length})</span>
-                <ArrowRight className="w-4 h-4 text-[#D9B877]" />
+                <ArrowRight className="w-4 h-4 text-[#D9B877] dark:text-[#12263A]" />
               </button>
 
-              <div className="pt-4 border-t border-[#E6DDD0] text-center">
-                <span className="text-[11px] text-[#4A5666]">
+              <div className="pt-4 border-t border-[var(--border)] text-center">
+                <span className="text-[11px] text-[var(--text-2)]">
                   Sertifikat gemologi lab &amp; kotak beludru eksklusif disertakan otomatis.
                 </span>
               </div>
@@ -453,19 +453,19 @@ export const CartPage: React.FC<CartPageProps> = ({
         ) : (
           /* Keadaan Kosong Desktop */
           <div className="text-center py-20 space-y-6 max-w-md mx-auto">
-            <div className="w-20 h-20 rounded-full bg-[#EDE6DA] mx-auto flex items-center justify-center text-[#8A6A2F]">
+            <div className="w-20 h-20 rounded-full bg-[var(--surface-muted)] mx-auto flex items-center justify-center text-[#8A6A2F] dark:text-[#D9B877]">
               <ShoppingBag className="w-10 h-10 stroke-[1.5]" />
             </div>
-            <h2 className="font-serif text-3xl font-medium text-[#12263A]">
+            <h2 className="font-serif text-3xl font-medium text-[var(--text)]">
               Tas Belanja Anda Kosong
             </h2>
-            <p className="text-xs text-[#4A5666] leading-relaxed">
+            <p className="text-xs text-[var(--text-2)] leading-relaxed">
               Jelajahi mahakarya mutiara air laut selatan kami dari perairan Sekotong &amp; Medana, Lombok.
             </p>
             <button
               type="button"
               onClick={onNavigateCatalog || (() => navigate('/katalog'))}
-              className="min-h-[44px] px-8 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] text-xs font-semibold cursor-pointer shadow-md"
+              className="min-h-[44px] px-8 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] dark:bg-[#D9B877] dark:text-[#12263A] dark:hover:bg-[#C9A968] text-xs font-semibold cursor-pointer shadow-md"
             >
               Mulai Eksplorasi Koleksi
             </button>
@@ -473,15 +473,15 @@ export const CartPage: React.FC<CartPageProps> = ({
         )}
 
         {/* Lacak Pesanan Langsung */}
-        <section className="bg-white border border-[#E6DDD0] rounded-2xl p-6 sm:p-8 space-y-6">
+        <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 sm:p-8 space-y-6">
           <div>
-            <span className="text-[11px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] block mb-1">
+            <span className="text-[11px] uppercase tracking-[0.16em] font-semibold text-[#8A6A2F] dark:text-[#D9B877] block mb-1">
               Layanan Concierge
             </span>
-            <h2 className="font-serif text-2xl font-medium text-[#12263A]">
+            <h2 className="font-serif text-2xl font-medium text-[var(--text)]">
               Lacak Pengiriman Pesanan Anda
             </h2>
-            <p className="text-xs text-[#4A5666] mt-1">
+            <p className="text-xs text-[var(--text-2)] mt-1">
               Masukkan ID Pesanan atau Nomor Resi pengiriman berasuransi Anda untuk memantau status secara langsung.
             </p>
           </div>
@@ -493,29 +493,29 @@ export const CartPage: React.FC<CartPageProps> = ({
                 placeholder="Contoh: ORD-2026-081 atau JNE-882910"
                 value={orderLookupNumber}
                 onChange={(e) => setOrderLookupNumber(e.target.value)}
-                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[#F4F1EB] border border-[#E6DDD0] text-xs text-[#12263A] focus:outline-none focus:border-[#12263A]"
+                className="w-full min-h-[44px] pl-10 pr-4 rounded-full bg-[var(--input-bg)] border border-[var(--border)] text-xs text-[var(--text)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
               />
-              <Search className="w-4 h-4 text-[#4A5666] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-[var(--text-2)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
             <button
               type="submit"
-              className="w-full sm:w-auto min-h-[44px] px-7 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] text-xs font-semibold cursor-pointer shrink-0"
+              className="w-full sm:w-auto min-h-[44px] px-7 rounded-full bg-[#12263A] text-white hover:bg-[#1A3652] dark:bg-[#D9B877] dark:text-[#12263A] dark:hover:bg-[#C9A968] text-xs font-semibold cursor-pointer shrink-0"
             >
               Cek Status
             </button>
           </form>
 
           {lookupSearched && lookupResult && (
-            <div className="pt-6 border-t border-[#E6DDD0] space-y-4 animate-in fade-in">
+            <div className="pt-6 border-t border-[var(--border)] space-y-4 animate-in fade-in">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <span className="font-mono text-xs font-bold text-[#12263A]">{lookupResult.id}</span>
-                  <h3 className="font-serif text-xl font-semibold text-[#12263A] mt-0.5">
+                  <span className="font-mono text-xs font-bold text-[var(--text)]">{lookupResult.id}</span>
+                  <h3 className="font-serif text-xl font-semibold text-[var(--text)] mt-0.5">
                     Pesanan a.n. {lookupResult.customerName}
                   </h3>
                 </div>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#E1ECF7] text-[#1D4E7A]">
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[var(--info-bg)] border border-[var(--info-border)] text-[var(--info-text)]">
                   {lookupResult.status}
                 </span>
               </div>
@@ -534,7 +534,7 @@ export const CartPage: React.FC<CartPageProps> = ({
           )}
 
           {lookupSearched && !lookupResult && (
-            <div className="p-4 rounded-xl bg-[#F4F1EB] text-center text-xs text-[#4A5666]">
+            <div className="p-4 rounded-xl bg-[var(--surface-muted)] text-center text-xs text-[var(--text-2)]">
               Nomor pesanan tidak ditemukan. Coba periksa kembali email konfirmasi Anda.
             </div>
           )}
