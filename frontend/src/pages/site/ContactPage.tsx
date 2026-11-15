@@ -1,6 +1,7 @@
 import React from 'react';
 import { MapPin, Phone, Mail, Clock, Send, Sparkles } from 'lucide-react';
 import { Seo } from '../../components/common/Seo';
+import { StoreMap } from '../../components/common/StoreMap';
 
 export const ContactPage: React.FC = () => {
   return (
@@ -40,6 +41,8 @@ export const ContactPage: React.FC = () => {
                 </p>
               </div>
             </div>
+
+            <StoreMap />
 
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#8A6A2F]/10 text-[#8A6A2F] flex items-center justify-center shrink-0 mt-0.5">

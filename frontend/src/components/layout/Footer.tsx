@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Send, MapPin, ShieldCheck, MessageCircle, Sparkles } from 'lucide-react';
+import { STORE_CONTACT } from '../../lib/seo';
 
 interface FooterProps {
   onNavigate: (tab: string, categoryFilter?: string) => void;
@@ -134,9 +135,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
         {/* Bottom: Address, Certification & Copyright */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-[#F5ECE5]/60 text-center md:text-left">
-          <div className="flex items-center gap-2">
-            <MapPin size={15} className="text-[#BD8F4B] shrink-0" />
-            <span>Jl. Raya Senggigi No. 88, Batu Layar, Lombok Barat, NTB 83355</span>
+          <div className="flex flex-col items-center md:items-start gap-1">
+            <div className="flex items-center gap-2">
+              <MapPin size={15} className="text-[#BD8F4B] shrink-0" />
+              <span>Jl. Raya Senggigi No. 88, Batu Layar, Lombok Barat, NTB 83355</span>
+            </div>
+            <a
+              href={STORE_CONTACT.mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-[#BD8F4B] hover:text-[#D9B877] underline decoration-[#BD8F4B]/40 hover:decoration-[#D9B877] transition-colors md:pl-6"
+            >
+              Lihat di Google Maps
+            </a>
           </div>
 
           <div className="flex items-center gap-6">

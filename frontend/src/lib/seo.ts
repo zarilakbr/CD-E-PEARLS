@@ -21,6 +21,10 @@ export const STORE_CONTACT = {
   openingHours: ['Mo-Sa 09:00-18:00'], // TODO: Pastikan jam operasional galeri
   priceRange: 'Rp 2.000.000 - Rp 150.000.000',
   sameAs: [] as string[], // TODO: Tambahkan tautan Instagram/TikTok/Facebook resmi
+  mapsUrl:
+    'https://maps.google.com/?q=CD%27E+Pearls+Lombok%2C+Jl.+Raya+Senggigi+No.+88%2C+Batu+Layar%2C+Lombok+Barat%2C+Nusa+Tenggara+Barat+83355',
+  mapsEmbedQuery:
+    "CD'E Pearls Lombok, Jl. Raya Senggigi No. 88, Batu Layar, Lombok Barat, Nusa Tenggara Barat 83355",
 } as const;
 
 export interface StaticSitemapRoute {
@@ -287,6 +291,7 @@ export function buildLocalBusinessJsonLd(): Record<string, unknown> {
       postalCode: STORE_CONTACT.postalCode,
       addressCountry: STORE_CONTACT.addressCountry,
     },
+    hasMap: STORE_CONTACT.mapsUrl,
     parentOrganization: {
       '@id': `${SITE_URL}/#organization`,
     },
