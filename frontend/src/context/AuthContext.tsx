@@ -3,8 +3,9 @@ import { apiClient, authApi, authChannel, type UserResponse } from '../lib/api';
 import { queryClient } from '../lib/queryClient';
 
 export type UserRole = 'user' | 'admin' | 'spi';
+export type { UserResponse };
 
-interface AuthContextType {
+export interface AuthContextType {
   user: UserResponse | null;
   role: UserRole | null;
   isAuthenticated: boolean;
@@ -28,7 +29,7 @@ interface AuthContextType {
   refetchUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserResponse | null>(null);
