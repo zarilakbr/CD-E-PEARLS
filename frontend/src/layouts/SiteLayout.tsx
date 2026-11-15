@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { UserProfileDropdown } from '../components/common/UserProfileDropdown';
 import { SearchOverlay } from '../components/common/SearchOverlay';
+import { catalogApi } from '../lib/api';
 import {
   Heart,
   ShoppingBag,
@@ -15,6 +16,8 @@ import {
   Search,
   Sun,
   Moon,
+  ChevronDown,
+  Sparkles,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
@@ -51,6 +54,8 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
   const { t, i18n } = useTranslation();
   const { resolvedTheme, toggleTheme } = useTheme();
   const { user, isAuthenticated, logout: authLogout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
   const [emailInput, setEmailInput] = useState('');
@@ -110,13 +115,118 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
     };
   }, []);
 
-  const navLinks = [
-    { id: 'home', label: t('site.nav.home', 'Home') },
-    { id: 'catalog', label: t('site.nav.catalog', 'Koleksi Produk') },
-    { id: 'studio', label: t('site.nav.studio', 'Studio 3D Atelier') },
-    { id: 'education', label: t('site.nav.education', 'Edukasi Mutiara') },
-    { id: 'about', label: t('site.nav.about', 'Tentang Kami') },
-  ];
+  // Tahap V7: Dropdown state & categories from GET /api/v1/categories
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [categories, setCategories] = useState<Array<{ id?: string | number; name: string; slug: string }>>([]);
+  const catalogDropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    try {
+      const promise = catalogApi?.getCategories?.();
+      if (promise && typeof promise.then === 'function') {
+        promise
+          .then((res: any) => {
+            const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+            if (mounted && list.length > 0) {
+              setCategories(list);
+            }
+          })
+          .catch(() => {
+            // Fallback: empty list (will display only "Semua Koleksi")
+          });
+      }
+    } catch {
+      // Safe fallback
+    }
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (catalogDropdownRef.current && !catalogDropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener('keydown', handleGlobalKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [isDropdownOpen]);
+
+  const handleMouseEnter = () => {
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+      dropdownTimeoutRef.current = null;
+    }
+    setIsDropdownOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setIsDropdownOpen(false);
+    }, 150);
+  };
+
+  const handleCatalogLabelClick = () => {
+    setIsDropdownOpen((prev) => !prev);
+    onNavigate('catalog');
+    navigate('/katalog');
+  };
+
+  const handleCatalogKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      setIsDropdownOpen((prev) => !prev);
+    } else if (e.key === 'Escape') {
+      setIsDropdownOpen(false);
+    }
+  };
+
+  const handleSelectCategory = (slug?: string) => {
+    setIsDropdownOpen(false);
+    onNavigate('catalog');
+    if (slug) {
+      navigate(`/katalog?kategori=${encodeURIComponent(slug)}`);
+    } else {
+      navigate('/katalog');
+    }
+  };
+
+  const isHomeActive = currentTab === 'home' || location.pathname === '/';
+  const isCatalogActive = currentTab === 'catalog' || location.pathname.startsWith('/katalog');
+  const isStudioActive = currentTab === 'studio' || location.pathname.startsWith('/studio');
+  const isEducationActive = currentTab === 'education' || location.pathname.startsWith('/edukasi');
+  const isAboutActive = currentTab === 'about' || location.pathname.startsWith('/tentang');
+  const isContactActive = currentTab === 'contact' || location.pathname.startsWith('/kontak');
+
+  const getNavLinkClass = (isActive: boolean) =>
+    `text-[13px] 2xl:text-[14px] font-medium tracking-wide transition-colors cursor-pointer relative py-1 whitespace-nowrap inline-flex items-center gap-1.5 ${
+      isActive
+        ? isOverDark && !isScrolled
+          ? 'text-white font-semibold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#D9B877]'
+          : 'text-[var(--text)] font-semibold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#8A6A2F] dark:after:bg-[#D9B877]'
+        : isOverDark && !isScrolled
+        ? 'text-white/80 hover:text-white'
+        : 'text-[var(--text-2)] hover:text-[var(--text)]'
+    }`;
 
   const currentLang = (i18n.language || 'id').startsWith('en') ? 'en' : 'id';
   const handleLangChange = (lang: 'id' | 'en') => {
@@ -162,7 +272,7 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
           data-slot="announcement-bar"
           className="hidden lg:block bg-[#12263A] text-[#D9B877] text-[12px] py-2 px-4 border-b border-[#D9B877]/20 select-none"
         >
-          <div className="max-w-[1200px] mx-auto flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-center tracking-wide">
+          <div className="max-w-[1200px] 2xl:max-w-[1440px] mx-auto flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-center tracking-wide">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>{t('site.announcement.shipping', 'Pengiriman Gratis & Berasuransi Penuh ke Seluruh Indonesia')}</span>
@@ -187,10 +297,13 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
         data-slot="mobile-header"
         className={`sticky top-0 z-30 transition-all duration-200 px-4 sm:px-6 py-2.5 sm:py-3 border-none shadow-none pt-[max(0.625rem,env(safe-area-inset-top))] ${headerThemeClasses}`}
       >
-        <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
+        <div className="max-w-[1200px] 2xl:max-w-[1440px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Authentic Brand Logo CD'E Pearls */}
           <div
-            onClick={() => onNavigate('home')}
+            onClick={() => {
+              onNavigate('home');
+              navigate('/');
+            }}
             className="cursor-pointer flex items-center select-none group shrink-0 py-1"
             title="CD'E Pearls Culture Pearls Lombok"
           >
@@ -218,33 +331,174 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
             <span className="truncate">{t('common.searchPublicPlaceholder', 'Cari mutiara...')}</span>
           </button>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden xl:flex items-center gap-6">
-            {navLinks.map((item) => {
-              const isActive = currentTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => onNavigate(item.id)}
-                  className={`text-[14px] font-medium tracking-wide transition-colors cursor-pointer relative py-1 ${
-                    isActive
-                      ? isOverDark && !isScrolled
-                        ? 'text-white font-semibold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#D9B877]'
-                        : 'text-[var(--text)] font-semibold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#8A6A2F] dark:after:bg-[#D9B877]'
-                      : isOverDark && !isScrolled
-                      ? 'text-white/80 hover:text-white'
-                      : 'text-[var(--text-2)] hover:text-[var(--text)]'
+          {/* Desktop Nav Links (TAHAP V7: Bahasa Indonesia, Dropdown Koleksi Produk, Menu Kontak, Anti-Overlap) */}
+          <nav className="hidden xl:flex items-center gap-3 xl:gap-3.5 2xl:gap-6 shrink-0">
+            {/* 1. Beranda */}
+            <button
+              type="button"
+              onClick={() => {
+                onNavigate('home');
+                navigate('/');
+              }}
+              className={getNavLinkClass(isHomeActive)}
+            >
+              Beranda
+            </button>
+
+            {/* 2. Koleksi Produk with Dropdown */}
+            <div
+              ref={catalogDropdownRef}
+              className="relative"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onMouseOver={handleMouseEnter}
+            >
+              <button
+                id="nav-koleksi-produk"
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={isDropdownOpen}
+                onClick={handleCatalogLabelClick}
+                onKeyDown={handleCatalogKeyDown}
+                onMouseEnter={handleMouseEnter}
+                onMouseOver={handleMouseEnter}
+                onFocus={handleMouseEnter}
+                className={getNavLinkClass(isCatalogActive)}
+              >
+                <span>Koleksi Produk</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    isDropdownOpen ? 'rotate-180 text-[#8A6A2F] dark:text-[#D9B877]' : 'opacity-70'
                   }`}
+                />
+              </button>
+
+              {/* Dropdown Menu Container */}
+              {isDropdownOpen && (
+                <div
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="nav-koleksi-produk"
+                  className="absolute top-full left-0 mt-2 w-64 rounded-2xl shadow-xl z-50 border p-2 backdrop-blur-md transition-all animate-in fade-in-0 zoom-in-95 bg-[var(--surface)] border-[var(--border)] text-[var(--text)]"
+                  style={{
+                    boxShadow: '0 12px 32px -4px rgba(18, 38, 58, 0.15), 0 4px 12px -2px rgba(18, 38, 58, 0.08)',
+                  }}
                 >
-                  {item.label}
-                </button>
-              );
-            })}
+                  {/* Item: Semua Koleksi */}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleSelectCategory('')}
+                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer text-[var(--text)] hover:bg-[var(--surface-2)] group"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-[#8A6A2F] dark:text-[#D9B877]" />
+                      <span>Semua Koleksi</span>
+                    </span>
+                    <span className="text-[10px] font-normal uppercase tracking-wider text-[var(--text-2)] group-hover:text-[#8A6A2F] dark:group-hover:text-[#D9B877]">
+                      Lihat Semua &rarr;
+                    </span>
+                  </button>
+
+                  {categories.length > 0 && (
+                    <div className="h-px bg-[var(--border)] my-1.5 opacity-60" />
+                  )}
+
+                  {/* Dynamic Category Items from API */}
+                  {categories.length > 0 && (
+                    <div className="max-h-64 overflow-y-auto space-y-0.5 custom-scrollbar">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat.id || cat.slug}
+                          type="button"
+                          role="menuitem"
+                          onClick={() => handleSelectCategory(cat.slug)}
+                          className="w-full text-left px-3.5 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-colors cursor-pointer text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[#8A6A2F] dark:hover:text-[#D9B877] group"
+                        >
+                          <span>{cat.name}</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#8A6A2F]/40 dark:bg-[#D9B877]/40 group-hover:bg-[#8A6A2F] dark:group-hover:bg-[#D9B877] transition-colors" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 3. Studio 3D */}
+            <button
+              type="button"
+              onClick={() => {
+                onNavigate('studio');
+                navigate('/studio');
+              }}
+              className={getNavLinkClass(isStudioActive)}
+            >
+              Studio 3D
+            </button>
+
+            {/* 4. Edukasi Mutiara */}
+            <button
+              type="button"
+              onClick={() => {
+                onNavigate('education');
+                navigate('/edukasi');
+              }}
+              className={getNavLinkClass(isEducationActive)}
+            >
+              Edukasi Mutiara
+            </button>
+
+            {/* 5. Tentang Kami */}
+            <button
+              type="button"
+              onClick={() => {
+                onNavigate('about');
+                navigate('/tentang');
+              }}
+              className={getNavLinkClass(isAboutActive)}
+            >
+              Tentang Kami
+            </button>
+
+            {/* 6. Kontak */}
+            <button
+              type="button"
+              onClick={() => {
+                onNavigate('contact');
+                navigate('/kontak');
+              }}
+              className={getNavLinkClass(isContactActive)}
+            >
+              Kontak
+            </button>
           </nav>
 
-          {/* Kolom Cari Berbentuk Pil di Header (Desktop) - min-w-0 mencegah overflow di 1024px */}
-          <div className="hidden md:flex items-center flex-1 min-w-0 max-w-[150px] lg:max-w-[190px] xl:max-w-sm mx-1 sm:mx-2">
+          {/* Search Controls:
+              - Compact Pill on XL (1280px - 1535px, prevents collision/overlap on 1280, 1366, 1440)
+              - Full Search Input Form on 2XL (>= 1536px / 1920px)
+              - Compact Search Pill on Tablet (md to lg)
+          */}
+          <button
+            type="button"
+            onClick={() => setIsSearchOverlayOpen(true)}
+            aria-label="Cari mutiara atau perhiasan"
+            title="Cari mutiara (⌘K)..."
+            className={`hidden xl:inline-flex 2xl:hidden min-h-[38px] px-3 items-center gap-2 rounded-full border text-xs transition-all cursor-pointer shadow-2xs shrink-0 ${
+              isOverDark && !isScrolled
+                ? 'border-white/30 bg-black/25 text-white/80 hover:text-white hover:bg-black/40'
+                : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-2)] hover:text-[var(--text)] hover:border-[#8A6A2F]/40'
+            }`}
+          >
+            <Search className="w-3.5 h-3.5 text-[#8A6A2F] dark:text-[#D9B877] shrink-0" />
+            <span className="text-[12px] opacity-80">Cari...</span>
+            <kbd className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-[var(--surface)] text-[var(--text-2)] border border-[var(--border)] shadow-2xs">
+              ⌘K
+            </kbd>
+          </button>
+
+          {/* Full Search Bar on 2XL (>= 1536px / 1920px) */}
+          <div className="hidden 2xl:flex items-center flex-1 min-w-0 max-w-xs 2xl:max-w-sm mx-3">
             <form onSubmit={handleHeaderSearchSubmit} className="relative w-full">
               <input
                 type="text"
@@ -266,13 +520,25 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
                 <button
                   type="button"
                   onClick={() => setHeaderSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-inherit hover:opacity-100 opacity-60"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-inherit hover:opacity-100 opacity-60 cursor-pointer"
                   aria-label="Bersihkan pencarian"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </form>
+          </div>
+
+          {/* Search Pill for Tablet (md to lg) */}
+          <div className="hidden md:flex lg:hidden items-center flex-1 min-w-0 max-w-[180px] mx-1">
+            <button
+              type="button"
+              onClick={() => setIsSearchOverlayOpen(true)}
+              className="w-full flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--surface-2)]/90 border border-[var(--border)] text-xs text-[var(--text-2)] hover:text-[var(--text)] transition-colors cursor-pointer shadow-2xs"
+            >
+              <Search className="w-3.5 h-3.5 text-[#8A6A2F] dark:text-[#D9B877] shrink-0" />
+              <span className="truncate">{t('common.searchPublicPlaceholder', 'Cari mutiara...')}</span>
+            </button>
           </div>
 
           {/* Controls: Bahasa (ID|EN), Tema (Pill Switch), Wishlist, Cart, User Profile */}
