@@ -60,7 +60,7 @@ describe('Tahap V7: Navbar Dropdown Koleksi Produk, Menu Kontak, dan Bahasa Indo
     { id: 3, name: 'Anting Drop', slug: 'anting-drop' },
   ];
 
-  it('1. Merender navbar desktop: memuat teks Beranda, Koleksi Produk, Studio 3D, Edukasi Mutiara, Tentang Kami, Kontak', async () => {
+  it('1. Merender navbar desktop: memuat teks Beranda, Koleksi Produk, Edukasi Mutiara, Tentang Kami, Kontak (tanpa Studio 3D saat belum login)', async () => {
     vi.mocked(catalogApi.getCategories).mockResolvedValueOnce(mockCategories);
 
     await act(async () => {
@@ -83,13 +83,13 @@ describe('Tahap V7: Navbar Dropdown Koleksi Produk, Menu Kontak, dan Bahasa Indo
     const navText = desktopNav?.textContent || '';
     expect(navText).toContain('Beranda');
     expect(navText).toContain('Koleksi Produk');
-    expect(navText).toContain('Studio 3D');
+    expect(navText).not.toContain('Studio 3D');
     expect(navText).toContain('Edukasi Mutiara');
     expect(navText).toContain('Tentang Kami');
     expect(navText).toContain('Kontak');
   });
 
-  it('2. Memastikan teks "Home" dan "Studio 3D Atelier" TIDAK muncul pada navbar desktop', async () => {
+  it('2. Memastikan teks "Home", "Studio 3D", dan "Studio 3D Atelier" TIDAK muncul pada navbar desktop saat belum login', async () => {
     vi.mocked(catalogApi.getCategories).mockResolvedValueOnce(mockCategories);
 
     await act(async () => {
@@ -109,8 +109,9 @@ describe('Tahap V7: Navbar Dropdown Koleksi Produk, Menu Kontak, dan Bahasa Indo
     const desktopNav = container.querySelector('nav');
     const navText = desktopNav?.textContent || '';
 
-    // Memastikan tidak ada sisa bahasa Inggris
+    // Memastikan tidak ada sisa bahasa Inggris atau Studio 3D untuk pengunjung belum login
     expect(navText).not.toContain('Home');
+    expect(navText).not.toContain('Studio 3D');
     expect(navText).not.toContain('Studio 3D Atelier');
   });
 

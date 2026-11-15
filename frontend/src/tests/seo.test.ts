@@ -141,6 +141,7 @@ describe('SEO & Structured Data Helpers', () => {
     expect(xml).toContain('<loc>https://cdepearlslombok.id/produk/103</loc>');
     expect(xml).toContain('<lastmod>2026-11-12</lastmod>');
     expect(xml).not.toContain('/produk/102');
+    expect(xml).not.toContain('/studio');
     expect(xml).not.toContain('/admin');
     expect(xml).not.toContain('/spi');
     expect(xml).not.toContain('/akun');
@@ -152,6 +153,7 @@ describe('SEO & Structured Data Helpers', () => {
     expect(isPrivateNoindexPath('/spi')).toBe(true);
     expect(isPrivateNoindexPath('/akun/pesanan')).toBe(true);
     expect(isPrivateNoindexPath('/checkout')).toBe(true);
+    expect(isPrivateNoindexPath('/studio')).toBe(true);
     expect(isPrivateNoindexPath('/masuk')).toBe(true);
     expect(isPrivateNoindexPath('/daftar')).toBe(true);
     expect(isPrivateNoindexPath('/login')).toBe(true);
@@ -172,6 +174,7 @@ describe('SEO & Structured Data Helpers', () => {
     expect(ROBOTS_TXT_CONTENT).toContain('Disallow: /spi');
     expect(ROBOTS_TXT_CONTENT).toContain('Disallow: /akun');
     expect(ROBOTS_TXT_CONTENT).toContain('Disallow: /checkout');
+    expect(ROBOTS_TXT_CONTENT).toContain('Disallow: /studio');
     expect(ROBOTS_TXT_CONTENT).toContain('Disallow: /api');
     expect(ROBOTS_TXT_CONTENT).toContain('Sitemap: https://cdepearlslombok.id/sitemap.xml');
     expect(clampTitle('A '.repeat(50)).length).toBeLessThanOrEqual(60);

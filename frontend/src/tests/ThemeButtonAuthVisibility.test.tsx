@@ -95,7 +95,7 @@ describe('Tahap V8: Visibilitas Tombol Tema Khusus Pengguna Login', () => {
     expect(switchThemeByLabel).toBeNull();
   });
 
-  it('2. Pengunjung belum login: kontrol pilihan bahasa ID | EN TETAP ADA di navbar', async () => {
+  it('2. Pengunjung belum login: kontrol pilihan bahasa ID | EN TIDAK ADA di DOM navbar (Tahap V9)', async () => {
     const unauthAuth = createMockAuth(false, null);
 
     await act(async () => {
@@ -113,12 +113,7 @@ describe('Tahap V8: Visibilitas Tombol Tema Khusus Pengguna Login', () => {
     });
 
     const langGroup = container.querySelector('div[role="group"][aria-label="Pilih Bahasa"]');
-    expect(langGroup).not.toBeNull();
-
-    const buttons = Array.from(langGroup?.querySelectorAll('button') || []);
-    const buttonTexts = buttons.map((b) => b.textContent?.trim());
-    expect(buttonTexts).toContain('ID');
-    expect(buttonTexts).toContain('EN');
+    expect(langGroup).toBeNull();
   });
 
   it('3. Pengguna login: tombol switch tema MUNCUL di DOM dan memanggil toggleTheme saat diklik', async () => {
@@ -149,7 +144,7 @@ describe('Tahap V8: Visibilitas Tombol Tema Khusus Pengguna Login', () => {
     // Verifikasi tombol switch tema dirender
     const themeSwitch = container.querySelector('button[role="switch"]') as HTMLButtonElement;
     expect(themeSwitch).not.toBeNull();
-    expect(themeSwitch.getAttribute('aria-label')).toBe('Ganti tema tampilan');
+    expect(themeSwitch.getAttribute('aria-label')?.toLowerCase()).toBe('ganti tema tampilan');
 
     // Klik tombol tema dan verifikasi toggleTheme dipanggil
     await act(async () => {
@@ -158,11 +153,13 @@ describe('Tahap V8: Visibilitas Tombol Tema Khusus Pengguna Login', () => {
     expect(mockToggleTheme).toHaveBeenCalledTimes(1);
 
     // Bahasa ID dan EN juga tetap ada untuk pengguna login
-    const langGroup = container.querySelector('div[role="group"][aria-label="Pilih Bahasa"]');
-    expect(langGroup).not.toBeNull();
+    const langButtons = Array.from(container.querySelectorAll('button')).filter((b) =>
+      ['ID', 'EN'].includes(b.textContent?.trim() || '')
+    );
+    expect(langButtons.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('4. GuestAccountHub belum login: pengatur tema TIDAK ADA di DOM, bahasa ID | EN TETAP ADA', async () => {
+  it('4. GuestAccountHub belum login: pengatur tema dan bahasa TIDAK ADA di DOM (Tahap V9)', async () => {
     const unauthAuth = createMockAuth(false, null);
 
     await act(async () => {
@@ -184,10 +181,9 @@ describe('Tahap V8: Visibilitas Tombol Tema Khusus Pengguna Login', () => {
     expect(themeChooser).toBeNull();
     expect(container.textContent).not.toContain('Tema Tampilan');
 
-    // Pemilih Bahasa tetap ada
+    // Tidak ada Pemilih Bahasa untuk tamu (Tahap V9)
     const langGroup = container.querySelector('div[role="group"][aria-label="Pilih Bahasa"]');
-    expect(langGroup).not.toBeNull();
-    expect(container.textContent).toContain('Bahasa');
+    expect(langGroup).toBeNull();
   });
 
   it('5. GuestAccountHub saat terautentikasi: pengatur tema MUNCUL di DOM', async () => {

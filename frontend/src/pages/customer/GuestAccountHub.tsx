@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Sparkles,
   ShieldCheck,
   Truck,
   BookOpen,
@@ -35,7 +34,6 @@ export const GuestAccountHub: React.FC = () => {
   const currentLang = i18n.language?.startsWith('en') ? 'en' : 'id';
 
   const menuRows = [
-    { label: 'Studio 3D', icon: Sparkles, path: '/studio' },
     { label: 'Cek Sertifikat', icon: ShieldCheck, path: '/cek-sertifikat' },
     { label: 'Lacak Pesanan', icon: Truck, path: '/lacak-pesanan' },
     { label: 'Edukasi Mutiara', icon: BookOpen, path: '/edukasi' },
@@ -115,48 +113,48 @@ export const GuestAccountHub: React.FC = () => {
         })}
       </Card>
 
-      {/* 3. Pengaturan Bahasa & Tema (Satu Pemilih Masing-Masing) */}
-      <Card className="p-4 bg-[var(--surface)] border-[var(--border)] shadow-xs rounded-2xl space-y-3.5">
-        {/* Pemilih Bahasa */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-[#8A6A2F] dark:text-[#D9B877]" />
-            <span className="text-xs font-medium text-[var(--text)]">Bahasa</span>
-          </div>
-          <div
-            role="group"
-            aria-label="Pilih Bahasa"
-            className="inline-flex items-center p-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] text-xs font-semibold"
-          >
-            <button
-              type="button"
-              aria-pressed={currentLang === 'id'}
-              onClick={() => i18n.changeLanguage('id')}
-              className={`min-h-[32px] px-3 rounded-md transition-colors ${
-                currentLang === 'id'
-                  ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] shadow-xs font-bold'
-                  : 'text-[var(--text-2)] hover:text-[var(--text)]'
-              }`}
+      {/* 3. Pengaturan Bahasa & Tema (HANYA untuk pengguna yang sudah login - TAHAP V9) */}
+      {isAuthenticated && (
+        <Card className="p-4 bg-[var(--surface)] border-[var(--border)] shadow-xs rounded-2xl space-y-3.5">
+          {/* Pemilih Bahasa */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-[#8A6A2F] dark:text-[#D9B877]" />
+              <span className="text-xs font-medium text-[var(--text)]">Bahasa</span>
+            </div>
+            <div
+              role="group"
+              aria-label="Pilih Bahasa"
+              className="inline-flex items-center p-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] text-xs font-semibold"
             >
-              ID
-            </button>
-            <button
-              type="button"
-              aria-pressed={currentLang === 'en'}
-              onClick={() => i18n.changeLanguage('en')}
-              className={`min-h-[32px] px-3 rounded-md transition-colors ${
-                currentLang === 'en'
-                  ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] shadow-xs font-bold'
-                  : 'text-[var(--text-2)] hover:text-[var(--text)]'
-              }`}
-            >
-              EN
-            </button>
+              <button
+                type="button"
+                aria-pressed={currentLang === 'id'}
+                onClick={() => i18n.changeLanguage('id')}
+                className={`min-h-[32px] px-3 rounded-md transition-colors ${
+                  currentLang === 'id'
+                    ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] shadow-xs font-bold'
+                    : 'text-[var(--text-2)] hover:text-[var(--text)]'
+                }`}
+              >
+                ID
+              </button>
+              <button
+                type="button"
+                aria-pressed={currentLang === 'en'}
+                onClick={() => i18n.changeLanguage('en')}
+                className={`min-h-[32px] px-3 rounded-md transition-colors ${
+                  currentLang === 'en'
+                    ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] shadow-xs font-bold'
+                    : 'text-[var(--text-2)] hover:text-[var(--text)]'
+                }`}
+              >
+                EN
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Pemilih Tema - HANYA untuk pengguna yang sudah login (TAHAP V8) */}
-        {isAuthenticated && (
+          {/* Pemilih Tema */}
           <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
             <div className="flex items-center gap-2">
               <Sun className="w-4 h-4 text-[#8A6A2F] dark:text-[#D9B877]" />
@@ -205,8 +203,8 @@ export const GuestAccountHub: React.FC = () => {
               </button>
             </div>
           </div>
-        )}
-      </Card>
+        </Card>
+      )}
 
       {/* 4. Penanda Versi Aplikasi */}
       <div className="text-center pt-2 pb-2">

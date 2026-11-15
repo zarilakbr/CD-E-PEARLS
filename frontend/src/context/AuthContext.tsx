@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { apiClient, authApi, authChannel, type UserResponse } from '../lib/api';
 import { queryClient } from '../lib/queryClient';
+import i18n from '../lib/i18n';
 
 export type UserRole = 'user' | 'admin' | 'spi';
 export type { UserResponse };
@@ -50,6 +51,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userData = await authApi.getMe();
       setUser(userData);
+      if (userData && typeof window !== 'undefined') {
+        const savedLang = localStorage.getItem('cde_language');
+        if (savedLang === 'en' || savedLang === 'id') {
+          void i18n.changeLanguage(savedLang);
+        }
+      }
     } catch {
       setUser(null);
     } finally {
@@ -149,6 +156,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const res = await authApi.login(credentials);
         setUser(res.user);
         setIsAuthModalOpen(false);
+        if (typeof window !== 'undefined') {
+          const savedLang = localStorage.getItem('cde_language');
+          if (savedLang === 'en' || savedLang === 'id') {
+            void i18n.changeLanguage(savedLang);
+          }
+        }
         authChannel?.postMessage({ type: 'LOGIN', timestamp: Date.now() });
         try {
           localStorage.setItem('cde_auth_sync', JSON.stringify({ event: 'LOGIN', timestamp: Date.now() }));
@@ -179,6 +192,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const res = await authApi.register(data);
         setUser(res.user);
         setIsAuthModalOpen(false);
+        if (typeof window !== 'undefined') {
+          const savedLang = localStorage.getItem('cde_language');
+          if (savedLang === 'en' || savedLang === 'id') {
+            void i18n.changeLanguage(savedLang);
+          }
+        }
         authChannel?.postMessage({ type: 'LOGIN', timestamp: Date.now() });
         try {
           localStorage.setItem('cde_auth_sync', JSON.stringify({ event: 'LOGIN', timestamp: Date.now() }));
@@ -218,6 +237,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Close any open auth modal
       setIsAuthModalOpen(false);
+
+      // TAHAP V9: Saat logout, bahasa kembali ke Indonesia dan tema kembali ke terang
+      void i18n.changeLanguage('id');
+      if (typeof document !== 'undefined') {
+        document.documentElement.lang = 'id';
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.remove('dark');
+        document.documentElement.style.colorScheme = 'light';
+        let meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', '#FBF8F3');
+      }
 
       // Broadcast logout across tabs
       authChannel?.postMessage({ type: 'LOGOUT', timestamp: Date.now() });

@@ -7,12 +7,13 @@
     <meta name="robots" content="index, follow" data-rh="true" />
     <meta name="theme-color" content="#FBF8F3" />
     <title>CD'E Pearls Lombok | Haute Joaillerie Samudera Indonesia</title>
-    <meta name="description" content="Platform resmi perhiasan mutiara air laut asli Lombok (South Sea Pearls Grade AAA) berbalut Emas 18K solid dengan sertifikat gemologi resmi, studio atelier 3D, dan pemesanan WhatsApp dinamis." data-rh="true" />
+    <meta name="description" content="Platform resmi perhiasan mutiara air laut asli Lombok (South Sea Pearls Grade AAA) berbalut Emas 18K solid dengan sertifikat gemologi resmi, atelier perhiasan kustom, dan pemesanan WhatsApp dinamis." data-rh="true" />
     <script>
       (function() {
         try {
-          var t = localStorage.getItem('cde_theme') || 'system';
-          var isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var hasAuth = Boolean(localStorage.getItem('cde_auth_token'));
+          var t = hasAuth ? (localStorage.getItem('cde_theme') || 'light') : 'light';
+          var isDark = t === 'dark';
           var root = document.documentElement;
           if (isDark) {
             root.setAttribute('data-theme', 'dark');
@@ -23,7 +24,7 @@
             root.classList.remove('dark');
             root.style.colorScheme = 'light';
           }
-          var l = localStorage.getItem('cde_language') || 'id';
+          var l = hasAuth ? (localStorage.getItem('cde_language') || 'id') : 'id';
           root.setAttribute('lang', l);
         } catch(e) {}
       })();

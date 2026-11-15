@@ -50,7 +50,7 @@ export const routesManifest: RouteManifestItem[] = [
   { path: '/', component: PublicHomePage, allowedRoles: ['public'], titleKey: 'Beranda' },
   { path: '/katalog', component: CatalogPage, allowedRoles: ['public'], titleKey: 'Koleksi Produk' },
   { path: '/koleksi', component: CatalogPage, allowedRoles: ['public'], titleKey: 'Koleksi Produk' },
-  { path: '/studio', component: Studio3DPage, allowedRoles: ['public'], titleKey: 'Studio 3D Atelier' },
+  { path: '/studio', component: Studio3DPage, allowedRoles: ['user'], titleKey: 'Kustom Perhiasan' },
   { path: '/edukasi', component: EducationPage, allowedRoles: ['public'], titleKey: 'Edukasi Mutiara' },
   { path: '/tentang', component: AboutPage, allowedRoles: ['public'], titleKey: 'Tentang Kami' },
   { path: '/kontak', component: ContactPage, allowedRoles: ['public'], titleKey: 'Kontak Butik' },
