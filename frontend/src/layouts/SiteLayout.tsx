@@ -583,31 +583,33 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
               </button>
             </div>
 
-            {/* Theme Switch Pill 56x28px dengan ikon Sun & Moon (TAHAP C) - hidden on mobile <sm, available in mobile drawer */}
-            <button
-              type="button"
-              role="switch"
-              aria-checked={effectiveResolvedTheme === 'dark'}
-              aria-label={t('common.switchTheme', 'Ganti tema tampilan')}
-              onClick={toggleTheme}
-              className={`hidden sm:flex relative w-[56px] h-[28px] rounded-full p-1 transition-colors cursor-pointer items-center justify-between border shrink-0 ${
-                effectiveResolvedTheme === 'dark'
-                  ? 'bg-[#1D354E] border-[#D9B877]/50 text-[#D9B877]'
-                  : isOverDark && !isScrolled
-                  ? 'bg-black/30 border-white/30 text-white'
-                  : 'bg-[#EDE6DA] border-[#D9B877]/40 text-[#8A6A2F]'
-              }`}
-            >
-              <Sun className="w-3.5 h-3.5 ml-0.5 z-10 pointer-events-none" />
-              <Moon className="w-3.5 h-3.5 mr-0.5 z-10 pointer-events-none" />
-              <span
-                className={`absolute top-[2px] bottom-[2px] w-[22px] rounded-full shadow-sm transition-transform duration-200 ease-out ${
+            {/* Theme Switch Pill 56x28px dengan ikon Sun & Moon (TAHAP V8: HANYA untuk pengguna yang sudah login) */}
+            {isAuthenticated && (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={effectiveResolvedTheme === 'dark'}
+                aria-label={t('common.switchTheme', 'Ganti tema tampilan')}
+                onClick={toggleTheme}
+                className={`hidden sm:flex relative w-[56px] h-[28px] rounded-full p-1 transition-colors cursor-pointer items-center justify-between border shrink-0 ${
                   effectiveResolvedTheme === 'dark'
-                    ? 'translate-x-[28px] bg-[#D9B877]'
-                    : 'translate-x-0 bg-white'
+                    ? 'bg-[#1D354E] border-[#D9B877]/50 text-[#D9B877]'
+                    : isOverDark && !isScrolled
+                    ? 'bg-black/30 border-white/30 text-white'
+                    : 'bg-[#EDE6DA] border-[#D9B877]/40 text-[#8A6A2F]'
                 }`}
-              />
-            </button>
+              >
+                <Sun className="w-3.5 h-3.5 ml-0.5 z-10 pointer-events-none" />
+                <Moon className="w-3.5 h-3.5 mr-0.5 z-10 pointer-events-none" />
+                <span
+                  className={`absolute top-[2px] bottom-[2px] w-[22px] rounded-full shadow-sm transition-transform duration-200 ease-out ${
+                    effectiveResolvedTheme === 'dark'
+                      ? 'translate-x-[28px] bg-[#D9B877]'
+                      : 'translate-x-0 bg-white'
+                  }`}
+                />
+              </button>
+            )}
 
             {/* Wishlist */}
             <button

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Sparkles,
@@ -21,6 +21,7 @@ import {
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { useTheme } from '../../context/ThemeContext';
+import { AuthContext } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Seo } from '../../components/common/Seo';
 
@@ -28,6 +29,8 @@ export const GuestAccountHub: React.FC = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { i18n } = useTranslation();
+  const auth = useContext(AuthContext);
+  const isAuthenticated = !!auth?.isAuthenticated;
 
   const currentLang = i18n.language?.startsWith('en') ? 'en' : 'id';
 
@@ -152,55 +155,57 @@ export const GuestAccountHub: React.FC = () => {
           </div>
         </div>
 
-        {/* Pemilih Tema */}
-        <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
-          <div className="flex items-center gap-2">
-            <Sun className="w-4 h-4 text-[#8A6A2F] dark:text-[#D9B877]" />
-            <span className="text-xs font-medium text-[var(--text)]">Tema Tampilan</span>
+        {/* Pemilih Tema - HANYA untuk pengguna yang sudah login (TAHAP V8) */}
+        {isAuthenticated && (
+          <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
+            <div className="flex items-center gap-2">
+              <Sun className="w-4 h-4 text-[#8A6A2F] dark:text-[#D9B877]" />
+              <span className="text-xs font-medium text-[var(--text)]">Tema Tampilan</span>
+            </div>
+            <div
+              role="group"
+              aria-label="Pilih Tema"
+              className="inline-flex items-center p-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] text-xs"
+            >
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                aria-label="Mode Terang"
+                className={`min-h-[32px] px-2.5 rounded-md transition-colors ${
+                  theme === 'light'
+                    ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] shadow-xs font-semibold'
+                    : 'text-[var(--text-2)] hover:text-[var(--text)]'
+                }`}
+              >
+                <Sun className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                aria-label="Mode Gelap"
+                className={`min-h-[32px] px-2.5 rounded-md transition-colors ${
+                  theme === 'dark'
+                    ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] shadow-xs font-semibold'
+                    : 'text-[var(--text-2)] hover:text-[var(--text)]'
+                }`}
+              >
+                <Moon className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('system')}
+                aria-label="Mode Sistem"
+                className={`min-h-[32px] px-2.5 rounded-md transition-colors ${
+                  theme === 'system'
+                    ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] shadow-xs font-semibold'
+                    : 'text-[var(--text-2)] hover:text-[var(--text)]'
+                }`}
+              >
+                <Laptop className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
-          <div
-            role="group"
-            aria-label="Pilih Tema"
-            className="inline-flex items-center p-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] text-xs"
-          >
-            <button
-              type="button"
-              onClick={() => setTheme('light')}
-              aria-label="Mode Terang"
-              className={`min-h-[32px] px-2.5 rounded-md transition-colors ${
-                theme === 'light'
-                  ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] shadow-xs font-semibold'
-                  : 'text-[var(--text-2)] hover:text-[var(--text)]'
-              }`}
-            >
-              <Sun className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme('dark')}
-              aria-label="Mode Gelap"
-              className={`min-h-[32px] px-2.5 rounded-md transition-colors ${
-                theme === 'dark'
-                  ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] shadow-xs font-semibold'
-                  : 'text-[var(--text-2)] hover:text-[var(--text)]'
-              }`}
-            >
-              <Moon className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme('system')}
-              aria-label="Mode Sistem"
-              className={`min-h-[32px] px-2.5 rounded-md transition-colors ${
-                theme === 'system'
-                  ? 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] shadow-xs font-semibold'
-                  : 'text-[var(--text-2)] hover:text-[var(--text)]'
-              }`}
-            >
-              <Laptop className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+        )}
       </Card>
 
       {/* 4. Penanda Versi Aplikasi */}
