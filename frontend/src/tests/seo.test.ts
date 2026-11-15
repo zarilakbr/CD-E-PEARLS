@@ -3,6 +3,7 @@ import {
   BRAND_NAME,
   ROBOTS_TXT_CONTENT,
   SITE_URL,
+  STORE_CONTACT,
   buildBreadcrumbJsonLd,
   buildLocalBusinessJsonLd,
   buildOrganizationJsonLd,
@@ -31,6 +32,7 @@ describe('SEO & Structured Data Helpers', () => {
       addressRegion: 'Nusa Tenggara Barat',
       addressCountry: 'ID',
     });
+    expect(local.hasMap).toBe(STORE_CONTACT.mapsUrl);
   });
 
   it('2. omits aggregateRating when no real reviews exist despite default rating=5', () => {
