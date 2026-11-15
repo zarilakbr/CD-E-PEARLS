@@ -87,10 +87,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             Katalog Produk
           </button>
           <span className="text-white/20">•</span>
-          <button onClick={() => onNavigate('customizer')} className="hover:text-[#BD8F4B] transition-colors cursor-pointer">
-            Studio 3D Atelier
-          </button>
-          <span className="text-white/20">•</span>
           <button onClick={() => onNavigate('cart')} className="hover:text-[#BD8F4B] transition-colors cursor-pointer">
             Keranjang & Resi
           </button>

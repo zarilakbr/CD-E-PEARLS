@@ -14,6 +14,7 @@ import {
   Truck,
   Award,
   ArrowRight,
+  Gem,
 } from 'lucide-react';
 import type { MockProduct } from '../../types/models';
 import { usePrefersReducedMotion } from '../../lib/motion';
@@ -53,10 +54,10 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
     },
     {
       image: '/images/hero_pearl_shell.jpg',
-      title: 'Desain Kustom Studio 3D',
-      subtitle: 'Pilih Mutiara & Rangka Emas',
-      cta: 'Buka Studio',
-      action: () => navigate('/studio'),
+      title: 'Edukasi Mutiara Lombok',
+      subtitle: 'Kenali Grade AAA & Kilau Samudera',
+      cta: 'Pelajari Mutiara',
+      action: () => navigate('/edukasi'),
     },
   ];
 
@@ -192,16 +193,16 @@ export const MobileMarketplaceHome: React.FC<MobileMarketplaceHomeProps> = ({
       </div>
 
       {/* ========================================================
-          3. BARIS CHIP JALAN PINTAS (Studio 3D, Cek Sertifikat, Lacak)
+          3. BARIS CHIP JALAN PINTAS (Katalog, Cek Sertifikat, Lacak)
          ======================================================== */}
       <div className="grid grid-cols-3 gap-2">
         <button
           type="button"
-          onClick={() => navigate('/studio')}
+          onClick={() => navigate('/katalog')}
           className="min-h-[44px] p-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] flex items-center justify-center gap-1.5 text-xs font-semibold touch-feedback shadow-2xs hover:border-[#8A6A2F]"
         >
-          <Sparkles className="w-3.5 h-3.5 text-[#8A6A2F] dark:text-[#D9B877] shrink-0" />
-          <span className="truncate">Studio 3D</span>
+          <Gem className="w-3.5 h-3.5 text-[#8A6A2F] dark:text-[#D9B877] shrink-0" />
+          <span className="truncate">Katalog</span>
         </button>
 
         <button

@@ -396,10 +396,9 @@ export default {
       return rewriteHtmlWithCanonical(spaRes, '/katalog');
     }
 
-    // Other public non-prerendered routes (e.g. /studio, /cek-sertifikat, /bantuan, /kebijakan-privasi, /syarat-ketentuan)
+    // Other public non-prerendered routes (e.g. /cek-sertifikat, /bantuan, /kebijakan-privasi, /syarat-ketentuan)
     // Unknown paths are still rendered by client React Router NotFoundPage (<Seo noindex />).
     const knownNonPrerenderedPublic = new Set([
-      '/studio',
       '/cek-sertifikat',
       '/bantuan',
       '/kebijakan-privasi',

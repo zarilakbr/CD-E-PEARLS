@@ -345,13 +345,13 @@ export const ThreeCustomizer: React.FC = () => {
 
   const handleOrderWhatsApp = () => {
     recordWhatsAppLead({
-      customer_name: 'Pemesan 3D Atelier Custom',
+      customer_name: 'Pemesan Kustom Perhiasan Atelier',
       phone: 'WhatsApp User',
       source: 'CUSTOM_3D_ATELIER',
       message: `Desain Kustom: ${selectedBase.name}, Mutiara: ${selectedPearl.name} ${pearlDiameterMm} mm, Logam: ${selectedMetal.name}, Estimasi: ${formatIDR(calculatedPrice)}`,
     }).catch(() => {});
 
-    const msg = `Halo Atelier CD'E Pearls Lombok,%0A%0ASaya ingin memesan perhiasan kustom hasil desain Studio 3D:%0A• Basis: *${encodeURIComponent(selectedBase.name)}*%0A• Mutiara: *${encodeURIComponent(selectedPearl.name)}*%0A• Diameter: *${pearlDiameterMm} mm*%0A• Logam: *${encodeURIComponent(selectedMetal.name)}*%0A• Estimasi Biaya: *${formatIDR(calculatedPrice)}*%0A%0AMohon konfirmasi waktu pengerjaan atelier dan nomor rekening pembayaran. Terima kasih.`;
+    const msg = `Halo Atelier CD'E Pearls Lombok,%0A%0ASaya ingin memesan perhiasan kustom hasil desain Kustom Perhiasan:%0A• Basis: *${encodeURIComponent(selectedBase.name)}*%0A• Mutiara: *${encodeURIComponent(selectedPearl.name)}*%0A• Diameter: *${pearlDiameterMm} mm*%0A• Logam: *${encodeURIComponent(selectedMetal.name)}*%0A• Estimasi Biaya: *${formatIDR(calculatedPrice)}*%0A%0AMohon konfirmasi waktu pengerjaan atelier dan nomor rekening pembayaran. Terima kasih.`;
     window.open(`https://wa.me/6281239887766?text=${msg}`, '_blank');
   };
 

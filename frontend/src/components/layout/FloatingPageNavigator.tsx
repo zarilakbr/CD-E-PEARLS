@@ -20,7 +20,7 @@ export const FloatingPageNavigator: React.FC<FloatingPageNavigatorProps> = ({
       case 'catalog':
         return 'Katalog';
       case 'customizer':
-        return 'Studio 3D';
+        return 'Kustom Perhiasan';
       case 'cart':
         return 'Keranjang';
       case 'customer':

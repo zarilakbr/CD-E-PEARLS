@@ -481,7 +481,14 @@ const AppContent: React.FC = () => {
               />
             }
           />
-          <Route path="/studio" element={<Studio3DPage onAddToCart={handleAddToCart} />} />
+          <Route
+            path="/studio"
+            element={
+              <RouteGuard allowedRoles={['user']}>
+                <Studio3DPage onAddToCart={handleAddToCart} />
+              </RouteGuard>
+            }
+          />
           <Route path="/edukasi" element={<EducationPage />} />
           <Route path="/tentang" element={<AboutPage />} />
           <Route path="/kontak" element={<ContactPage />} />

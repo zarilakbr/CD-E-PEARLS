@@ -22,7 +22,9 @@ import {
   Upload,
   Bell,
   CheckCheck,
+  Sparkles,
 } from 'lucide-react';
+import { Studio3DPage } from '../site/Studio3DPage';
 import { DashboardLayout, type DashboardMenuItem } from '../../layouts/DashboardLayout';
 import { PageHeader } from '../../components/common/PageHeader';
 import { StatCard } from '../../components/common/StatCard';
@@ -78,6 +80,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     if (path === '/akun/favorit') return 'wishlist';
     if (path === '/akun/alamat') return 'addresses';
     if (path === '/akun/profil') return 'profile';
+    if (path === '/studio' || path === '/akun/kustom') return 'studio';
     return 'summary';
   });
 
@@ -361,6 +364,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     { id: 'shipping_status', label: 'Status Pengiriman', icon: <Truck className="w-4 h-4" /> },
     { id: 'notifications', label: 'Notifikasi', icon: <Bell className="w-4 h-4" />, badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined },
     { id: 'wishlist', label: 'Koleksi Favorit', icon: <Heart className="w-4 h-4" />, badge: wishlistProducts.length },
+    { id: 'studio', label: 'Kustom Perhiasan', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'addresses', label: 'Alamat', icon: <MapPin className="w-4 h-4" /> },
     { id: 'profile', label: 'Profil Akun', icon: <UserIcon className="w-4 h-4" /> },
   ];
@@ -375,6 +379,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       tracking: '/akun/status-pengiriman',
       notifications: '/akun/notifikasi',
       wishlist: '/akun/favorit',
+      studio: '/studio',
       addresses: '/akun/alamat',
       profile: '/akun/profil',
     };
@@ -572,14 +577,17 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       websiteNavLinks={[
         { id: 'home', label: 'Home' },
         { id: 'catalog', label: 'Koleksi Produk' },
-        { id: 'studio', label: 'Studio 3D' },
+        { id: 'studio', label: 'Kustom Perhiasan' },
         { id: 'education', label: 'Edukasi Mutiara' },
         { id: 'about', label: 'Tentang Kami' },
       ]}
       onNavigateWebsite={(tab) => {
         if (tab === 'home') onNavigateHome();
         else if (tab === 'catalog') onNavigateCatalog();
-        else if (onNavigate) onNavigate(tab);
+        else if (tab === 'studio') {
+          setActiveMenu('studio');
+          if (typeof window !== 'undefined') window.history.pushState({}, '', '/studio');
+        } else if (onNavigate) onNavigate(tab);
       }}
       onLogout={() => setIsLogoutDialogOpen(true)}
     >
@@ -2034,7 +2042,26 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       )}
 
       {/* ========================================================
-          4.7 KELUAR (Dialog Konfirmasi Kecil)
+          4.7 KUSTOM PERHIASAN (STUDIO ATELIER)
+         ======================================================== */}
+      {activeMenu === 'studio' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <PageHeader
+            title="Kustom Perhiasan Atelier"
+            description="Rancang sendiri perhiasan mutiara laut impian Anda langsung di atelier interaktif."
+          />
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 sm:p-6 shadow-xs">
+            <Studio3DPage
+              onAddToCart={(item) =>
+                onAddToCart?.(typeof item === 'string' ? item : item?.name || 'Perhiasan Kustom')
+              }
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          4.8 KELUAR (Dialog Konfirmasi Kecil)
          ======================================================== */}
       {isLogoutDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">

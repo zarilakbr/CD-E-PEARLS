@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authApi } from '../lib/api';
+import { authApi, authChannel } from '../lib/api';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
@@ -13,30 +13,36 @@ interface ThemeContextType {
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<ThemeMode>(() => {
-    if (typeof window === 'undefined') return 'system';
+const resolveEffectiveTheme = (): { theme: ThemeMode; resolved: ResolvedTheme } => {
+  if (typeof window === 'undefined') return { theme: 'light', resolved: 'light' };
+  try {
     const saved = localStorage.getItem('cde_theme');
-    if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
-    return 'system';
-  });
+    // Jika localStorage berisi 'system' dari sebelumnya, perlakukan sebagai 'light'
+    if (saved === 'system') return { theme: 'light', resolved: 'light' };
+    if (saved === 'light' || saved === 'dark') {
+      // Nilai tersimpan 'light'/'dark' dihormati HANYA untuk pengguna login
+      const hasAuth = Boolean(localStorage.getItem('cde_auth_token'));
+      if (hasAuth) {
+        return { theme: saved, resolved: saved };
+      }
+    }
+  } catch {}
+  return { theme: 'light', resolved: 'light' };
+};
 
-  const getSystemTheme = (): ResolvedTheme => {
-    if (typeof window === 'undefined') return 'light';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  };
-
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
-    if (theme === 'system') return getSystemTheme();
-    return theme;
-  });
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [themeState, setThemeState] = useState<ThemeMode>(() => resolveEffectiveTheme().theme);
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => resolveEffectiveTheme().resolved);
 
   const applyThemeToDOM = useCallback((resolved: ResolvedTheme) => {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
 
     // Check prefers-reduced-motion
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!reducedMotion) {
       root.classList.add('theme-transition');
     }
@@ -67,18 +73,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setTheme = useCallback(
     (newMode: ThemeMode) => {
-      setThemeState(newMode);
+      // Jika memilih system, perlakukan sebagai light (TAHAP V9)
+      const effectiveMode: ThemeMode = newMode === 'system' ? 'light' : newMode;
+      const effectiveResolved: ResolvedTheme = effectiveMode === 'dark' ? 'dark' : 'light';
+
+      setThemeState(effectiveMode);
+      setResolvedTheme(effectiveResolved);
+
       try {
-        localStorage.setItem('cde_theme', newMode);
+        localStorage.setItem('cde_theme', effectiveMode);
       } catch {}
 
-      const resolved = newMode === 'system' ? getSystemTheme() : newMode;
-      setResolvedTheme(resolved);
-      applyThemeToDOM(resolved);
+      applyThemeToDOM(effectiveResolved);
 
       // Persist theme preference to user database if authenticated
       if (typeof window !== 'undefined' && localStorage.getItem('cde_auth_token')) {
-        authApi.updateProfile({ theme: newMode }).catch(() => {});
+        authApi.updateProfile({ theme: effectiveMode }).catch(() => {});
       }
     },
     [applyThemeToDOM]
@@ -88,28 +98,42 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   }, [resolvedTheme, setTheme]);
 
-  // Listen for OS system theme changes
+  // Synchronize on mount and listen for login/logout/storage events
   useEffect(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const listener = () => {
-      if (theme === 'system') {
-        const sys = media.matches ? 'dark' : 'light';
-        setResolvedTheme(sys);
-        applyThemeToDOM(sys);
+    const syncThemeFromAuth = () => {
+      const { theme: nextTheme, resolved: nextResolved } = resolveEffectiveTheme();
+      setThemeState(nextTheme);
+      setResolvedTheme(nextResolved);
+      applyThemeToDOM(nextResolved);
+    };
+
+    // Initial DOM sync on mount
+    applyThemeToDOM(resolvedTheme);
+
+    const handleBroadcast = (event: MessageEvent) => {
+      const data = event.data;
+      if (data?.type === 'LOGIN' || data?.type === 'LOGOUT' || data?.type === 'SESSION_EXPIRED') {
+        syncThemeFromAuth();
       }
     };
 
-    media.addEventListener('change', listener);
-    // Initial sync
-    const initialResolved = theme === 'system' ? (media.matches ? 'dark' : 'light') : theme;
-    setResolvedTheme(initialResolved);
-    applyThemeToDOM(initialResolved);
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'cde_auth_token' || e.key === 'cde_theme' || e.key === 'cde_auth_sync') {
+        syncThemeFromAuth();
+      }
+    };
 
-    return () => media.removeEventListener('change', listener);
-  }, [theme, applyThemeToDOM]);
+    authChannel?.addEventListener('message', handleBroadcast);
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      authChannel?.removeEventListener('message', handleBroadcast);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [applyThemeToDOM, resolvedTheme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme: themeState, resolvedTheme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -122,4 +146,3 @@ export const useTheme = (): ThemeContextType => {
   }
   return context;
 };
-

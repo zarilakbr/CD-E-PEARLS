@@ -163,13 +163,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onNavigate, onSearch
             </div>
 
             <button
-              onClick={() => onNavigate('customizer')}
-              className={`relative py-2 cursor-pointer ${getNavButtonClass('customizer')}`}
-            >
-              Studio 3D Atelier
-            </button>
-
-            <button
               onClick={() => onNavigate('about')}
               className={`relative py-2 cursor-pointer ${getNavButtonClass('about')}`}
             >
@@ -347,12 +340,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onNavigate, onSearch
             </div>
           </div>
 
-          <button
-            onClick={() => { onNavigate('customizer'); setMobileMenuOpen(false); }}
-            className="text-left text-xs font-bold py-2 text-white hover:text-amber-200"
-          >
-            Studio 3D Atelier
-          </button>
           <button
             onClick={() => { onNavigate('about'); setMobileMenuOpen(false); }}
             className="text-left text-xs font-bold py-2 text-white hover:text-amber-200"

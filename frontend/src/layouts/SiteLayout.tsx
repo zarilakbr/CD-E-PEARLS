@@ -53,7 +53,7 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const { resolvedTheme, toggleTheme } = useTheme();
-  const { user, isAuthenticated, logout: authLogout } = useAuth();
+  const { user, role, isAuthenticated, logout: authLogout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -425,17 +425,19 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
               )}
             </div>
 
-            {/* 3. Studio 3D */}
-            <button
-              type="button"
-              onClick={() => {
-                onNavigate('studio');
-                navigate('/studio');
-              }}
-              className={getNavLinkClass(isStudioActive)}
-            >
-              Studio 3D
-            </button>
+            {/* 3. Kustom Perhiasan (TAHAP V9: HANYA untuk pengguna yang sudah login dengan peran user) */}
+            {isAuthenticated && (!role || role === 'user') && (
+              <button
+                type="button"
+                onClick={() => {
+                  onNavigate('studio');
+                  navigate('/studio');
+                }}
+                className={getNavLinkClass(isStudioActive)}
+              >
+                Kustom Perhiasan
+              </button>
+            )}
 
             {/* 4. Edukasi Mutiara */}
             <button
@@ -543,45 +545,47 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
 
           {/* Controls: Bahasa (ID|EN), Tema (Pill Switch), Wishlist, Cart, User Profile */}
           <div className="hidden lg:flex items-center gap-1 sm:gap-2 shrink-0">
-            {/* Language Segmented Control ID | EN (TAHAP D) - hidden on mobile <sm, available in mobile drawer */}
-            <div
-              role="group"
-              aria-label={t('common.switchLang', 'Pilih Bahasa')}
-              className={`hidden sm:inline-flex items-center p-0.5 rounded-lg border text-[11px] font-semibold transition-colors ${
-                isOverDark && !isScrolled
-                  ? 'border-white/20 bg-black/25 text-white'
-                  : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)]'
-              }`}
-            >
-              <button
-                type="button"
-                aria-pressed={currentLang === 'id'}
-                onClick={() => handleLangChange('id')}
-                className={`px-1.5 py-0.5 rounded-md transition-colors cursor-pointer ${
-                  currentLang === 'id'
-                    ? isOverDark && !isScrolled
-                      ? 'bg-white text-[#12263A] font-bold shadow-2xs'
-                      : 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] font-bold shadow-2xs'
-                    : 'opacity-70 hover:opacity-100'
+            {/* Language Segmented Control ID | EN (TAHAP V9: HANYA untuk pengguna yang sudah login) */}
+            {isAuthenticated && (
+              <div
+                role="group"
+                aria-label={t('common.switchLang', 'Pilih Bahasa')}
+                className={`hidden sm:inline-flex items-center p-0.5 rounded-lg border text-[11px] font-semibold transition-colors ${
+                  isOverDark && !isScrolled
+                    ? 'border-white/20 bg-black/25 text-white'
+                    : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)]'
                 }`}
               >
-                ID
-              </button>
-              <button
-                type="button"
-                aria-pressed={currentLang === 'en'}
-                onClick={() => handleLangChange('en')}
-                className={`px-1.5 py-0.5 rounded-md transition-colors cursor-pointer ${
-                  currentLang === 'en'
-                    ? isOverDark && !isScrolled
-                      ? 'bg-white text-[#12263A] font-bold shadow-2xs'
-                      : 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] font-bold shadow-2xs'
-                    : 'opacity-70 hover:opacity-100'
-                }`}
-              >
-                EN
-              </button>
-            </div>
+                <button
+                  type="button"
+                  aria-pressed={currentLang === 'id'}
+                  onClick={() => handleLangChange('id')}
+                  className={`px-1.5 py-0.5 rounded-md transition-colors cursor-pointer ${
+                    currentLang === 'id'
+                      ? isOverDark && !isScrolled
+                        ? 'bg-white text-[#12263A] font-bold shadow-2xs'
+                        : 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] font-bold shadow-2xs'
+                      : 'opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  ID
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={currentLang === 'en'}
+                  onClick={() => handleLangChange('en')}
+                  className={`px-1.5 py-0.5 rounded-md transition-colors cursor-pointer ${
+                    currentLang === 'en'
+                      ? isOverDark && !isScrolled
+                        ? 'bg-white text-[#12263A] font-bold shadow-2xs'
+                        : 'bg-[var(--surface)] text-[#8A6A2F] dark:text-[#D9B877] font-bold shadow-2xs'
+                      : 'opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  EN
+                </button>
+              </div>
+            )}
 
             {/* Theme Switch Pill 56x28px dengan ikon Sun & Moon (TAHAP V8: HANYA untuk pengguna yang sudah login) */}
             {isAuthenticated && (
@@ -732,7 +736,9 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
                 </AccordionTrigger>
                 <AccordionContent className="text-white/70 space-y-2 pt-1 pb-3 text-xs">
                   <p><button type="button" onClick={() => onNavigate('about')} className="hover:text-white transition-colors cursor-pointer">Tentang CD'E Pearls</button></p>
-                  <p><button type="button" onClick={() => onNavigate('studio')} className="hover:text-white transition-colors cursor-pointer">Studio 3D Atelier</button></p>
+                  {isAuthenticated && (!role || role === 'user') && (
+                    <p><button type="button" onClick={() => onNavigate('studio')} className="hover:text-white transition-colors cursor-pointer">Kustom Perhiasan</button></p>
+                  )}
                   <p><button type="button" onClick={() => onNavigate('education')} className="hover:text-white transition-colors cursor-pointer">Edukasi &amp; Gradasi Mutiara</button></p>
                 </AccordionContent>
               </AccordionItem>
@@ -867,7 +873,9 @@ export const SiteLayout: React.FC<SiteLayoutProps> = ({
                   {t('site.footer.services', 'Layanan Butik')}
                 </h4>
                 <ul className="flex flex-col gap-2.5 text-[14px] text-white/70">
-                  <li><button type="button" onClick={() => onNavigate('studio')} className="hover:text-white transition-colors cursor-pointer">Studio 3D Atelier</button></li>
+                  {isAuthenticated && (!role || role === 'user') && (
+                    <li><button type="button" onClick={() => onNavigate('studio')} className="hover:text-white transition-colors cursor-pointer">Kustom Perhiasan</button></li>
+                  )}
                   <li><button type="button" onClick={() => onNavigate('education')} className="hover:text-white transition-colors cursor-pointer">Edukasi &amp; Gradasi Mutiara</button></li>
                   <li><button type="button" onClick={() => onNavigate('keranjang')} className="hover:text-white transition-colors cursor-pointer">Status Pesanan &amp; Resi</button></li>
                   <li><button type="button" onClick={() => onNavigate('akun')} className="hover:text-white transition-colors cursor-pointer">Portal Pelanggan</button></li>

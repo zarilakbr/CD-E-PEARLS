@@ -1,19 +1,28 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
-import { authApi } from './api';
 
 import idTranslation from '../locales/id.json';
 import enTranslation from '../locales/en.json';
 
-const getSavedOrBrowserLang = (): string => {
+export const isUserAuthenticated = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return Boolean(localStorage.getItem('cde_auth_token'));
+  } catch {
+    return false;
+  }
+};
+
+export const getEffectiveLanguage = (): 'id' | 'en' => {
   if (typeof window === 'undefined') return 'id';
   try {
-    const saved = localStorage.getItem('cde_language');
-    if (saved === 'id' || saved === 'en') return saved;
+    // TAHAP V9: Bahasa efektif untuk tamu selalu Indonesia (id) tanpa menimpa nilai tersimpan.
+    // Pilihan tersimpan 'cde_language' dihormati HANYA jika pengguna sudah login.
+    if (isUserAuthenticated()) {
+      const saved = localStorage.getItem('cde_language');
+      if (saved === 'en' || saved === 'id') return saved;
+    }
   } catch {}
-  const nav = navigator.language?.toLowerCase() || '';
-  if (nav.startsWith('en')) return 'en';
   return 'id';
 };
 
@@ -23,20 +32,19 @@ const isHydratingPrerenderedDom = (): boolean => {
   return Boolean(rootEl && rootEl.hasAttribute('data-prerendered-path') && rootEl.hasChildNodes());
 };
 
-const initialLang = isHydratingPrerenderedDom() ? 'id' : getSavedOrBrowserLang();
+const initialLang = isHydratingPrerenderedDom() ? 'id' : getEffectiveLanguage();
 if (typeof document !== 'undefined') {
   document.documentElement.lang = initialLang;
 }
 
 export function syncHydratedLanguage(): void {
-  const preferred = getSavedOrBrowserLang();
+  const preferred = getEffectiveLanguage();
   if (preferred !== i18n.language) {
     void i18n.changeLanguage(preferred);
   }
 }
 
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
@@ -48,24 +56,12 @@ i18n
     interpolation: {
       escapeValue: false,
     },
-    detection: {
-      order: ['localStorage', 'navigator'],
-      lookupLocalStorage: 'cde_language',
-      caches: ['localStorage'],
-    },
   });
 
 i18n.on('languageChanged', (lng) => {
   if (typeof document !== 'undefined') {
     document.documentElement.lang = lng;
-    try {
-      localStorage.setItem('cde_language', lng);
-      if (localStorage.getItem('cde_auth_token')) {
-        authApi.updateProfile({ locale: lng }).catch(() => {});
-      }
-    } catch {}
   }
 });
 
 export default i18n;
-

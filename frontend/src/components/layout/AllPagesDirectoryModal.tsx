@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Home,
-  Gem,
   Award,
   Sparkles,
   ShoppingBag,
@@ -39,16 +38,6 @@ export const AllPagesDirectoryModal: React.FC<AllPagesDirectoryModalProps> = ({
       badge: '5 Kategori',
       badgeColor: 'bg-[#BD8F4B]/15 text-[#BD8F4B]',
       description: 'Showcase Kalung, Gelang, Anting, Cincin, & Mutiara Lepas dengan filter varietas dan grade mutu.',
-    },
-    {
-      id: 'customizer',
-      name: 'Studio 3D Kustomisasi Mutiara',
-      subtitle: 'Three.js WebGL Haute Joaillerie Atelier 360°',
-      category: 'Interaktif 3D',
-      icon: Gem,
-      badge: 'OrbitControls 360°',
-      badgeColor: 'bg-[#C5A880]/20 text-[#C5A880]',
-      description: 'Pilih jenis mutiara air laut (Gold, White, Black Tahiti), jenis rangka emas (Kuning, Putih, Rose Gold 18K), dan custom ukuran mutiara secara real-time.',
     },
     {
       id: 'certificates',
@@ -134,7 +123,7 @@ export const AllPagesDirectoryModal: React.FC<AllPagesDirectoryModalProps> = ({
             </h2>
           </div>
           <p className="text-xs text-[#4A5666] font-light">
-            Navigasi lengkap seluruh halaman katalog, studio 3D, portal pelanggan, dan dashboard pengawasan internal SPI.
+            Navigasi lengkap seluruh halaman katalog, edukasi mutiara, portal pelanggan, dan dashboard pengawasan internal SPI.
             {user && (
               <span className="ml-1 text-[#8A6A2F] font-semibold">
                 (Login: {user.name} • {user.role?.toUpperCase()})

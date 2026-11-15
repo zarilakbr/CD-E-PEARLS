@@ -46,8 +46,9 @@ export const Studio3DPage: React.FC<Studio3DPageProps> = ({
   return (
     <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
       <Seo
-        title="Studio Kustomisasi 3D Atelier | CD'E Pearls"
-        description="Rancang perhiasan mutiara laut selatan Lombok sesuai selera Anda di Studio 3D interaktif: pilih varietas mutiara, ukuran, dan ikatan emas 18K."
+        noindex
+        title="Kustom Perhiasan Atelier | CD'E Pearls Lombok"
+        description="Rancang perhiasan mutiara laut selatan Lombok sesuai selera Anda di atelier interaktif: pilih varietas mutiara, ukuran, dan ikatan emas 18K."
         path="/studio"
       />
       {/* Page Header */}
@@ -56,7 +57,7 @@ export const Studio3DPage: React.FC<Studio3DPageProps> = ({
           Haute Joaillerie Atelier
         </span>
         <h1 className="font-serif text-3xl sm:text-5xl font-medium text-[#12263A] leading-tight">
-          Studio 3D Atelier CD'E Pearls
+          Kustom Perhiasan Atelier CD'E Pearls
         </h1>
         <p className="text-[15px] text-[#4A5666] mt-2">
           Rancang sendiri perhiasan mutiara laut impian Anda. Pilih jenis perhiasan, warna mutiara alami Lombok, ukuran diameter, dan ikatan emas 18K.
@@ -100,7 +101,7 @@ export const Studio3DPage: React.FC<Studio3DPageProps> = ({
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
                 <div className="absolute top-4 left-4 z-10 px-3 py-1 rounded-full bg-[#12263A]/85 border border-[#D9B877]/30 text-[11px] font-semibold text-[#D9B877] backdrop-blur-md">
-                  Studio Atelier Still Photography
+                  Koleksi Atelier Still Photography
                 </div>
                 <div className="absolute bottom-4 left-4 z-10 text-white text-xs">
                   <p className="font-semibold text-[#D9B877]">{jewelryType} • {variety}</p>
@@ -116,7 +117,7 @@ export const Studio3DPage: React.FC<Studio3DPageProps> = ({
                 onClick={() => setViewMode(viewMode === '3d' ? 'placeholder' : '3d')}
                 className="px-3.5 py-1.5 rounded-full bg-white/95 border border-[#E6DDD0] text-xs font-semibold text-[#12263A] hover:bg-[#F4F1EB] shadow-md cursor-pointer backdrop-blur-xs transition-colors"
               >
-                {viewMode === '3d' ? 'Lihat Foto Studio' : 'Buka 3D Canvas'}
+                {viewMode === '3d' ? 'Lihat Foto Galeri' : 'Buka 3D Canvas'}
               </button>
             </div>
           </div>
@@ -286,7 +287,7 @@ export const Studio3DPage: React.FC<Studio3DPageProps> = ({
             </button>
 
             <a
-              href={`https://wa.me/6281239001122?text=Halo%20Atelier%20CDE%20Pearls,%20saya%20tertarik%20dengan%20desain%203D%20${encodeURIComponent(jewelryType)}%20mutiara%20${encodeURIComponent(variety)}%20${encodeURIComponent(pearlSize)}%20logam%20${encodeURIComponent(metal)}%20seharga%20Rp%20${totalPrice.toLocaleString('id-ID')}`}
+              href={`https://wa.me/6281239001122?text=Halo%20Atelier%20CDE%20Pearls,%20saya%20tertarik%20dengan%20desain%20kustom%20${encodeURIComponent(jewelryType)}%20mutiara%20${encodeURIComponent(variety)}%20${encodeURIComponent(pearlSize)}%20logam%20${encodeURIComponent(metal)}%20seharga%20Rp%20${totalPrice.toLocaleString('id-ID')}`}
               target="_blank"
               rel="noreferrer"
               className="w-full min-h-[44px] rounded-full border border-[#12263A] text-[#12263A] hover:bg-[#12263A]/5 text-xs font-semibold inline-flex items-center justify-center gap-2 cursor-pointer"
